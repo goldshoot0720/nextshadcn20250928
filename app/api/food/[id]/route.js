@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { Client, Databases } from "appwrite";
 
+// 初始化 Appwrite client
 const client = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
 
 const databases = new Databases(client);
-const databaseId = process.env.APPWRITE_DATABASE_ID!;
-const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID!;
+const databaseId = process.env.APPWRITE_DATABASE_ID || "";
+const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID || "";
 
 // PUT /api/food/[id]
 export async function PUT(
@@ -29,7 +30,7 @@ export async function PUT(
       id,
       {
         name,
-        amount: parseInt(amount, 10),
+        amount: amount ? parseInt(amount, 10) : 0,
         todate,
         photo,
       }
