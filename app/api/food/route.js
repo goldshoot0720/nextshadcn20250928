@@ -29,7 +29,7 @@ export async function POST(req) {
     const response = await databases.createDocument(
       databaseId,
       collectionId,
-      undefined, // 讓 Appwrite 自動生成 ID
+      "unique()", // Appwrite 自動生成 ID
       {
         name,
         amount: amount ? parseInt(amount, 10) : 0,
