@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,14 +13,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// 定義 Food 型別
+interface Food {
+  $id: string;
+  name: string;
+  amount: string;
+  todate: string;
+  photo: string;
+}
+
+// 定義 Subscription 型別
+interface Subscription {
+  $id: string;
+  name: string;
+  site: string;
+  price: string;
+  nextdate: string;
+}
+
 export default function DashboardPage() {
-  const [currentModule, setCurrentModule] = useState("food");
+  const [currentModule, setCurrentModule] = useState<"food" | "subscription">(
+    "food"
+  );
 
   // -------------------
   // Food 狀態
   // -------------------
-  const [foods, setFoods] = useState<any[]>([]);
-  const [foodForm, setFoodForm] = useState({
+  const [foods, setFoods] = useState<Food[]>([]);
+  const [foodForm, setFoodForm] = useState<Omit<Food, "$id">>({
     name: "",
     amount: "",
     todate: "",
@@ -30,8 +51,8 @@ export default function DashboardPage() {
   // -------------------
   // Subscription 狀態
   // -------------------
-  const [subs, setSubs] = useState<any[]>([]);
-  const [subForm, setSubForm] = useState({
+  const [subs, setSubs] = useState<Subscription[]>([]);
+  const [subForm, setSubForm] = useState<Omit<Subscription, "$id">>({
     name: "",
     site: "",
     price: "",
@@ -44,18 +65,13 @@ export default function DashboardPage() {
   // -------------------
   async function loadFoods() {
     const res = await fetch("/api/food");
-    const data = await res.json();
+    const data: Food[] = await res.json();
     setFoods(data);
   }
 
   async function handleFoodSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const body = {
-      name: foodForm.name || "",
-      amount: foodForm.amount || "",
-      todate: foodForm.todate || "",
-      photo: foodForm.photo || "",
-    };
+    const body = { ...foodForm };
 
     if (editingFoodId) {
       await fetch(`/api/food/${editingFoodId}`, {
@@ -86,24 +102,17 @@ export default function DashboardPage() {
   // -------------------
   async function loadSubs() {
     const res = await fetch("/api/subscription");
-    let data = await res.json();
+    let data: Subscription[] = await res.json();
 
-    // 確保 nextdate 排序（升序，最早日期在前）
-    data = data.sort((a: any, b: any) => {
-      return new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime();
-    });
-
+    data = data.sort(
+      (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
+    );
     setSubs(data);
   }
 
   async function handleSubSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const body = {
-      name: subForm.name || "",
-      site: subForm.site || "",
-      price: subForm.price || "",
-      nextdate: subForm.nextdate || "",
-    };
+    const body = { ...subForm };
 
     if (editingSubId) {
       await fetch(`/api/subscription/${editingSubId}`, {
@@ -146,24 +155,24 @@ export default function DashboardPage() {
       <form onSubmit={handleFoodSubmit} className="flex flex-wrap gap-2 mb-4">
         <Input
           placeholder="名稱"
-          value={foodForm.name || ""}
+          value={foodForm.name}
           onChange={(e) => setFoodForm({ ...foodForm, name: e.target.value })}
         />
         <Input
           placeholder="數量"
           type="number"
-          value={foodForm.amount || ""}
+          value={foodForm.amount}
           onChange={(e) => setFoodForm({ ...foodForm, amount: e.target.value })}
         />
         <Input
           placeholder="有效期限"
           type="date"
-          value={foodForm.todate || ""}
+          value={foodForm.todate}
           onChange={(e) => setFoodForm({ ...foodForm, todate: e.target.value })}
         />
         <Input
           placeholder="圖片 URL"
-          value={foodForm.photo || ""}
+          value={foodForm.photo}
           onChange={(e) => setFoodForm({ ...foodForm, photo: e.target.value })}
         />
         <Button type="submit">{editingFoodId ? "更新" : "新增"}</Button>
@@ -236,24 +245,24 @@ export default function DashboardPage() {
       <form onSubmit={handleSubSubmit} className="flex flex-wrap gap-2 mb-4">
         <Input
           placeholder="名稱"
-          value={subForm.name || ""}
+          value={subForm.name}
           onChange={(e) => setSubForm({ ...subForm, name: e.target.value })}
         />
         <Input
           placeholder="網站"
-          value={subForm.site || ""}
+          value={subForm.site}
           onChange={(e) => setSubForm({ ...subForm, site: e.target.value })}
         />
         <Input
           placeholder="價格"
           type="number"
-          value={subForm.price || ""}
+          value={subForm.price}
           onChange={(e) => setSubForm({ ...subForm, price: e.target.value })}
         />
         <Input
           placeholder="下次付款日期"
           type="date"
-          value={subForm.nextdate || ""}
+          value={subForm.nextdate}
           onChange={(e) => setSubForm({ ...subForm, nextdate: e.target.value })}
         />
         <Button type="submit">{editingSubId ? "更新" : "新增"}</Button>
