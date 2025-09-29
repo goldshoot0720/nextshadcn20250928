@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,7 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// 定義 Food 型別
+// -------------------
+// 型別定義
+// -------------------
 interface Food {
   $id: string;
   name: string;
@@ -22,7 +23,6 @@ interface Food {
   photo: string;
 }
 
-// 定義 Subscription 型別
 interface Subscription {
   $id: string;
   name: string;
@@ -31,6 +31,17 @@ interface Subscription {
   nextdate: string;
 }
 
+// -------------------
+// 格式化日期
+// -------------------
+function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toISOString().split("T")[0];
+}
+
+// -------------------
+// 主組件
+// -------------------
 export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState<"food" | "subscription">(
     "food"
@@ -61,7 +72,7 @@ export default function DashboardPage() {
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
 
   // -------------------
-  // Food CRUD
+  // 載入資料
   // -------------------
   async function loadFoods() {
     const res = await fetch("/api/food");
@@ -69,10 +80,26 @@ export default function DashboardPage() {
     setFoods(data);
   }
 
+  async function loadSubs() {
+    const res = await fetch("/api/subscription");
+    let data: Subscription[] = await res.json();
+    data = data.sort(
+      (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
+    );
+    setSubs(data);
+  }
+
+  useEffect(() => {
+    loadFoods();
+    loadSubs();
+  }, []);
+
+  // -------------------
+  // Food CRUD
+  // -------------------
   async function handleFoodSubmit(e: React.FormEvent) {
     e.preventDefault();
     const body = { ...foodForm };
-
     if (editingFoodId) {
       await fetch(`/api/food/${editingFoodId}`, {
         method: "PUT",
@@ -100,20 +127,9 @@ export default function DashboardPage() {
   // -------------------
   // Subscription CRUD
   // -------------------
-  async function loadSubs() {
-    const res = await fetch("/api/subscription");
-    let data: Subscription[] = await res.json();
-
-    data = data.sort(
-      (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
-    );
-    setSubs(data);
-  }
-
   async function handleSubSubmit(e: React.FormEvent) {
     e.preventDefault();
     const body = { ...subForm };
-
     if (editingSubId) {
       await fetch(`/api/subscription/${editingSubId}`, {
         method: "PUT",
@@ -137,14 +153,6 @@ export default function DashboardPage() {
     await fetch(`/api/subscription/${id}`, { method: "DELETE" });
     loadSubs();
   }
-
-  // -------------------
-  // useEffect
-  // -------------------
-  useEffect(() => {
-    loadFoods();
-    loadSubs();
-  }, []);
 
   // -------------------
   // Render Food
@@ -187,8 +195,8 @@ export default function DashboardPage() {
         <TableHeader>
           <TableRow>
             <TableHead>名稱</TableHead>
-            <TableHead>數量</TableHead>
             <TableHead>有效期限</TableHead>
+            <TableHead>數量</TableHead>
             <TableHead>圖片</TableHead>
             <TableHead>操作</TableHead>
           </TableRow>
@@ -197,8 +205,8 @@ export default function DashboardPage() {
           {foods.map((f) => (
             <TableRow key={f.$id}>
               <TableCell>{f.name}</TableCell>
+              <TableCell>{formatDate(f.todate)}</TableCell>
               <TableCell>{f.amount}</TableCell>
-              <TableCell>{f.todate}</TableCell>
               <TableCell>
                 {f.photo ? (
                   <img
@@ -277,9 +285,9 @@ export default function DashboardPage() {
         <TableHeader>
           <TableRow>
             <TableHead>名稱</TableHead>
-            <TableHead>網站</TableHead>
-            <TableHead>價格</TableHead>
             <TableHead>下次付款日期</TableHead>
+            <TableHead>價格</TableHead>
+            <TableHead>網站</TableHead>
             <TableHead>操作</TableHead>
           </TableRow>
         </TableHeader>
@@ -287,6 +295,8 @@ export default function DashboardPage() {
           {subs.map((s) => (
             <TableRow key={s.$id}>
               <TableCell>{s.name}</TableCell>
+              <TableCell>{formatDate(s.nextdate)}</TableCell>
+              <TableCell>{s.price}</TableCell>
               <TableCell>
                 <a
                   href={s.site}
@@ -297,8 +307,6 @@ export default function DashboardPage() {
                   {s.site}
                 </a>
               </TableCell>
-              <TableCell>{s.price}</TableCell>
-              <TableCell>{s.nextdate}</TableCell>
               <TableCell className="flex gap-2">
                 <Button
                   size="sm"
@@ -330,6 +338,7 @@ export default function DashboardPage() {
   // -------------------
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
+      {/* 側邊欄 */}
       <aside className="w-full md:w-60 p-4 border-r border-gray-200">
         <Button
           variant={currentModule === "food" ? "default" : "outline"}
@@ -347,17 +356,10 @@ export default function DashboardPage() {
         </Button>
       </aside>
 
+      {/* 主要內容 */}
       <main className="flex-1 p-4 overflow-auto">
-        {/* 手機：Food 下方自動顯示 Subscription */}
-        <div className="block md:hidden">
-          {renderFood()}
-          {renderSubscription()}
-        </div>
-
-        {/* 桌機 / 平板：切換模組 */}
-        <div className="hidden md:block">
-          {currentModule === "food" ? renderFood() : renderSubscription()}
-        </div>
+        {/* 手機 / 桌機 / 平板都用同一邏輯 */}
+        {currentModule === "food" ? renderFood() : renderSubscription()}
       </main>
     </div>
   );
