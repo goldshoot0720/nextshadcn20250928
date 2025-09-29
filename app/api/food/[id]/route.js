@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client, Databases } from "appwrite";
 
-// 初始化 Appwrite client
 const client = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
@@ -11,12 +10,9 @@ const databaseId = process.env.APPWRITE_DATABASE_ID || "";
 const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID || "";
 
 // PUT /api/food/[id]
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req, context) {
   try {
-    const id = params?.id;
+    const id = context?.params?.id;
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
@@ -37,19 +33,16 @@ export async function PUT(
     );
 
     return NextResponse.json(response);
-  } catch (err: any) {
+  } catch (err) {
     console.error("PUT /api/food/[id] error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 // DELETE /api/food/[id]
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req, context) {
   try {
-    const id = params?.id;
+    const id = context?.params?.id;
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
@@ -57,7 +50,7 @@ export async function DELETE(
     await databases.deleteDocument(databaseId, collectionId, id);
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error("DELETE /api/food/[id] error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

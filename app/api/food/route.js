@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { Client, Databases, ID } from "appwrite";
+import { Client, Databases } from "appwrite";
 
 const client = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID);
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
 
 const databases = new Databases(client);
-const databaseId = process.env.APPWRITE_DATABASE_ID;
-const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID;
+const databaseId = process.env.APPWRITE_DATABASE_ID || "";
+const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID || "";
 
-// GET
+// GET /api/food
 export async function GET() {
   try {
     const response = await databases.listDocuments(databaseId, collectionId);
@@ -20,7 +20,7 @@ export async function GET() {
   }
 }
 
-// POST
+// POST /api/food
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -29,10 +29,10 @@ export async function POST(req) {
     const response = await databases.createDocument(
       databaseId,
       collectionId,
-      ID.unique(),
+      undefined, // 讓 Appwrite 自動生成 ID
       {
         name,
-        amount: parseInt(amount, 10),
+        amount: amount ? parseInt(amount, 10) : 0,
         todate,
         photo,
       }
