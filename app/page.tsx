@@ -76,7 +76,10 @@ export default function DashboardPage() {
   // -------------------
   async function loadFoods() {
     const res = await fetch("/api/food");
-    const data: Food[] = await res.json();
+    let data: Food[] = await res.json();
+    data = data.sort(
+      (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
+    );
     setFoods(data);
   }
 
