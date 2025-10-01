@@ -18,7 +18,7 @@ import {
 interface Food {
   $id: string;
   name: string;
-  amount: string;
+  amount: number;
   todate: string;
   photo: string;
 }
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [foodForm, setFoodForm] = useState<Omit<Food, "$id">>({
     name: "",
-    amount: "",
+    amount: 0,
     todate: "",
     photo: "",
   });
@@ -116,7 +116,7 @@ export default function DashboardPage() {
         body: JSON.stringify(body),
       });
     }
-    setFoodForm({ name: "", amount: "", todate: "", photo: "" });
+    setFoodForm({ name: "", amount: 0, todate: "", photo: "" });
     setEditingFoodId(null);
     loadFoods();
   }
@@ -125,6 +125,21 @@ export default function DashboardPage() {
     if (!confirm("確定刪除？")) return;
     await fetch(`/api/food/${id}`, { method: "DELETE" });
     loadFoods();
+  }
+
+  async function handleAmountChange(food: Food, delta: number) {
+    const newAmount = food.amount + delta;
+    if (newAmount < 0) return;
+
+    const updatedFood = { ...food, amount: newAmount };
+
+    await fetch(`/api/food/${food.$id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedFood),
+    });
+
+    setFoods(foods.map((f) => (f.$id === food.$id ? updatedFood : f)));
   }
 
   // -------------------
@@ -173,7 +188,9 @@ export default function DashboardPage() {
           placeholder="數量"
           type="number"
           value={foodForm.amount}
-          onChange={(e) => setFoodForm({ ...foodForm, amount: e.target.value })}
+          onChange={(e) =>
+            setFoodForm({ ...foodForm, amount: parseInt(e.target.value) || 0 })
+          }
         />
         <Input
           placeholder="有效期限"
@@ -209,7 +226,25 @@ export default function DashboardPage() {
             <TableRow key={f.$id}>
               <TableCell>{f.name}</TableCell>
               <TableCell>{formatDate(f.todate)}</TableCell>
-              <TableCell>{f.amount}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+              	  <span className="w-8 text-center">{f.amount}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAmountChange(f, -1)}
+                  >
+                    -
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAmountChange(f, 1)}
+                  >
+                    +
+                  </Button>
+                </div>
+              </TableCell>
               <TableCell>
                 {f.photo ? (
                   <img
