@@ -81,6 +81,7 @@ export default function DashboardPage() {
       (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
     );
     setFoods(data);
+    return data;
   }
 
   async function loadSubs() {
@@ -90,11 +91,21 @@ export default function DashboardPage() {
       (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
     );
     setSubs(data);
+    return data;
   }
 
   useEffect(() => {
-    loadFoods();
-    loadSubs();
+    async function loadInitialData() {
+      const [foodsData, subsData] = await Promise.all([
+        loadFoods(),
+        loadSubs(),
+      ]);
+
+      if (foodsData.length === 0 && subsData.length > 0) {
+        setCurrentModule("subscription");
+      }
+    }
+    loadInitialData();
   }, []);
 
   // -------------------
