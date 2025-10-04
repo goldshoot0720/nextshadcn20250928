@@ -75,7 +75,7 @@ export default function DashboardPage() {
   // 載入資料
   // -------------------
   async function loadFoods() {
-    const res = await fetch("/api/food");
+    const res = await fetch("/api/food", { cache: "no-store" });
     let data: Food[] = await res.json();
     data = data.sort(
       (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
@@ -84,7 +84,7 @@ export default function DashboardPage() {
   }
 
   async function loadSubs() {
-    const res = await fetch("/api/subscription");
+    const res = await fetch("/api/subscription", { cache: "no-store" });
     let data: Subscription[] = await res.json();
     data = data.sort(
       (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
