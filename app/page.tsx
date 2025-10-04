@@ -27,7 +27,7 @@ interface Subscription {
   $id: string;
   name: string;
   site: string;
-  price: string;
+  price: number;
   nextdate: string;
 }
 
@@ -66,7 +66,7 @@ export default function DashboardPage() {
   const [subForm, setSubForm] = useState<Omit<Subscription, "$id">>({
     name: "",
     site: "",
-    price: "",
+    price: 0,
     nextdate: "",
   });
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
@@ -103,28 +103,43 @@ export default function DashboardPage() {
   async function handleFoodSubmit(e: React.FormEvent) {
     e.preventDefault();
     const body = { ...foodForm };
+    let updatedFood: Food;
+
     if (editingFoodId) {
-      await fetch(`/api/food/${editingFoodId}`, {
+      const res = await fetch(`/api/food/${editingFoodId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      updatedFood = await res.json();
+      const newFoods = foods.map((f) =>
+        f.$id === editingFoodId ? updatedFood : f
+      );
+      newFoods.sort(
+        (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
+      );
+      setFoods(newFoods);
     } else {
-      await fetch("/api/food", {
+      const res = await fetch("/api/food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      updatedFood = await res.json();
+      const newFoods = [...foods, updatedFood];
+      newFoods.sort(
+        (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
+      );
+      setFoods(newFoods);
     }
     setFoodForm({ name: "", amount: 0, todate: "", photo: "" });
     setEditingFoodId(null);
-    loadFoods();
   }
 
   async function handleFoodDelete(id: string) {
     if (!confirm("確定刪除？")) return;
     await fetch(`/api/food/${id}`, { method: "DELETE" });
-    loadFoods();
+    setFoods(foods.filter((f) => f.$id !== id));
   }
 
   async function handleAmountChange(food: Food, delta: number) {
@@ -148,28 +163,45 @@ export default function DashboardPage() {
   async function handleSubSubmit(e: React.FormEvent) {
     e.preventDefault();
     const body = { ...subForm };
+    let updatedSub: Subscription;
+
     if (editingSubId) {
-      await fetch(`/api/subscription/${editingSubId}`, {
+      const res = await fetch(`/api/subscription/${editingSubId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      updatedSub = await res.json();
+      const newSubs = subs.map((s) =>
+        s.$id === editingSubId ? updatedSub : s
+      );
+      newSubs.sort(
+        (a, b) =>
+          new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
+      );
+      setSubs(newSubs);
     } else {
-      await fetch("/api/subscription", {
+      const res = await fetch("/api/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      updatedSub = await res.json();
+      const newSubs = [...subs, updatedSub];
+      newSubs.sort(
+        (a, b) =>
+          new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
+      );
+      setSubs(newSubs);
     }
-    setSubForm({ name: "", site: "", price: "", nextdate: "" });
+    setSubForm({ name: "", site: "", price: 0, nextdate: "" });
     setEditingSubId(null);
-    loadSubs();
   }
 
   async function handleSubDelete(id: string) {
     if (!confirm("確定刪除？")) return;
     await fetch(`/api/subscription/${id}`, { method: "DELETE" });
-    loadSubs();
+    setSubs(subs.filter((s) => s.$id !== id));
   }
 
   // -------------------
@@ -303,7 +335,9 @@ export default function DashboardPage() {
           placeholder="價格"
           type="number"
           value={subForm.price}
-          onChange={(e) => setSubForm({ ...subForm, price: e.target.value })}
+          onChange={(e) =>
+            setSubForm({ ...subForm, price: parseInt(e.target.value) || 0 })
+          }
         />
         <Input
           placeholder="下次付款日期"

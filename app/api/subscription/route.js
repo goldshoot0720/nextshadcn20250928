@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { Client, Databases, ID } from "appwrite";
 
+export const dynamic = 'force-dynamic';
+
 // 初始化 Appwrite Client
 const client = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
