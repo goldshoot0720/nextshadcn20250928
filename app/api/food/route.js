@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Client, Databases, ID } from "appwrite";
+import { Client, Databases, ID, Query } from "appwrite";
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,10 @@ const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID || "";
 // GET /api/food
 export async function GET() {
   try {
-    const response = await databases.listDocuments(databaseId, collectionId);
+    const response = await databases.listDocuments(databaseId, collectionId, [
+      Query.limit(100),
+      Query.orderAsc('todate'),
+    ]);
     return NextResponse.json(response.documents);
   } catch (err) {
     console.error("GET /api/food error:", err);

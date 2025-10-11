@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Client, Databases, ID } from "appwrite";
+import { Client, Databases, ID, Query } from "appwrite";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,11 +18,10 @@ export async function GET() {
     const res = await databases.listDocuments(
       databaseId,
       collectionId,
-      [], // filters
-      100, // limit
-      0, // offset
-      "nextdate", // orderField
-      "ASC" // orderType: "ASC" 或 "DESC"
+      [
+        Query.limit(100),
+        Query.orderAsc('nextdate')
+      ]
     );
     return NextResponse.json(res.documents);
   } catch (err) {
