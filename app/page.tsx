@@ -21,6 +21,7 @@ interface Food {
   amount: number;
   todate: string;
   photo: string;
+  isSubscription: boolean;
 }
 
 interface Subscription {
@@ -56,8 +57,10 @@ export default function DashboardPage() {
     amount: 0,
     todate: "",
     photo: "",
+    isSubscription: false,
   });
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
+  const [originalAmount, setOriginalAmount] = useState<{ [key: string]: number }>({});
 
   // -------------------
   // Subscription 狀態
@@ -137,13 +140,25 @@ export default function DashboardPage() {
         body: JSON.stringify(body),
       });
       updatedFood = await res.json();
+      if (updatedFood.isSubscription) {
+        setOriginalAmount({
+          ...originalAmount,
+          [updatedFood.$id]: updatedFood.amount,
+        });
+      }
       const newFoods = [...foods, updatedFood];
       newFoods.sort(
         (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
       );
       setFoods(newFoods);
     }
-    setFoodForm({ name: "", amount: 0, todate: "", photo: "" });
+    setFoodForm({
+      name: "",
+      amount: 0,
+      todate: "",
+      photo: "",
+      isSubscription: false,
+    });
     setEditingFoodId(null);
   }
 
@@ -154,10 +169,24 @@ export default function DashboardPage() {
   }
 
   async function handleAmountChange(food: Food, delta: number) {
-    const newAmount = food.amount + delta;
+    let newAmount = food.amount + delta;
     if (newAmount < 0) return;
 
-    const updatedFood = { ...food, amount: newAmount };
+    let updatedFood = { ...food, amount: newAmount };
+
+    if (food.isSubscription && newAmount === 0) {
+      const replenishmentAmount = originalAmount[food.$id] || food.amount;
+      newAmount += replenishmentAmount;
+      const currentTodate = new Date(food.todate);
+      const nextTodate = new Date(
+        currentTodate.setMonth(currentTodate.getMonth() + 1)
+      );
+      updatedFood = {
+        ...updatedFood,
+        amount: newAmount,
+        todate: nextTodate.toISOString().split("T")[0],
+      };
+    }
 
     await fetch(`/api/food/${food.$id}`, {
       method: "PUT",
@@ -246,6 +275,17 @@ export default function DashboardPage() {
           value={foodForm.photo}
           onChange={(e) => setFoodForm({ ...foodForm, photo: e.target.value })}
         />
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isSubscription"
+            checked={foodForm.isSubscription}
+            onChange={(e) =>
+              setFoodForm({ ...foodForm, isSubscription: e.target.checked })
+            }
+          />
+          <label htmlFor="isSubscription">訂閱項目</label>
+        </div>
         <Button type="submit">{editingFoodId ? "更新" : "新增"}</Button>
         {editingFoodId && (
           <Button variant="outline" onClick={() => setEditingFoodId(null)}>
@@ -267,7 +307,9 @@ export default function DashboardPage() {
         <TableBody>
           {foods.map((f) => (
             <TableRow key={f.$id}>
-              <TableCell>{f.name}</TableCell>
+              <TableCell>
+                {f.name} {f.isSubscription && <span className="text-xs text-gray-500">(Sub)</span>}
+              </TableCell>
               <TableCell>{formatDate(f.todate)}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
