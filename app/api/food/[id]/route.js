@@ -18,7 +18,7 @@ export async function PUT(req, context) {
     }
 
     const body = await req.json();
-    const { name, amount, todate, photo, isSubscription } = body;
+    const { name, amount, todate, photo } = body;
 
     const response = await databases.updateDocument(
       databaseId,
@@ -29,7 +29,6 @@ export async function PUT(req, context) {
         amount: amount ? parseInt(amount, 10) : 0,
         todate,
         photo,
-        isSubscription: isSubscription || false,
       }
     );
 
