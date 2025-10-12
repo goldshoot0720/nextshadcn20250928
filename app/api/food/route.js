@@ -29,7 +29,7 @@ export async function GET() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { name, amount, todate, photo } = body;
+    const { name, amount, todate, photo, isSubscription } = body;
 
     const response = await databases.createDocument(
       databaseId,
@@ -40,6 +40,7 @@ export async function POST(req) {
         amount: amount ? parseInt(amount, 10) : 0,
         todate,
         photo,
+        isSubscription: isSubscription || false,
       }
     );
 
