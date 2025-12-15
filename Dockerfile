@@ -1,5 +1,5 @@
-# 使用官方 Node.js 18 Alpine 映像作為基礎
-FROM node:18-alpine AS base
+# 使用官方 Node.js LTS 24 Alpine 映像作為基礎
+FROM node:24-alpine AS base
 
 # 安裝依賴項所需的套件
 RUN apk add --no-cache libc6-compat
@@ -21,8 +21,8 @@ COPY . .
 # 設置環境變數
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# 構建應用 (包含靜態圖片生成)
-RUN npm run build:static
+# 構建應用
+RUN npm run build
 
 # 生產階段
 FROM base AS runner
