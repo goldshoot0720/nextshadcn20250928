@@ -140,29 +140,29 @@ export default function SimpleVideoPlayer({ src, title }: SimpleVideoPlayerProps
         onDoubleClick={toggleFullscreen}
       />
       
-      {/* 標題覆蓋層 */}
-      <div className={`absolute top-4 left-4 right-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-        <h3 className="text-white font-semibold text-lg drop-shadow-lg">{title}</h3>
+      {/* 響應式標題覆蓋層 */}
+      <div className={`absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+        <h3 className="text-white font-semibold text-sm sm:text-lg drop-shadow-lg truncate">{title}</h3>
       </div>
 
-      {/* 中央播放按鈕 */}
+      {/* 響應式中央播放按鈕 */}
       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showControls && !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
         <button
           onClick={togglePlayPause}
-          className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 touch-manipulation"
+          className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 touch-manipulation"
         >
-          <Play className="text-white ml-1" size={24} />
+          <Play className="text-white ml-0.5 sm:ml-1 w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
 
-      {/* 底部控制欄 */}
-      <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+      {/* 響應式底部控制欄 */}
+      <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 sm:p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
         
-        {/* 可點選時間軸進度條 */}
-        <div className="mb-3">
+        {/* 響應式可點選時間軸進度條 */}
+        <div className="mb-2 sm:mb-3">
           <div 
             ref={progressRef}
-            className="relative h-2 bg-white/20 rounded-full cursor-pointer hover:h-3 transition-all duration-200 touch-manipulation"
+            className="relative h-1.5 sm:h-2 bg-white/20 rounded-full cursor-pointer hover:h-2 sm:hover:h-3 transition-all duration-200 touch-manipulation"
             onClick={handleProgressClick}
             onMouseDown={handleProgressMouseDown}
             onMouseMove={handleProgressMouseMove}
@@ -178,52 +178,52 @@ export default function SimpleVideoPlayer({ src, title }: SimpleVideoPlayerProps
               style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
             ></div>
             
-            {/* 進度拖拽點 */}
+            {/* 響應式進度拖拽點 */}
             <div 
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 hover:opacity-100 transition-opacity duration-200"
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg opacity-0 hover:opacity-100 transition-opacity duration-200"
               style={{ left: duration ? `${(currentTime / duration) * 100}%` : '0%', transform: 'translateX(-50%) translateY(-50%)' }}
             ></div>
           </div>
           
-          {/* 時間顯示 */}
-          <div className="flex justify-between text-white text-sm mt-2">
+          {/* 響應式時間顯示 */}
+          <div className="flex justify-between text-white text-xs sm:text-sm mt-1 sm:mt-2">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
         </div>
 
-        {/* 控制按鈕列 */}
+        {/* 響應式控制按鈕列 */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* 播放/暫停按鈕 */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* 響應式播放/暫停按鈕 */}
             <button
               onClick={togglePlayPause}
-              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 touch-manipulation"
+              className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 touch-manipulation"
             >
               {isPlaying ? (
-                <Pause className="text-white" size={18} />
+                <Pause className="text-white" size={16} />
               ) : (
-                <Play className="text-white ml-0.5" size={18} />
+                <Play className="text-white ml-0.5" size={16} />
               )}
             </button>
 
-            {/* 音量控制 */}
-            <div className="flex items-center gap-2">
+            {/* 響應式音量控制 */}
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={toggleMute}
-                className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded transition-all duration-200 touch-manipulation"
+                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-white/20 rounded transition-all duration-200 touch-manipulation"
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="text-white" size={16} />
+                  <VolumeX className="text-white" size={14} />
                 ) : (
-                  <Volume2 className="text-white" size={16} />
+                  <Volume2 className="text-white" size={14} />
                 )}
               </button>
               
-              {/* 音量滑桿 */}
+              {/* 響應式音量滑桿 */}
               <div 
                 ref={volumeRef}
-                className="w-16 h-1 bg-white/20 rounded-full cursor-pointer hover:h-2 transition-all duration-200 touch-manipulation"
+                className="w-12 sm:w-16 h-1 bg-white/20 rounded-full cursor-pointer hover:h-1.5 sm:hover:h-2 transition-all duration-200 touch-manipulation"
                 onClick={handleVolumeClick}
               >
                 <div 
@@ -234,13 +234,13 @@ export default function SimpleVideoPlayer({ src, title }: SimpleVideoPlayerProps
             </div>
           </div>
 
-          {/* 右側控制按鈕 */}
-          <div className="flex items-center gap-2">
+          {/* 響應式右側控制按鈕 */}
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={toggleFullscreen}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded transition-all duration-200 touch-manipulation"
+              className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-white/20 rounded transition-all duration-200 touch-manipulation"
             >
-              <Maximize className="text-white" size={16} />
+              <Maximize className="text-white" size={14} />
             </button>
           </div>
         </div>

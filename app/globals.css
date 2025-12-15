@@ -189,4 +189,50 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+  
+  /* 影片播放器響應式樣式 */
+  .video-container {
+    @apply relative w-full;
+    aspect-ratio: 16 / 9;
+  }
+  
+  .video-controls {
+    @apply absolute bottom-0 left-0 right-0 p-2 sm:p-4;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+  }
+  
+  .video-progress {
+    @apply relative h-1 sm:h-2 bg-white/20 rounded-full cursor-pointer;
+    transition: height 0.2s ease;
+  }
+  
+  .video-progress:hover {
+    @apply h-2 sm:h-3;
+  }
+  
+  /* 觸控優化 */
+  @media (hover: none) and (pointer: coarse) {
+    .video-progress {
+      @apply h-2;
+    }
+    
+    .video-controls button {
+      @apply min-h-[44px] min-w-[44px];
+    }
+  }
+  
+  /* 文字截斷 */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
