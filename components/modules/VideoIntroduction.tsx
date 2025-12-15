@@ -145,12 +145,28 @@ export default function VideoIntroduction() {
           <div className="p-4 pt-0">
             {currentVideo && (
               <div>
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-gray-900 mb-2">
                   {videoList.find(v => v.id === currentVideo)?.title}
                 </h3>
-                <p className="text-gray-600 text-sm mt-1">
+                <p className="text-gray-600 text-sm mb-3">
                   {videoList.find(v => v.id === currentVideo)?.description}
                 </p>
+                
+                {/* 播放提示 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="text-blue-500 text-lg">💡</div>
+                    <div className="text-sm text-blue-700">
+                      <p className="font-medium mb-1">播放控制提示：</p>
+                      <ul className="text-xs space-y-1 text-blue-600">
+                        <li>• 點擊影片或播放按鈕開始/暫停播放</li>
+                        <li>• 點擊時間軸任意位置快速跳轉</li>
+                        <li>• 拖拽音量滑桿調整音量</li>
+                        <li>• 雙擊影片進入全螢幕模式</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -183,24 +183,34 @@ export default function DashboardPage() {
                 <p className="text-gray-500">沒有找到圖片</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 lg:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6">
+                {/* 響應式圖片網格 */}
+                <div className="grid gap-3 sm:gap-4 lg:gap-6 
+                  grid-cols-2 
+                  sm:grid-cols-3 
+                  md:grid-cols-4 
+                  lg:grid-cols-5 
+                  xl:grid-cols-6 
+                  2xl:grid-cols-8">
                   {images.map((image, index) => (
                     <div
                       key={index}
-                      className="group relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100"
+                      className="group relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-gray-200"
                     >
-                      {/* 圖片容器 - 保持原始比例 */}
-                      <div className="relative overflow-hidden rounded-t-xl">
+                      {/* 響應式圖片容器 */}
+                      <div className="relative overflow-hidden rounded-t-xl aspect-square">
                         <img
                           src={image.path}
                           alt={image.name}
-                          className="w-full h-auto max-h-64 object-contain bg-gray-50 group-hover:scale-102 transition-transform duration-300"
+                          className="w-full h-full object-cover bg-gray-50 group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                           onClick={() => setSelectedImage(image)}
                         />
                         
-                        {/* 操作按鈕 - 只在右上角顯示 */}
+                        {/* 漸變遮罩 - 提升按鈕可見性 */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                        
+                        {/* 操作按鈕 - 響應式尺寸 */}
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <div className="flex gap-1">
                             <button
@@ -208,34 +218,46 @@ export default function DashboardPage() {
                                 e.stopPropagation();
                                 setSelectedImage(image);
                               }}
-                              className="p-1.5 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors"
+                              className="p-1.5 sm:p-2 bg-black/70 backdrop-blur-sm rounded-lg hover:bg-black/90 transition-colors touch-manipulation"
                               title="查看大圖"
                             >
-                              <Eye className="text-white" size={14} />
+                              <Eye className="text-white" size={12} />
                             </button>
                             <a
                               href={image.path}
                               download={image.name}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors"
+                              className="p-1.5 sm:p-2 bg-black/70 backdrop-blur-sm rounded-lg hover:bg-black/90 transition-colors touch-manipulation"
                               title="下載圖片"
                             >
-                              <Download className="text-white" size={14} />
+                              <Download className="text-white" size={12} />
                             </a>
                           </div>
                         </div>
+                        
+                        {/* 圖片格式標籤 */}
+                        <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <span className="px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-white text-xs font-medium">
+                            {image.extension.replace('.', '').toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                       
-                      {/* 圖片資訊 - 移到圖片下方 */}
-                      <div className="p-3 bg-white">
-                        <h3 className="font-medium text-gray-900 text-xs truncate mb-1" title={image.name}>
-                          {image.name}
+                      {/* 響應式圖片資訊 */}
+                      <div className="p-2 sm:p-3 bg-white">
+                        <h3 className="font-medium text-gray-900 text-xs sm:text-sm truncate mb-1" title={image.name}>
+                          {image.name.length > 20 ? `${image.name.substring(0, 20)}...` : image.name}
                         </h3>
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>{formatFileSize(image.size)}</span>
+                          <span className="font-medium">{formatFileSize(image.size)}</span>
                           <span className="flex items-center gap-1">
                             <Calendar size={10} />
-                            {new Date(image.modified).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+                            <span className="hidden sm:inline">
+                              {new Date(image.modified).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+                            </span>
+                            <span className="sm:hidden">
+                              {new Date(image.modified).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -245,41 +267,74 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* 圖片預覽模態框 */}
+            {/* 響應式圖片預覽模態框 */}
             {selectedImage && (
               <div 
-                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4"
                 onClick={() => setSelectedImage(null)}
               >
-                <div className="relative max-w-4xl max-h-full">
-                  <img
-                    src={selectedImage.path}
-                    alt={selectedImage.name}
-                    className="max-w-full max-h-full object-contain rounded-lg"
-                  />
+                <div className="relative w-full h-full max-w-6xl max-h-full flex flex-col">
+                  {/* 圖片容器 */}
+                  <div className="flex-1 flex items-center justify-center min-h-0">
+                    <img
+                      src={selectedImage.path}
+                      alt={selectedImage.name}
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   
-                  {/* 關閉按鈕 */}
-                  <button
-                    onClick={() => setSelectedImage(null)}
-                    className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors"
-                  >
-                    ✕
-                  </button>
-                  
-                  {/* 圖片資訊 */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
-                    <h3 className="font-medium mb-2">{selectedImage.name}</h3>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span>大小: {formatFileSize(selectedImage.size)}</span>
-                      <span>修改時間: {formatDate(selectedImage.modified)}</span>
+                  {/* 頂部控制欄 */}
+                  <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-white text-sm font-medium">
+                        {selectedImage.extension.replace('.', '').toUpperCase()}
+                      </span>
+                      <span className="hidden sm:inline px-3 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-white text-sm">
+                        {formatFileSize(selectedImage.size)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
                       <a
                         href={selectedImage.path}
                         download={selectedImage.name}
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                        className="p-2 sm:p-3 bg-black/70 backdrop-blur-sm rounded-lg text-white hover:bg-black/90 transition-colors touch-manipulation"
+                        title="下載圖片"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Download size={14} />
-                        下載
+                        <Download size={16} />
                       </a>
+                      <button
+                        onClick={() => setSelectedImage(null)}
+                        className="p-2 sm:p-3 bg-black/70 backdrop-blur-sm rounded-lg text-white hover:bg-black/90 transition-colors touch-manipulation"
+                        title="關閉"
+                      >
+                        <span className="text-lg">✕</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* 底部資訊欄 */}
+                  <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4">
+                    <div className="bg-black/70 backdrop-blur-sm rounded-lg p-3 sm:p-4 text-white">
+                      <h3 className="font-medium mb-2 text-sm sm:text-base truncate" title={selectedImage.name}>
+                        {selectedImage.name}
+                      </h3>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                        <span className="flex items-center gap-1">
+                          <span className="opacity-75">大小:</span>
+                          <span className="font-medium">{formatFileSize(selectedImage.size)}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          <span className="opacity-75">修改:</span>
+                          <span className="font-medium">{formatDate(selectedImage.modified)}</span>
+                        </span>
+                        <div className="flex items-center gap-2 mt-2 sm:mt-0 sm:ml-auto">
+                          <span className="text-xs opacity-75">點擊空白處關閉</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
