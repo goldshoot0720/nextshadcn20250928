@@ -12,6 +12,8 @@ const { execSync } = require('child_process');
 const CONFIG_FILE = path.join(process.cwd(), 'next.config.ts');
 const STATIC_CONFIG_FILE = path.join(process.cwd(), 'next.config.static.ts');
 const BACKUP_CONFIG_FILE = path.join(process.cwd(), 'next.config.ts.backup');
+const API_DIR = path.join(process.cwd(), 'app', 'api');
+const API_BACKUP_DIR = path.join(process.cwd(), 'api.backup.temp');
 
 function buildStatic() {
   try {
@@ -27,13 +29,19 @@ function buildStatic() {
       fs.copyFileSync(CONFIG_FILE, BACKUP_CONFIG_FILE);
     }
     
-    // 3. 使用靜態配置
+    // 3. 暫時移動 API 資料夾 (靜態導出不支援 API 路由)
+    console.log('📂 暫時移動 API 資料夾...');
+    if (fs.existsSync(API_DIR)) {
+      fs.renameSync(API_DIR, API_BACKUP_DIR);
+    }
+    
+    // 4. 使用靜態配置
     console.log('⚙️  切換到靜態配置...');
     if (fs.existsSync(STATIC_CONFIG_FILE)) {
       fs.copyFileSync(STATIC_CONFIG_FILE, CONFIG_FILE);
     }
     
-    // 4. 構建靜態網站
+    // 5. 構建靜態網站
     console.log('🔨 構建靜態網站...');
     execSync('next build', { stdio: 'inherit' });
     
@@ -44,7 +52,13 @@ function buildStatic() {
     console.error('❌ 構建失敗:', error.message);
     process.exit(1);
   } finally {
-    // 5. 恢復原始配置
+    // 6. 恢復 API 資料夾
+    console.log('🔄 恢復 API 資料夾...');
+    if (fs.existsSync(API_BACKUP_DIR)) {
+      fs.renameSync(API_BACKUP_DIR, API_DIR);
+    }
+    
+    // 7. 恢復原始配置
     console.log('🔄 恢復原始配置...');
     if (fs.existsSync(BACKUP_CONFIG_FILE)) {
       fs.copyFileSync(BACKUP_CONFIG_FILE, CONFIG_FILE);

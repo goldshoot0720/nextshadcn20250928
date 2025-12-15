@@ -18,9 +18,12 @@ const nextConfig: NextConfig = {
   // 禁用伺服器端功能
   trailingSlash: true,
   
-  // 排除 API 路由
+  // 跳過 API 路由的構建
+  skipTrailingSlashRedirect: true,
+  
+  // 實驗性功能
   experimental: {
-    // 如果有動態路由，可能需要這個選項
+    // 跳過中間件
   }
 };
 
