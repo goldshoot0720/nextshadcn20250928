@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import EnhancedScrollNavigation from "@/components/ui/enhanced-scroll-navigation";
 
 interface Subscription {
   $id: string;
@@ -127,27 +128,28 @@ export default function SubscriptionManagement() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      {/* 標題和統計區域 */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-            訂閱管理
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            共 {subs.length} 個訂閱服務
-          </p>
-        </div>
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-500/25">
-          <div className="text-sm opacity-90">總月費</div>
-          <div className="text-2xl lg:text-3xl font-bold">
-            NT$ {totalMonthlyFee.toLocaleString()}
+    <>
+      <div className="space-y-4 lg:space-y-6" id="subscription-management-container">
+        {/* 標題和統計區域 */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" id="subscription-top">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              訂閱管理
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              共 {subs.length} 個訂閱服務
+            </p>
+          </div>
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-500/25">
+            <div className="text-sm opacity-90">總月費</div>
+            <div className="text-2xl lg:text-3xl font-bold">
+              NT$ {totalMonthlyFee.toLocaleString()}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* 新增/編輯表單 */}
-      <div className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
+      <div id="subscription-form" className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
           <h2 className="text-lg font-semibold">
@@ -216,7 +218,7 @@ export default function SubscriptionManagement() {
       </div>
 
       {/* 訂閱列表 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div id="subscription-list" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {/* 桌面版表格 */}
         <div className="hidden lg:block overflow-x-auto">
           <Table>
@@ -407,6 +409,21 @@ export default function SubscriptionManagement() {
           )}
         </div>
       </div>
+      
+      {/* 底部標記，用於滾動導航 */}
+      <div id="subscription-bottom" className="h-1"></div>
     </div>
-  );
+    
+    {/* 增強版滾動導航按鈕 */}
+    <EnhancedScrollNavigation 
+      showThreshold={200}
+      showProgress={true}
+      quickNavItems={[
+        { id: "top", label: "🔝 頁面頂部", elementId: "subscription-top" },
+        { id: "form", label: "➕ 新增表單", elementId: "subscription-form" },
+        { id: "list", label: "💳 訂閱列表", elementId: "subscription-list" },
+        { id: "bottom", label: "⬇️ 頁面底部", elementId: "subscription-bottom" }
+      ]}
+    />
+  </>);
 }

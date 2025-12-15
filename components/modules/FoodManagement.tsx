@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import EnhancedScrollNavigation from "@/components/ui/enhanced-scroll-navigation";
 
 interface Food {
   $id: string;
@@ -143,25 +144,26 @@ export default function FoodManagement() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      {/* 標題區域 */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-            食品管理
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            共 {foods.length} 項食品
-          </p>
+    <>
+      <div className="space-y-4 lg:space-y-6" id="food-management-container">
+        {/* 標題區域 */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" id="food-top">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              食品管理
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              共 {foods.length} 項食品
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600 bg-white px-4 py-2 rounded-xl border border-gray-200">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span>即時同步</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600 bg-white px-4 py-2 rounded-xl border border-gray-200">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>即時同步</span>
-        </div>
-      </div>
 
       {/* 新增/編輯表單 */}
-      <div className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
+      <div id="food-form" className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
           <h2 className="text-lg font-semibold">
@@ -228,7 +230,7 @@ export default function FoodManagement() {
       </div>
 
       {/* 食品列表 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div id="food-list" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {/* 桌面版表格 */}
         <div className="hidden lg:block overflow-x-auto">
           <Table>
@@ -463,6 +465,21 @@ export default function FoodManagement() {
           )}
         </div>
       </div>
+      
+      {/* 底部標記，用於滾動導航 */}
+      <div id="food-bottom" className="h-1"></div>
     </div>
-  );
+    
+    {/* 增強版滾動導航按鈕 */}
+    <EnhancedScrollNavigation 
+      showThreshold={200}
+      showProgress={true}
+      quickNavItems={[
+        { id: "top", label: "🔝 頁面頂部", elementId: "food-top" },
+        { id: "form", label: "➕ 新增表單", elementId: "food-form" },
+        { id: "list", label: "📋 食品列表", elementId: "food-list" },
+        { id: "bottom", label: "⬇️ 頁面底部", elementId: "food-bottom" }
+      ]}
+    />
+  </>);
 }

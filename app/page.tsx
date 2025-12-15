@@ -4,17 +4,29 @@ import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import FoodManagement from "@/components/modules/FoodManagement";
 import SubscriptionManagement from "@/components/modules/SubscriptionManagement";
-import { Package, CreditCard, Home, Settings } from "lucide-react";
+import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
+import VideoIntroduction from "@/components/modules/VideoIntroduction";
+import { Package, CreditCard, Home, Settings, BarChart3, Info, Phone, Play } from "lucide-react";
 
 export default function DashboardPage() {
-  const [currentModule, setCurrentModule] = useState("food");
+  const [currentModule, setCurrentModule] = useState("dashboard");
 
-  // 選單項目配置
+  // 選單項目配置 - 重新排序
   const menuItems = [
+    {
+      id: "home",
+      label: "首頁",
+      icon: <Home size={18} />,
+    },
     {
       id: "dashboard",
       label: "儀表板",
-      icon: <Home size={18} />,
+      icon: <BarChart3 size={18} />,
+    },
+    {
+      id: "subscription",
+      label: "訂閱管理",
+      icon: <CreditCard size={18} />,
     },
     {
       id: "food",
@@ -22,9 +34,19 @@ export default function DashboardPage() {
       icon: <Package size={18} />,
     },
     {
-      id: "subscription",
-      label: "訂閱管理",
-      icon: <CreditCard size={18} />,
+      id: "videos",
+      label: "影片介紹",
+      icon: <Play size={18} />,
+    },
+    {
+      id: "about",
+      label: "關於我們",
+      icon: <Info size={18} />,
+    },
+    {
+      id: "contact",
+      label: "聯絡我們",
+      icon: <Phone size={18} />,
     },
     {
       id: "settings",
@@ -41,6 +63,10 @@ export default function DashboardPage() {
       case "subscription":
         return <SubscriptionManagement />;
       case "dashboard":
+        return <EnhancedDashboard onNavigate={setCurrentModule} />;
+      case "videos":
+        return <VideoIntroduction />;
+      case "home":
         return (
           <div className="space-y-4 lg:space-y-6">
             <div>
@@ -173,6 +199,151 @@ export default function DashboardPage() {
             </div>
           </div>
         );
+      case "about":
+        return (
+          <div className="space-y-4 lg:space-y-6">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">關於我們</h1>
+              <p className="text-gray-500 mt-1">了解智能管理平台的使命與願景</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:p-8">
+              <div className="max-w-3xl mx-auto text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <span className="text-white font-bold text-2xl">M</span>
+                </div>
+                
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">智能管理平台</h2>
+                <p className="text-gray-600 text-lg mb-8">
+                  我們致力於為用戶提供最優質的生活管理解決方案，幫助您更好地管理食品庫存和訂閱服務，
+                  讓生活更加井然有序，避免不必要的浪費。
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <Package className="text-blue-600" size={24} />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">智能提醒</h3>
+                    <p className="text-gray-600 text-sm">及時提醒食品過期和訂閱到期</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <BarChart3 className="text-green-600" size={24} />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">數據分析</h3>
+                    <p className="text-gray-600 text-sm">詳細的統計報告和趨勢分析</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <Settings className="text-purple-600" size={24} />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">個性化</h3>
+                    <p className="text-gray-600 text-sm">可自定義的設定和偏好</p>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">版本資訊</h3>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p>智能管理平台 v1.0.0</p>
+                    <p>© 2024 管理系統團隊</p>
+                    <p>使用 Next.js + TypeScript 構建</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case "contact":
+        return (
+          <div className="space-y-4 lg:space-y-6">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">聯絡我們</h1>
+              <p className="text-gray-500 mt-1">有任何問題或建議，歡迎與我們聯繫</p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">聯絡資訊</h2>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Phone className="text-blue-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">客服電話</p>
+                      <p className="text-gray-600">0800-123-456</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <span className="text-green-600">📧</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">電子郵件</p>
+                      <p className="text-gray-600">support@management-platform.com</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <span className="text-purple-600">🕒</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">服務時間</p>
+                      <p className="text-gray-600">週一至週五 09:00-18:00</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">意見回饋</h2>
+                
+                <form className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                    <input
+                      type="text"
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="請輸入您的姓名"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">電子郵件</label>
+                    <input
+                      type="email"
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="請輸入您的電子郵件"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">訊息內容</label>
+                    <textarea
+                      rows={4}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="請輸入您的訊息或建議"
+                    ></textarea>
+                  </div>
+                  
+                  <button
+                    type="submit"
+                    className="w-full p-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-200"
+                  >
+                    發送訊息
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        );
       case "settings":
         return (
           <div className="space-y-4 lg:space-y-6">
@@ -261,18 +432,24 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* 關於 */}
+              {/* 備份與還原 */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                    <span className="text-gray-600">ℹ️</span>
+                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <span className="text-orange-600">🔄</span>
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900">關於</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">備份與還原</h2>
                 </div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>智能管理平台 v1.0.0</p>
-                  <p>© 2024 管理系統</p>
-                  <p>幫助您更好地管理日常生活</p>
+                <div className="space-y-3">
+                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
+                    自動備份設定
+                  </button>
+                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
+                    手動建立備份
+                  </button>
+                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
+                    從備份還原
+                  </button>
                 </div>
               </div>
             </div>
