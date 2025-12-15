@@ -7,8 +7,8 @@ export async function GET() {
     const publicDir = path.join(process.cwd(), "public");
     const files = await fs.readdir(publicDir);
     
-    // 過濾出圖片文件
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    // 過濾出圖片文件 - 只包含 JPG/JPEG/PNG
+    const imageExtensions = ['.jpg', '.jpeg', '.png'];
     const imageFiles = files.filter(file => {
       const ext = path.extname(file).toLowerCase();
       return imageExtensions.includes(ext);

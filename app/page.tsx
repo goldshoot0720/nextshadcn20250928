@@ -131,7 +131,7 @@ export default function DashboardPage() {
             </div>
 
             {/* 統計卡片 */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 lg:p-6 rounded-2xl text-white shadow-lg shadow-blue-500/25">
                 <div className="flex items-center justify-between">
                   <div>
@@ -163,18 +163,6 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="text-purple-200 text-xl lg:text-2xl">🖼️</div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4 lg:p-6 rounded-2xl text-white shadow-lg shadow-orange-500/25">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100 text-xs lg:text-sm">其他格式</p>
-                    <p className="text-xl lg:text-2xl font-bold">
-                      {images.filter(img => !['.jpg', '.jpeg', '.png'].includes(img.extension)).length}
-                    </p>
-                  </div>
-                  <div className="text-orange-200 text-xl lg:text-2xl">🎨</div>
                 </div>
               </div>
             </div>
