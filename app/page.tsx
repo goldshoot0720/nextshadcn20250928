@@ -131,50 +131,50 @@ export default function DashboardPage() {
             </div>
 
             {/* 統計卡片 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/25">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 lg:p-6 rounded-2xl text-white shadow-lg shadow-blue-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm">總圖片數</p>
-                    <p className="text-2xl font-bold">{images.length}</p>
+                    <p className="text-blue-100 text-xs lg:text-sm">總圖片數</p>
+                    <p className="text-xl lg:text-2xl font-bold">{images.length}</p>
                   </div>
-                  <ImageIcon size={32} className="text-blue-200" />
+                  <ImageIcon size={24} className="text-blue-200 lg:w-8 lg:h-8" />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg shadow-green-500/25">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 lg:p-6 rounded-2xl text-white shadow-lg shadow-green-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-green-100 text-sm">JPG/JPEG</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-green-100 text-xs lg:text-sm">JPG/JPEG</p>
+                    <p className="text-xl lg:text-2xl font-bold">
                       {images.filter(img => ['.jpg', '.jpeg'].includes(img.extension)).length}
                     </p>
                   </div>
-                  <div className="text-green-200 text-2xl">📷</div>
+                  <div className="text-green-200 text-xl lg:text-2xl">📷</div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg shadow-purple-500/25">
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 lg:p-6 rounded-2xl text-white shadow-lg shadow-purple-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm">PNG</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-purple-100 text-xs lg:text-sm">PNG</p>
+                    <p className="text-xl lg:text-2xl font-bold">
                       {images.filter(img => img.extension === '.png').length}
                     </p>
                   </div>
-                  <div className="text-purple-200 text-2xl">🖼️</div>
+                  <div className="text-purple-200 text-xl lg:text-2xl">🖼️</div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 rounded-2xl text-white shadow-lg shadow-orange-500/25">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4 lg:p-6 rounded-2xl text-white shadow-lg shadow-orange-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-orange-100 text-sm">其他格式</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-orange-100 text-xs lg:text-sm">其他格式</p>
+                    <p className="text-xl lg:text-2xl font-bold">
                       {images.filter(img => !['.jpg', '.jpeg', '.png'].includes(img.extension)).length}
                     </p>
                   </div>
-                  <div className="text-orange-200 text-2xl">🎨</div>
+                  <div className="text-orange-200 text-xl lg:text-2xl">🎨</div>
                 </div>
               </div>
             </div>
@@ -196,57 +196,58 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 lg:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                   {images.map((image, index) => (
                     <div
                       key={index}
-                      className="group relative bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer"
-                      onClick={() => setSelectedImage(image)}
+                      className="group relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100"
                     >
-                      <div className="aspect-square relative">
+                      {/* 圖片容器 - 保持原始比例 */}
+                      <div className="relative overflow-hidden rounded-t-xl">
                         <img
                           src={image.path}
                           alt={image.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          className="w-full h-auto max-h-64 object-contain bg-gray-50 group-hover:scale-102 transition-transform duration-300"
                           loading="lazy"
+                          onClick={() => setSelectedImage(image)}
                         />
                         
-                        {/* 懸停覆蓋層 */}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                          <div className="flex gap-2">
+                        {/* 操作按鈕 - 只在右上角顯示 */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="flex gap-1">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedImage(image);
                               }}
-                              className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+                              className="p-1.5 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors"
                               title="查看大圖"
                             >
-                              <Eye className="text-white" size={18} />
+                              <Eye className="text-white" size={14} />
                             </button>
                             <a
                               href={image.path}
                               download={image.name}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+                              className="p-1.5 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors"
                               title="下載圖片"
                             >
-                              <Download className="text-white" size={18} />
+                              <Download className="text-white" size={14} />
                             </a>
                           </div>
                         </div>
                       </div>
                       
-                      {/* 圖片資訊 */}
-                      <div className="p-3">
-                        <h3 className="font-medium text-gray-900 text-sm truncate mb-1" title={image.name}>
+                      {/* 圖片資訊 - 移到圖片下方 */}
+                      <div className="p-3 bg-white">
+                        <h3 className="font-medium text-gray-900 text-xs truncate mb-1" title={image.name}>
                           {image.name}
                         </h3>
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>{formatFileSize(image.size)}</span>
                           <span className="flex items-center gap-1">
-                            <Calendar size={12} />
-                            {formatDate(image.modified)}
+                            <Calendar size={10} />
+                            {new Date(image.modified).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
                       </div>
