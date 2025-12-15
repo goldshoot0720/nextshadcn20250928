@@ -1,15 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import FoodManagement from "@/components/modules/FoodManagement";
 import SubscriptionManagement from "@/components/modules/SubscriptionManagement";
 import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
 import VideoIntroduction from "@/components/modules/VideoIntroduction";
-import { Package, CreditCard, Home, Settings, BarChart3, Info, Phone, Play } from "lucide-react";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Image as ImageIcon, Download, Eye, Calendar, Phone } from "lucide-react";
+
+interface ImageFile {
+  name: string;
+  path: string;
+  size: number;
+  modified: string;
+  extension: string;
+}
 
 export default function DashboardPage() {
-  const [currentModule, setCurrentModule] = useState("dashboard");
+  const [currentModule, setCurrentModule] = useState("home");
+  const [images, setImages] = useState<ImageFile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<ImageFile | null>(null);
+
+  // 載入圖片列表
+  useEffect(() => {
+    if (currentModule === "home") {
+      loadImages();
+    }
+  }, [currentModule]);
+
+  const loadImages = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/images");
+      const data = await response.json();
+      if (data.success) {
+        setImages(data.images);
+      }
+    } catch (error) {
+      console.error("載入圖片失敗:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString("zh-TW", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
 
   // 選單項目配置
   const menuItems = [
@@ -59,134 +110,192 @@ export default function DashboardPage() {
       case "home":
         return (
           <div className="space-y-4 lg:space-y-6">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">儀表板</h1>
-              <p className="text-gray-500 mt-1">歡迎回到智能管理平台</p>
+            {/* 標題區域 */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">圖片展示</h1>
+                <p className="text-gray-500 mt-1">
+                  {loading ? "載入中..." : `共 ${images.length} 張圖片`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadImages}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors duration-200 disabled:opacity-50"
+                >
+                  <ImageIcon size={18} />
+                  重新載入
+                </button>
+              </div>
             </div>
-            
-            {/* 快速統計卡片 */}
+
+            {/* 統計卡片 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm">食品項目</p>
-                    <p className="text-2xl font-bold">12</p>
+                    <p className="text-blue-100 text-sm">總圖片數</p>
+                    <p className="text-2xl font-bold">{images.length}</p>
                   </div>
-                  <Package size={32} className="text-blue-200" />
+                  <ImageIcon size={32} className="text-blue-200" />
                 </div>
               </div>
               
               <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg shadow-green-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-green-100 text-sm">訂閱服務</p>
-                    <p className="text-2xl font-bold">8</p>
+                    <p className="text-green-100 text-sm">JPG/JPEG</p>
+                    <p className="text-2xl font-bold">
+                      {images.filter(img => ['.jpg', '.jpeg'].includes(img.extension)).length}
+                    </p>
                   </div>
-                  <CreditCard size={32} className="text-green-200" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 rounded-2xl text-white shadow-lg shadow-yellow-500/25">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-yellow-100 text-sm">即將過期</p>
-                    <p className="text-2xl font-bold">3</p>
-                  </div>
-                  <div className="text-yellow-200">⚠️</div>
+                  <div className="text-green-200 text-2xl">📷</div>
                 </div>
               </div>
               
               <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg shadow-purple-500/25">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm">月費總計</p>
-                    <p className="text-2xl font-bold">NT$ 2,580</p>
+                    <p className="text-purple-100 text-sm">PNG</p>
+                    <p className="text-2xl font-bold">
+                      {images.filter(img => img.extension === '.png').length}
+                    </p>
                   </div>
-                  <div className="text-purple-200">💰</div>
-                </div>
-              </div>
-            </div>
-
-            {/* 功能模組卡片 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-              <div 
-                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                onClick={() => setCurrentModule("food")}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                    <Package className="text-blue-600" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 text-lg mb-2">食品管理</h3>
-                    <p className="text-gray-500 text-sm mb-3">管理食品庫存和有效期限，避免食物浪費</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-600">9 項正常</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                        <span className="text-gray-600">3 項即將過期</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-gray-400 group-hover:text-gray-600 transition-colors">
-                    →
-                  </div>
+                  <div className="text-purple-200 text-2xl">🖼️</div>
                 </div>
               </div>
               
-              <div 
-                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                onClick={() => setCurrentModule("subscription")}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                    <CreditCard className="text-green-600" size={24} />
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 rounded-2xl text-white shadow-lg shadow-orange-500/25">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-100 text-sm">其他格式</p>
+                    <p className="text-2xl font-bold">
+                      {images.filter(img => !['.jpg', '.jpeg', '.png'].includes(img.extension)).length}
+                    </p>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 text-lg mb-2">訂閱管理</h3>
-                    <p className="text-gray-500 text-sm mb-3">追蹤訂閱服務和付款日期，控制支出</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-600">6 項正常</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <span className="text-gray-600">2 項即將到期</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-gray-400 group-hover:text-gray-600 transition-colors">
-                    →
-                  </div>
+                  <div className="text-orange-200 text-2xl">🎨</div>
                 </div>
               </div>
             </div>
 
-            {/* 最近活動 */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">最近活動</h2>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">新增食品：有機牛奶</span>
-                  <span className="text-xs text-gray-400 ml-auto">2 小時前</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">更新訂閱：Netflix 月費</span>
-                  <span className="text-xs text-gray-400 ml-auto">1 天前</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">提醒：麵包將於明天過期</span>
-                  <span className="text-xs text-gray-400 ml-auto">2 天前</span>
+            {/* 圖片網格 */}
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500">載入圖片中...</p>
                 </div>
               </div>
-            </div>
+            ) : images.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ImageIcon className="text-gray-400" size={32} />
+                </div>
+                <p className="text-gray-500">沒有找到圖片</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 lg:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {images.map((image, index) => (
+                    <div
+                      key={index}
+                      className="group relative bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer"
+                      onClick={() => setSelectedImage(image)}
+                    >
+                      <div className="aspect-square relative">
+                        <img
+                          src={image.path}
+                          alt={image.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          loading="lazy"
+                        />
+                        
+                        {/* 懸停覆蓋層 */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedImage(image);
+                              }}
+                              className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+                              title="查看大圖"
+                            >
+                              <Eye className="text-white" size={18} />
+                            </button>
+                            <a
+                              href={image.path}
+                              download={image.name}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+                              title="下載圖片"
+                            >
+                              <Download className="text-white" size={18} />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 圖片資訊 */}
+                      <div className="p-3">
+                        <h3 className="font-medium text-gray-900 text-sm truncate mb-1" title={image.name}>
+                          {image.name}
+                        </h3>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{formatFileSize(image.size)}</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={12} />
+                            {formatDate(image.modified)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 圖片預覽模態框 */}
+            {selectedImage && (
+              <div 
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                onClick={() => setSelectedImage(null)}
+              >
+                <div className="relative max-w-4xl max-h-full">
+                  <img
+                    src={selectedImage.path}
+                    alt={selectedImage.name}
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                  />
+                  
+                  {/* 關閉按鈕 */}
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors"
+                  >
+                    ✕
+                  </button>
+                  
+                  {/* 圖片資訊 */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
+                    <h3 className="font-medium mb-2">{selectedImage.name}</h3>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span>大小: {formatFileSize(selectedImage.size)}</span>
+                      <span>修改時間: {formatDate(selectedImage.modified)}</span>
+                      <a
+                        href={selectedImage.path}
+                        download={selectedImage.name}
+                        className="flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                      >
+                        <Download size={14} />
+                        下載
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case "about":
