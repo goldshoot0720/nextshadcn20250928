@@ -11,7 +11,7 @@ import { Package, CreditCard, Home, Settings, BarChart3, Info, Phone, Play } fro
 export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState("dashboard");
 
-  // 選單項目配置 - 重新排序
+  // 選單項目配置
   const menuItems = [
     {
       id: "home",
@@ -42,16 +42,6 @@ export default function DashboardPage() {
       id: "about",
       label: "關於我們",
       icon: <Info size={18} />,
-    },
-    {
-      id: "contact",
-      label: "聯絡我們",
-      icon: <Phone size={18} />,
-    },
-    {
-      id: "settings",
-      label: "系統設定",
-      icon: <Settings size={18} />,
     },
   ];
 
@@ -208,253 +198,153 @@ export default function DashboardPage() {
             </div>
             
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:p-8">
-              <div className="max-w-3xl mx-auto text-center">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <span className="text-white font-bold text-2xl">M</span>
+              <div className="max-w-4xl mx-auto">
+                {/* 公司標誌與介紹 */}
+                <div className="text-center mb-12">
+                  <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <span className="text-white font-bold text-3xl">鋒塗</span>
+                  </div>
+                  
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">鋒兄塗哥公關資訊</h2>
+                  <p className="text-gray-600 text-lg mb-6 max-w-2xl mx-auto">
+                    我們是專業的公關團隊，致力於為客戶提供最優質的公關服務和智能管理解決方案。
+                    透過創新技術和專業服務，幫助企業和個人實現更高效的管理目標。
+                  </p>
                 </div>
-                
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">智能管理平台</h2>
-                <p className="text-gray-600 text-lg mb-8">
-                  我們致力於為用戶提供最優質的生活管理解決方案，幫助您更好地管理食品庫存和訂閱服務，
-                  讓生活更加井然有序，避免不必要的浪費。
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <Package className="text-blue-600" size={24} />
+
+                {/* 團隊成員 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center">
+                    <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-white font-bold text-xl">鋒</span>
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">智能提醒</h3>
-                    <p className="text-gray-600 text-sm">及時提醒食品過期和訂閱到期</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">鋒兄</h3>
+                    <p className="text-blue-600 font-medium mb-3">技術總監 & 創新領袖</p>
+                    <p className="text-gray-600 text-sm">
+                      專精於系統架構設計與技術創新，擁有豐富的軟體開發經驗，
+                      致力於打造用戶友好的智能管理解決方案。
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center">
+                    <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-white font-bold text-xl">塗</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">塗哥</h3>
+                    <p className="text-purple-600 font-medium mb-3">公關總監 & 策略專家</p>
+                    <p className="text-gray-600 text-sm">
+                      擅長品牌策略規劃與公關活動執行，具備敏銳的市場洞察力，
+                      專注於建立企業與客戶之間的良好關係。
+                    </p>
+                  </div>
+                </div>
+
+                {/* 服務特色 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Package className="text-white" size={28} />
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-2">智能管理</h3>
+                    <p className="text-gray-600 text-sm">提供全方位的智能管理解決方案，讓生活更有序</p>
                   </div>
                   
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <BarChart3 className="text-green-600" size={24} />
+                    <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <BarChart3 className="text-white" size={28} />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">數據分析</h3>
-                    <p className="text-gray-600 text-sm">詳細的統計報告和趨勢分析</p>
+                    <h3 className="font-bold text-gray-900 mb-2">數據洞察</h3>
+                    <p className="text-gray-600 text-sm">深度數據分析，提供精準的決策支援</p>
                   </div>
                   
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <Settings className="text-purple-600" size={24} />
+                    <div className="w-16 h-16 bg-gradient-to-r from-pink-400 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Info className="text-white" size={28} />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">個性化</h3>
-                    <p className="text-gray-600 text-sm">可自定義的設定和偏好</p>
+                    <h3 className="font-bold text-gray-900 mb-2">專業服務</h3>
+                    <p className="text-gray-600 text-sm">24/7 專業客服支援，確保最佳使用體驗</p>
                   </div>
                 </div>
-                
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">版本資訊</h3>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p>智能管理平台 v1.0.0</p>
-                    <p>© 2024 管理系統團隊</p>
-                    <p>使用 Next.js + TypeScript 構建</p>
+
+                {/* 聯絡資訊 */}
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8 mb-8">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">聯絡我們</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                          <Phone className="text-white" size={20} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">業務洽詢</p>
+                          <p className="text-gray-600">+886-2-1234-5678</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-sm">📧</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">電子郵件</p>
+                          <p className="text-gray-600">contact@fengtuge.com</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-sm">🌐</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">官方網站</p>
+                          <p className="text-gray-600">www.fengtuge.com</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-sm">📍</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">公司地址</p>
+                          <p className="text-gray-600">台北市信義區信義路五段7號</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 版權資訊 */}
+                <div className="text-center border-t border-gray-200 pt-8">
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    <h3 className="text-2xl font-bold mb-4">智能管理平台</h3>
+                  </div>
+                  <div className="space-y-2 text-gray-600">
+                    <p className="text-lg font-medium">鋒兄塗哥公關資訊有限公司</p>
+                    <p className="flex items-center justify-center gap-2">
+                      <span className="text-xl">©</span>
+                      <span className="font-medium">2025 ～ 2125</span>
+                      <span>版權所有</span>
+                    </p>
+                    <p className="text-sm">Feng & Tu Public Relations Information Co., Ltd.</p>
+                    <p className="text-sm">All Rights Reserved</p>
+                  </div>
+                  
+                  <div className="mt-6 flex justify-center gap-4 text-sm text-gray-500">
+                    <span>智能管理平台 v2.0.0</span>
+                    <span>•</span>
+                    <span>Next.js + TypeScript</span>
+                    <span>•</span>
+                    <span>Made with ❤️ in Taiwan</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         );
-      case "contact":
-        return (
-          <div className="space-y-4 lg:space-y-6">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">聯絡我們</h1>
-              <p className="text-gray-500 mt-1">有任何問題或建議，歡迎與我們聯繫</p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">聯絡資訊</h2>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <Phone className="text-blue-600" size={20} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">客服電話</p>
-                      <p className="text-gray-600">0800-123-456</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                      <span className="text-green-600">📧</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">電子郵件</p>
-                      <p className="text-gray-600">support@management-platform.com</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                      <span className="text-purple-600">🕒</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">服務時間</p>
-                      <p className="text-gray-600">週一至週五 09:00-18:00</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">意見回饋</h2>
-                
-                <form className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">姓名</label>
-                    <input
-                      type="text"
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請輸入您的姓名"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">電子郵件</label>
-                    <input
-                      type="email"
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請輸入您的電子郵件"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">訊息內容</label>
-                    <textarea
-                      rows={4}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請輸入您的訊息或建議"
-                    ></textarea>
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    className="w-full p-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-200"
-                  >
-                    發送訊息
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        );
-      case "settings":
-        return (
-          <div className="space-y-4 lg:space-y-6">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">系統設定</h1>
-              <p className="text-gray-500 mt-1">個人化您的管理體驗</p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-              {/* 通知設定 */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <span className="text-blue-600">🔔</span>
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">通知設定</h2>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">食品過期提醒</span>
-                    <div className="w-12 h-6 bg-blue-500 rounded-full relative">
-                      <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5"></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">訂閱到期提醒</span>
-                    <div className="w-12 h-6 bg-blue-500 rounded-full relative">
-                      <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5"></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">每日摘要</span>
-                    <div className="w-12 h-6 bg-gray-300 rounded-full relative">
-                      <div className="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* 顯示設定 */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <span className="text-purple-600">🎨</span>
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">顯示設定</h2>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm text-gray-600 block mb-2">主題模式</label>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm">淺色</button>
-                      <button className="px-3 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm">深色</button>
-                      <button className="px-3 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm">自動</button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 block mb-2">語言</label>
-                    <select className="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                      <option>繁體中文</option>
-                      <option>English</option>
-                      <option>日本語</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* 資料管理 */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <span className="text-green-600">💾</span>
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">資料管理</h2>
-                </div>
-                <div className="space-y-3">
-                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
-                    匯出資料
-                  </button>
-                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
-                    匯入資料
-                  </button>
-                  <button className="w-full p-3 text-left bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm transition-colors">
-                    清除所有資料
-                  </button>
-                </div>
-              </div>
-
-              {/* 備份與還原 */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <span className="text-orange-600">🔄</span>
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">備份與還原</h2>
-                </div>
-                <div className="space-y-3">
-                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
-                    自動備份設定
-                  </button>
-                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
-                    手動建立備份
-                  </button>
-                  <button className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl text-sm transition-colors">
-                    從備份還原
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
       default:
         return (
           <div className="space-y-6">
