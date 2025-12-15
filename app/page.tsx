@@ -6,14 +6,14 @@ import FoodManagement from "@/components/modules/FoodManagement";
 import SubscriptionManagement from "@/components/modules/SubscriptionManagement";
 import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
 import VideoIntroduction from "@/components/modules/VideoIntroduction";
-import { loadImages, StaticImageFile } from "@/lib/static-images";
+// 移除靜態圖片導入，改回使用 API
 import { Package, CreditCard, Home, BarChart3, Info, Play, Image as ImageIcon, Download, Eye, Calendar, Phone } from "lucide-react";
 
 export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState("home");
-  const [images, setImages] = useState<StaticImageFile[]>([]);
+  const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<StaticImageFile | null>(null);
+  const [selectedImage, setSelectedImage] = useState<any | null>(null);
 
   // 載入圖片列表
   useEffect(() => {
@@ -25,8 +25,11 @@ export default function DashboardPage() {
   const loadImagesData = async () => {
     setLoading(true);
     try {
-      const imageFiles = await loadImages();
-      setImages(imageFiles);
+      const response = await fetch("/api/images");
+      const data = await response.json();
+      if (data.success) {
+        setImages(data.images);
+      }
     } catch (error) {
       console.error("載入圖片失敗:", error);
     } finally {

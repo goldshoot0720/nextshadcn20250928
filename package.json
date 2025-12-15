@@ -5,10 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "build:static": "node scripts/build-static.js",
     "start": "next start",
-    "lint": "eslint",
-    "generate:static": "node scripts/generate-static-images.js"
+    "lint": "eslint"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
