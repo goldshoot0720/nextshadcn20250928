@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -26,6 +26,18 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 檢測螢幕尺寸
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -45,35 +57,38 @@ export default function DashboardLayout({
     return (
       <div key={item.id} className={`${level > 0 ? 'ml-4' : ''}`}>
         <div
-          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+          className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 touch-manipulation ${
             isActive
-              ? 'bg-blue-100 text-blue-700 border border-blue-200'
-              : 'hover:bg-gray-100'
-          }`}
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
+              : 'hover:bg-gray-100 active:bg-gray-200'
+          } ${isMobile ? 'min-h-[48px]' : ''}`}
           onClick={() => {
             if (hasChildren) {
               toggleExpanded(item.id);
             } else {
               onModuleChange(item.id);
-              // 手機版選擇後關閉選單
-              if (window.innerWidth < 768) {
+              if (isMobile) {
                 setIsSidebarOpen(false);
               }
             }
           }}
         >
           <div className="flex items-center gap-3">
-            {item.icon}
-            <span className="font-medium">{item.label}</span>
+            <div className={`${isActive ? 'text-white' : 'text-gray-600'}`}>
+              {item.icon}
+            </div>
+            <span className={`font-medium ${isMobile ? 'text-base' : 'text-sm'}`}>
+              {item.label}
+            </span>
           </div>
           {hasChildren && (
-            <div className="text-gray-400">
+            <div className={`${isActive ? 'text-white' : 'text-gray-400'}`}>
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
           )}
         </div>
         {hasChildren && isExpanded && (
-          <div className="mt-1">
+          <div className="mt-1 space-y-1">
             {item.children!.map(child => renderMenuItem(child, level + 1))}
           </div>
         )}
@@ -82,39 +97,66 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* 手機版頂部導航欄 */}
-      <div className="md:hidden bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
+      <div className="lg:hidden bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">M</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
+          </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSidebar}
-            className="p-2"
+            className="p-2 hover:bg-gray-100 rounded-xl"
           >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
           </Button>
         </div>
       </div>
 
       <div className="flex">
         {/* 側邊欄 - 桌面版 */}
-        <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200 min-h-screen">
+        <aside className="hidden lg:flex lg:flex-col w-72 bg-white/95 backdrop-blur-sm border-r border-gray-200 min-h-screen shadow-sm">
           <div className="p-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold">M</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
+                <p className="text-sm text-gray-500">智能管理平台</p>
+              </div>
+            </div>
           </div>
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {menuItems.map(item => renderMenuItem(item))}
           </nav>
         </aside>
 
-        {/* 手機版側邊欄覆蓋層 */}
+        {/* 手機版和平板版側邊欄覆蓋層 */}
         {isSidebarOpen && (
-          <div className="md:hidden fixed inset-0 z-50 flex">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={toggleSidebar} />
-            <aside className="relative w-64 bg-white shadow-xl">
-              <nav className="p-4 space-y-2 h-full overflow-y-auto">
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+              onClick={toggleSidebar} 
+            />
+            <aside className="relative w-80 max-w-[85vw] bg-white shadow-2xl">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <span className="text-white font-bold">M</span>
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
+                    <p className="text-sm text-gray-500">智能管理平台</p>
+                  </div>
+                </div>
+              </div>
+              <nav className="p-4 space-y-2 h-full overflow-y-auto pb-20">
                 {menuItems.map(item => renderMenuItem(item))}
               </nav>
             </aside>
@@ -123,27 +165,11 @@ export default function DashboardLayout({
 
         {/* 主要內容區域 */}
         <main className="flex-1 min-h-screen">
-          {/* 平板橫向和桌面版 */}
-          <div className="hidden md:block h-full">
-            <div className="p-6 h-full overflow-auto">
-              {children}
-            </div>
-          </div>
-
-          {/* 手機版和平板直向 */}
-          <div className="md:hidden">
-            {/* 手機版選單區域 */}
-            {isSidebarOpen && (
-              <div className="bg-white border-b border-gray-200 p-4">
-                <nav className="space-y-2">
-                  {menuItems.map(item => renderMenuItem(item))}
-                </nav>
+          <div className="h-full">
+            <div className="p-4 lg:p-8 h-full overflow-auto">
+              <div className="max-w-7xl mx-auto">
+                {children}
               </div>
-            )}
-            
-            {/* 內容區域 */}
-            <div className="p-4">
-              {children}
             </div>
           </div>
         </main>

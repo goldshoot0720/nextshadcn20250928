@@ -118,5 +118,75 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* 改善觸控體驗 */
+  @media (hover: none) and (pointer: coarse) {
+    button, a, [role="button"] {
+      @apply min-h-[44px] min-w-[44px];
+    }
+  }
+  
+  /* 平滑滾動 */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* 自定義滾動條 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full hover:bg-gray-400;
+  }
+  
+  /* 響應式文字 */
+  .responsive-text {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  
+  /* 卡片陰影動畫 */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  /* 漸變背景 */
+  .gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  /* 玻璃效果 */
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-sm border border-white/20;
+  }
+}
+
+/* 響應式間距工具類 */
+@layer utilities {
+  .spacing-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  .gap-responsive {
+    @apply gap-3 sm:gap-4 lg:gap-6;
+  }
+  
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  
+  /* 安全區域支援 */
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

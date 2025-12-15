@@ -127,34 +127,41 @@ export default function SubscriptionManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">
-          訂閱管理
-          <span className="ml-2 text-sm font-normal text-gray-500">
-            ({subs.length} 項目)
-          </span>
-        </h1>
-        <div className="text-right">
-          <div className="text-sm text-gray-500">總月費</div>
-          <div className="text-2xl font-bold text-blue-600">
+    <div className="space-y-4 lg:space-y-6">
+      {/* 標題和統計區域 */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+            訂閱管理
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            共 {subs.length} 個訂閱服務
+          </p>
+        </div>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-500/25">
+          <div className="text-sm opacity-90">總月費</div>
+          <div className="text-2xl lg:text-3xl font-bold">
             NT$ {totalMonthlyFee.toLocaleString()}
           </div>
         </div>
       </div>
 
       {/* 新增/編輯表單 */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold mb-4">
-          {editingSubId ? "編輯訂閱" : "新增訂閱"}
-        </h2>
+      <div className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+          <h2 className="text-lg font-semibold">
+            {editingSubId ? "編輯訂閱" : "新增訂閱"}
+          </h2>
+        </div>
         <form onSubmit={handleSubSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Input
               placeholder="服務名稱"
               value={subForm.name}
               onChange={(e) => setSubForm({ ...subForm, name: e.target.value })}
               required
+              className="h-12 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
             />
             <Input
               placeholder="網站 URL"
@@ -162,6 +169,7 @@ export default function SubscriptionManagement() {
               value={subForm.site}
               onChange={(e) => setSubForm({ ...subForm, site: e.target.value })}
               required
+              className="h-12 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
             />
             <Input
               placeholder="月費金額"
@@ -172,6 +180,7 @@ export default function SubscriptionManagement() {
                 setSubForm({ ...subForm, price: parseInt(e.target.value) || 0 })
               }
               required
+              className="h-12 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
             />
             <Input
               placeholder="下次付款日期"
@@ -179,11 +188,15 @@ export default function SubscriptionManagement() {
               value={subForm.nextdate}
               onChange={(e) => setSubForm({ ...subForm, nextdate: e.target.value })}
               required
+              className="h-12 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
             />
           </div>
-          <div className="flex gap-2">
-            <Button type="submit">
-              {editingSubId ? "更新" : "新增"}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              type="submit"
+              className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25"
+            >
+              {editingSubId ? "更新訂閱" : "新增訂閱"}
             </Button>
             {editingSubId && (
               <Button 
@@ -193,8 +206,9 @@ export default function SubscriptionManagement() {
                   setEditingSubId(null);
                   setSubForm({ name: "", site: "", price: 0, nextdate: "" });
                 }}
+                className="h-12 px-6 rounded-xl border-gray-300 hover:bg-gray-50"
               >
-                取消
+                取消編輯
               </Button>
             )}
           </div>
@@ -202,23 +216,30 @@ export default function SubscriptionManagement() {
       </div>
 
       {/* 訂閱列表 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* 桌面版表格 */}
+        <div className="hidden lg:block overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>服務名稱</TableHead>
-                <TableHead>下次付款日期</TableHead>
-                <TableHead>月費</TableHead>
-                <TableHead>網站</TableHead>
-                <TableHead>操作</TableHead>
+              <TableRow className="bg-gray-50/50">
+                <TableHead className="font-semibold text-gray-700">服務名稱</TableHead>
+                <TableHead className="font-semibold text-gray-700">下次付款日期</TableHead>
+                <TableHead className="font-semibold text-gray-700">月費</TableHead>
+                <TableHead className="font-semibold text-gray-700">網站</TableHead>
+                <TableHead className="font-semibold text-gray-700">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {subs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                    暫無訂閱資料
+                  <TableCell colSpan={5} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                        <span className="text-2xl">💳</span>
+                      </div>
+                      <p className="text-gray-500">暫無訂閱資料</p>
+                      <p className="text-sm text-gray-400">點擊上方表單新增第一個訂閱</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -230,31 +251,31 @@ export default function SubscriptionManagement() {
                   const isOverdue = daysUntilNext < 0;
 
                   return (
-                    <TableRow key={s.$id} className={isOverdue ? "bg-red-50" : isUpcoming ? "bg-yellow-50" : ""}>
+                    <TableRow key={s.$id} className={`hover:bg-gray-50/50 ${isOverdue ? "bg-red-50" : isUpcoming ? "bg-yellow-50" : ""}`}>
                       <TableCell className="font-medium">{s.name}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span>{formatDate(s.nextdate)}</span>
                           {isOverdue && (
-                            <span className="text-xs text-red-600">已逾期 {Math.abs(daysUntilNext)} 天</span>
+                            <span className="text-xs text-red-600 font-medium">已逾期 {Math.abs(daysUntilNext)} 天</span>
                           )}
                           {isUpcoming && (
-                            <span className="text-xs text-yellow-600">{daysUntilNext} 天後到期</span>
+                            <span className="text-xs text-yellow-600 font-medium">{daysUntilNext} 天後到期</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">NT$ {s.price.toLocaleString()}</span>
+                        <span className="font-semibold text-green-600">NT$ {s.price.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
                         <a
                           href={s.site}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-500 hover:text-blue-700 underline truncate block max-w-32"
+                          className="text-blue-500 hover:text-blue-700 underline truncate block max-w-32 rounded-lg px-2 py-1 hover:bg-blue-50"
                           title={s.site}
                         >
-                          {s.site}
+                          前往網站
                         </a>
                       </TableCell>
                       <TableCell>
@@ -266,6 +287,7 @@ export default function SubscriptionManagement() {
                               setSubForm(s);
                               setEditingSubId(s.$id);
                             }}
+                            className="rounded-lg"
                           >
                             編輯
                           </Button>
@@ -273,6 +295,7 @@ export default function SubscriptionManagement() {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleSubDelete(s.$id)}
+                            className="rounded-lg"
                           >
                             刪除
                           </Button>
@@ -284,6 +307,104 @@ export default function SubscriptionManagement() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* 手機版和平板版卡片列表 */}
+        <div className="lg:hidden">
+          {subs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">💳</span>
+                </div>
+                <p className="text-gray-500">暫無訂閱資料</p>
+                <p className="text-sm text-gray-400">點擊上方表單新增第一個訂閱</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {subs.map((s) => {
+                const nextDate = new Date(s.nextdate);
+                const today = new Date();
+                const daysUntilNext = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const isUpcoming = daysUntilNext <= 7 && daysUntilNext >= 0;
+                const isOverdue = daysUntilNext < 0;
+
+                return (
+                  <div key={s.$id} className={`p-4 ${isOverdue ? "bg-red-50" : isUpcoming ? "bg-yellow-50" : ""}`}>
+                    <div className="space-y-3">
+                      {/* 標題和狀態 */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 text-lg">{s.name}</h3>
+                          <div className="mt-1">
+                            {isOverdue && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                已逾期 {Math.abs(daysUntilNext)} 天
+                              </span>
+                            )}
+                            {isUpcoming && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {daysUntilNext} 天後到期
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600">
+                            NT$ {s.price.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">月費</div>
+                        </div>
+                      </div>
+
+                      {/* 詳細資訊 */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <span className="font-medium">下次付款:</span>
+                          <span>{formatDate(s.nextdate)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600">網站:</span>
+                          <a
+                            href={s.site}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-500 hover:text-blue-700 underline text-sm bg-blue-50 px-2 py-1 rounded-lg"
+                          >
+                            前往網站
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* 操作按鈕 */}
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSubForm(s);
+                            setEditingSubId(s.$id);
+                          }}
+                          className="flex-1 rounded-xl"
+                        >
+                          編輯
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleSubDelete(s.$id)}
+                          className="flex-1 rounded-xl"
+                        >
+                          刪除
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
