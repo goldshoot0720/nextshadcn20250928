@@ -12,7 +12,8 @@ const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID || "";
 // PUT /api/food/[id]
 export async function PUT(req, context) {
   try {
-    const id = context?.params?.id;
+    const { params } = context;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
@@ -42,7 +43,8 @@ export async function PUT(req, context) {
 // DELETE /api/food/[id]
 export async function DELETE(req, context) {
   try {
-    const id = context?.params?.id;
+    const { params } = context;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }

@@ -4,10 +4,10 @@ import path from 'path';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const { filename } = params;
+    const { filename } = await params;
     
     // 安全檢查：確保文件名不包含路徑遍歷
     if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
