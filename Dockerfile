@@ -21,8 +21,8 @@ COPY . .
 # 設置環境變數
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# 構建應用
-RUN npm run build
+# 構建應用 (包含靜態圖片生成)
+RUN npm run build:static
 
 # 生產階段
 FROM base AS runner

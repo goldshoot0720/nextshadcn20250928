@@ -6,37 +6,27 @@ import FoodManagement from "@/components/modules/FoodManagement";
 import SubscriptionManagement from "@/components/modules/SubscriptionManagement";
 import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
 import VideoIntroduction from "@/components/modules/VideoIntroduction";
+import { loadImages, StaticImageFile } from "@/lib/static-images";
 import { Package, CreditCard, Home, BarChart3, Info, Play, Image as ImageIcon, Download, Eye, Calendar, Phone } from "lucide-react";
-
-interface ImageFile {
-  name: string;
-  path: string;
-  size: number;
-  modified: string;
-  extension: string;
-}
 
 export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState("home");
-  const [images, setImages] = useState<ImageFile[]>([]);
+  const [images, setImages] = useState<StaticImageFile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<ImageFile | null>(null);
+  const [selectedImage, setSelectedImage] = useState<StaticImageFile | null>(null);
 
   // 載入圖片列表
   useEffect(() => {
     if (currentModule === "home") {
-      loadImages();
+      loadImagesData();
     }
   }, [currentModule]);
 
-  const loadImages = async () => {
+  const loadImagesData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/images");
-      const data = await response.json();
-      if (data.success) {
-        setImages(data.images);
-      }
+      const imageFiles = await loadImages();
+      setImages(imageFiles);
     } catch (error) {
       console.error("載入圖片失敗:", error);
     } finally {
@@ -120,7 +110,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={loadImages}
+                  onClick={loadImagesData}
                   disabled={loading}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors duration-200 disabled:opacity-50"
                 >
