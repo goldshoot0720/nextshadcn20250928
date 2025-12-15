@@ -4,8 +4,21 @@ import path from "path";
 
 export async function GET() {
   try {
-    const publicDir = path.join(process.cwd(), "public");
-    const files = await fs.readdir(publicDir);
+    const imagesDir = path.join(process.cwd(), "public", "images");
+    
+    // 檢查 images 資料夾是否存在
+    try {
+      await fs.access(imagesDir);
+    } catch (error) {
+      // 如果資料夾不存在，返回空結果
+      return NextResponse.json({
+        success: true,
+        count: 0,
+        images: []
+      });
+    }
+    
+    const files = await fs.readdir(imagesDir);
     
     // 過濾出圖片文件 - 只包含 JPG/JPEG/PNG
     const imageExtensions = ['.jpg', '.jpeg', '.png'];
@@ -18,12 +31,12 @@ export async function GET() {
     const imagesWithDetails = await Promise.all(
       imageFiles.map(async (file) => {
         try {
-          const filePath = path.join(publicDir, file);
+          const filePath = path.join(imagesDir, file);
           const stats = await fs.stat(filePath);
           
           return {
             name: file,
-            path: `/${file}`,
+            path: `/images/${file}`,
             size: stats.size,
             modified: stats.mtime.toISOString(),
             extension: path.extname(file).toLowerCase()
@@ -32,7 +45,7 @@ export async function GET() {
           console.error(`Error getting stats for ${file}:`, error);
           return {
             name: file,
-            path: `/${file}`,
+            path: `/images/${file}`,
             size: 0,
             modified: new Date().toISOString(),
             extension: path.extname(file).toLowerCase()
