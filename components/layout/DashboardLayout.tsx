@@ -30,10 +30,19 @@ export default function DashboardLayout({
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
-  // 檢測螢幕尺寸
+  // 檢測螢幕尺寸和設備類型
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // 8.7吋平板檢測 (800x1280 或 1280x800)
+      const isTablet87 = (
+        (width >= 768 && width <= 900 && height >= 1200) || // 直向
+        (width >= 1200 && width <= 1400 && height >= 700 && height <= 900) // 橫向
+      );
+      
+      setIsMobile(width < 768 && !isTablet87);
     };
     
     checkScreenSize();
@@ -101,7 +110,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       {/* 手機版頂部導航欄 */}
-      <div className="lg:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+      <div className="md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40"}
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -124,8 +133,8 @@ export default function DashboardLayout({
       </div>
 
       <div className="flex">
-        {/* 側邊欄 - 桌面版 */}
-        <aside className="hidden lg:flex lg:flex-col w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 min-h-screen shadow-sm">
+        {/* 側邊欄 - 桌面版和8.7吋平板 */}
+        <aside className="hidden md:flex md:flex-col w-64 lg:w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 min-h-screen shadow-sm tablet-8-7"}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -145,9 +154,9 @@ export default function DashboardLayout({
           </nav>
         </aside>
 
-        {/* 手機版和平板版側邊欄覆蓋層 */}
+        {/* 手機版側邊欄覆蓋層 */}
         {isSidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="md:hidden fixed inset-0 z-50 flex"}
             <div 
               className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
               onClick={toggleSidebar} 

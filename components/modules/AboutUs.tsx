@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 
 export default function AboutUs() {
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="space-y-4 lg:space-y-6 tablet-8-7">
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">關於我們</h1>
         <p className="text-gray-500 dark:text-gray-300 mt-1">了解鋒兄AI管理系統的使命與願景</p>
@@ -56,7 +56,7 @@ function CompanyHeader() {
 // 團隊成員
 function TeamMembers() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-12 tablet-8-7">
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 text-center">
         <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-white font-bold text-xl">鋒</span>
@@ -87,7 +87,7 @@ function TeamMembers() {
 // 服務特色
 function ServiceFeatures() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6 mb-12 tablet-8-7">
       <div className="text-center">
         <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Package className="text-white" size={28} />

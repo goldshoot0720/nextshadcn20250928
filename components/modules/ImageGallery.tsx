@@ -257,42 +257,7 @@ function ImageGrid({
       p-2 xs:p-3 sm:p-4 lg:p-6 xl:p-8">
       
       {/* 響應式網格 - 針對不同設備和方向優化 */}
-      <div className="grid gap-2 xs:gap-3 sm:gap-4 lg:gap-6 xl:gap-8
-        
-        /* iPhone SE2 直向 (375px) */
-        grid-cols-2
-        
-        /* iPhone SE2 橫向 (667px) & Samsung Galaxy A53 直向 (412px) */
-        xs:grid-cols-3
-        
-        /* Samsung Galaxy A53 橫向 (915px) & 小平板 */
-        sm:grid-cols-4
-        
-        /* Redmi Pad SE 8.7 直向 (800px) */
-        md:grid-cols-5
-        
-        /* Redmi Pad SE 8.7 橫向 (1280px) & 桌面 100% */
-        lg:grid-cols-6
-        
-        /* 桌面 150% 縮放 & 大屏幕 */
-        xl:grid-cols-7
-        2xl:grid-cols-8
-        
-        /* 超大屏幕 */
-        3xl:grid-cols-10
-        
-        /* 方向特定優化 */
-        portrait:xs:grid-cols-2
-        portrait:sm:grid-cols-3
-        portrait:md:grid-cols-4
-        portrait:lg:grid-cols-5
-        
-        landscape:xs:grid-cols-4
-        landscape:sm:grid-cols-5
-        landscape:md:grid-cols-6
-        landscape:lg:grid-cols-7
-        landscape:xl:grid-cols-8
-        landscape:2xl:grid-cols-10">
+      <div className="image-grid-responsive tablet-8-7">
         
         {images.map((image, index) => (
           <ImageCard 

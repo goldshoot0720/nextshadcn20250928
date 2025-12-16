@@ -18,6 +18,21 @@ interface Subscription {
   nextdate: string;
 }
 
+interface FoodDetail {
+  id: string;
+  name: string;
+  daysRemaining: number;
+  expireDate: string;
+}
+
+interface SubscriptionDetail {
+  id: string;
+  name: string;
+  daysRemaining: number;
+  nextDate: string;
+  price: number;
+}
+
 interface DashboardStats {
   totalFoods: number;
   totalSubscriptions: number;
@@ -28,6 +43,13 @@ interface DashboardStats {
   totalMonthlyFee: number;
   expiredFoods: number;
   overdueSubscriptions: number;
+  // 詳細項目列表
+  foodsExpiring7DaysList: FoodDetail[];
+  foodsExpiring30DaysList: FoodDetail[];
+  expiredFoodsList: FoodDetail[];
+  subscriptionsExpiring3DaysList: SubscriptionDetail[];
+  subscriptionsExpiring7DaysList: SubscriptionDetail[];
+  overdueSubscriptionsList: SubscriptionDetail[];
 }
 
 export function useDashboardStats() {
@@ -41,6 +63,12 @@ export function useDashboardStats() {
     totalMonthlyFee: 0,
     expiredFoods: 0,
     overdueSubscriptions: 0,
+    foodsExpiring7DaysList: [],
+    foodsExpiring30DaysList: [],
+    expiredFoodsList: [],
+    subscriptionsExpiring3DaysList: [],
+    subscriptionsExpiring7DaysList: [],
+    overdueSubscriptionsList: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -60,50 +88,131 @@ export function useDashboardStats() {
         const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
         const threeDaysFromNow = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-        // 計算食品統計
-        const foodsExpiring7Days = foods.filter(food => {
-          const expireDate = new Date(food.todate);
-          return expireDate <= sevenDaysFromNow && expireDate >= today;
-        }).length;
+        // 計算食品統計和詳細列表
+        const foodsExpiring7DaysList: FoodDetail[] = foods
+          .filter(food => {
+            const expireDate = new Date(food.todate);
+            return expireDate <= sevenDaysFromNow && expireDate >= today;
+          })
+          .map(food => {
+            const expireDate = new Date(food.todate);
+            const daysRemaining = Math.ceil((expireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              id: food.$id,
+              name: food.name,
+              daysRemaining,
+              expireDate: food.todate
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const foodsExpiring30Days = foods.filter(food => {
-          const expireDate = new Date(food.todate);
-          return expireDate <= thirtyDaysFromNow && expireDate >= today;
-        }).length;
+        const foodsExpiring30DaysList: FoodDetail[] = foods
+          .filter(food => {
+            const expireDate = new Date(food.todate);
+            return expireDate <= thirtyDaysFromNow && expireDate >= today;
+          })
+          .map(food => {
+            const expireDate = new Date(food.todate);
+            const daysRemaining = Math.ceil((expireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              id: food.$id,
+              name: food.name,
+              daysRemaining,
+              expireDate: food.todate
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const expiredFoods = foods.filter(food => {
-          const expireDate = new Date(food.todate);
-          return expireDate < today;
-        }).length;
+        const expiredFoodsList: FoodDetail[] = foods
+          .filter(food => {
+            const expireDate = new Date(food.todate);
+            return expireDate < today;
+          })
+          .map(food => {
+            const expireDate = new Date(food.todate);
+            const daysRemaining = Math.floor((expireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              id: food.$id,
+              name: food.name,
+              daysRemaining,
+              expireDate: food.todate
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        // 計算訂閱統計
-        const subscriptionsExpiring3Days = subscriptions.filter(sub => {
-          const nextDate = new Date(sub.nextdate);
-          return nextDate <= threeDaysFromNow && nextDate >= today;
-        }).length;
+        // 計算訂閱統計和詳細列表
+        const subscriptionsExpiring3DaysList: SubscriptionDetail[] = subscriptions
+          .filter(sub => {
+            const nextDate = new Date(sub.nextdate);
+            return nextDate <= threeDaysFromNow && nextDate >= today;
+          })
+          .map(sub => {
+            const nextDate = new Date(sub.nextdate);
+            const daysRemaining = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              id: sub.$id,
+              name: sub.name,
+              daysRemaining,
+              nextDate: sub.nextdate,
+              price: sub.price
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const subscriptionsExpiring7Days = subscriptions.filter(sub => {
-          const nextDate = new Date(sub.nextdate);
-          return nextDate <= sevenDaysFromNow && nextDate >= today;
-        }).length;
+        const subscriptionsExpiring7DaysList: SubscriptionDetail[] = subscriptions
+          .filter(sub => {
+            const nextDate = new Date(sub.nextdate);
+            return nextDate <= sevenDaysFromNow && nextDate >= today;
+          })
+          .map(sub => {
+            const nextDate = new Date(sub.nextdate);
+            const daysRemaining = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              id: sub.$id,
+              name: sub.name,
+              daysRemaining,
+              nextDate: sub.nextdate,
+              price: sub.price
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const overdueSubscriptions = subscriptions.filter(sub => {
-          const nextDate = new Date(sub.nextdate);
-          return nextDate < today;
-        }).length;
+        const overdueSubscriptionsList: SubscriptionDetail[] = subscriptions
+          .filter(sub => {
+            const nextDate = new Date(sub.nextdate);
+            return nextDate < today;
+          })
+          .map(sub => {
+            const nextDate = new Date(sub.nextdate);
+            const daysRemaining = Math.floor((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              id: sub.$id,
+              name: sub.name,
+              daysRemaining,
+              nextDate: sub.nextdate,
+              price: sub.price
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
         const totalMonthlyFee = subscriptions.reduce((total, sub) => total + sub.price, 0);
 
         setStats({
           totalFoods: foods.length,
           totalSubscriptions: subscriptions.length,
-          foodsExpiring7Days,
-          foodsExpiring30Days,
-          subscriptionsExpiring3Days,
-          subscriptionsExpiring7Days,
+          foodsExpiring7Days: foodsExpiring7DaysList.length,
+          foodsExpiring30Days: foodsExpiring30DaysList.length,
+          subscriptionsExpiring3Days: subscriptionsExpiring3DaysList.length,
+          subscriptionsExpiring7Days: subscriptionsExpiring7DaysList.length,
           totalMonthlyFee,
-          expiredFoods,
-          overdueSubscriptions,
+          expiredFoods: expiredFoodsList.length,
+          overdueSubscriptions: overdueSubscriptionsList.length,
+          foodsExpiring7DaysList,
+          foodsExpiring30DaysList,
+          expiredFoodsList,
+          subscriptionsExpiring3DaysList,
+          subscriptionsExpiring7DaysList,
+          overdueSubscriptionsList,
         });
       } catch (error) {
         console.error("獲取統計數據失敗:", error);

@@ -128,7 +128,7 @@ export default function SubscriptionManagement() {
 
   return (
     <>
-      <div className="space-y-4 lg:space-y-6" id="subscription-management-container">
+      <div className="space-y-4 lg:space-y-6 tablet-8-7" id="subscription-management-container">
         {/* 標題和統計區域 */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" id="subscription-top">
           <div>
@@ -156,7 +156,7 @@ export default function SubscriptionManagement() {
           </h2>
         </div>
         <form onSubmit={handleSubSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 tablet-8-7">
             <Input
               placeholder="服務名稱"
               value={subForm.name}

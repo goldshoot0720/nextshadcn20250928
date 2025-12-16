@@ -203,17 +203,46 @@
     }
   }
   
-  /* Redmi Pad SE 8.7 直向 (800px) */
+  /* 8.7吋平板 直向 (800x1280) */
   @media (min-width: 768px) and (max-width: 900px) and (orientation: portrait) {
-    .redmi-pad-portrait {
+    .tablet-8-7-portrait {
       @apply text-base p-4 gap-4;
     }
   }
   
-  /* Redmi Pad SE 8.7 橫向 (1280px) */
+  /* 8.7吋平板 橫向 (1280x800) */
   @media (min-width: 1200px) and (max-width: 1400px) and (orientation: landscape) {
-    .redmi-pad-landscape {
+    .tablet-8-7-landscape {
       @apply text-lg p-5 gap-5;
+    }
+  }
+  
+  /* 8.7吋平板通用樣式 */
+  @media (min-width: 768px) and (max-width: 1400px) {
+    .tablet-8-7 {
+      /* 適中的字體大小 */
+      font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+      
+      /* 適中的間距 */
+      --spacing-unit: clamp(0.75rem, 2vw, 1.25rem);
+      
+      /* 觸控友好的按鈕大小 */
+      button, .btn {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 0.75rem 1.5rem;
+      }
+      
+      /* 卡片間距 */
+      .card {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+      }
+      
+      /* 網格佈局優化 */
+      .grid-responsive {
+        gap: 1rem;
+      }
     }
   }
   
@@ -244,51 +273,74 @@
     @apply text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl;
   }
   
-  /* 圖片網格響應式 */
+  /* 圖片網格響應式 - 針對8.7吋平板優化 */
   .image-grid-responsive {
-    /* iPhone SE2 直向: 2欄 */
-    @apply grid-cols-2;
-    
-    /* iPhone SE2 橫向 & Galaxy A53 直向: 3欄 */
+    /* 手機直向: 2欄 */
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
   
+  /* 手機橫向: 3欄 */
   @media (min-width: 375px) {
     .image-grid-responsive {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.875rem;
     }
   }
   
-  /* Galaxy A53 橫向 & 小平板: 4欄 */
+  /* 大手機/小平板: 4欄 */
   @media (min-width: 640px) {
     .image-grid-responsive {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
     }
   }
   
-  /* Redmi Pad 直向: 5欄 */
+  /* 8.7吋平板直向: 5欄 - 專門優化 */
+  @media (min-width: 768px) and (max-width: 900px) and (orientation: portrait) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1rem;
+    }
+  }
+  
+  /* 8.7吋平板橫向: 7欄 - 專門優化 */
+  @media (min-width: 1200px) and (max-width: 1400px) and (orientation: landscape) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+  
+  /* 一般平板: 5欄 */
   @media (min-width: 768px) {
     .image-grid-responsive {
       grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1rem;
     }
   }
   
-  /* Redmi Pad 橫向 & 桌面: 6-8欄 */
+  /* 大平板/小桌面: 6欄 */
   @media (min-width: 1024px) {
     .image-grid-responsive {
       grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 1.125rem;
     }
   }
   
+  /* 桌面: 7欄 */
   @media (min-width: 1280px) {
     .image-grid-responsive {
       grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 1.25rem;
     }
   }
   
+  /* 大桌面: 8欄 */
   @media (min-width: 1536px) {
     .image-grid-responsive {
       grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 1.5rem;
     }
   }
   
@@ -296,6 +348,7 @@
   @media (min-width: 1920px) {
     .image-grid-responsive {
       grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 1.75rem;
     }
   }
   

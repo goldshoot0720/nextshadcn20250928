@@ -125,7 +125,7 @@ export default function VideoIntroduction() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6 tablet-8-7">
       {/* 響應式標題區域 */}
       <div className="px-1 sm:px-0">
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">影片介紹</h1>

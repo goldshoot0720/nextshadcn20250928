@@ -144,7 +144,7 @@ export default function FoodManagement() {
 
   return (
     <>
-      <div className="space-y-4 lg:space-y-6" id="food-management-container">
+      <div className="space-y-4 lg:space-y-6 tablet-8-7" id="food-management-container">
         {/* 標題區域 */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" id="food-top">
           <div>
@@ -170,7 +170,7 @@ export default function FoodManagement() {
           </h2>
         </div>
         <form onSubmit={handleFoodSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 tablet-8-7">
             <Input
               placeholder="食品名稱"
               value={foodForm.name}

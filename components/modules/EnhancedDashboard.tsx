@@ -19,7 +19,7 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="space-y-4 lg:space-y-6 tablet-8-7">
       {/* 標題區域 */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">儀表板</h1>
@@ -27,7 +27,7 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
       </div>
 
       {/* 主要統計卡片 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 tablet-8-7">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/25">
           <div className="flex items-center justify-between">
             <div>
@@ -91,28 +91,83 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
               </span>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">7天內過期</span>
+            <div className="p-3 bg-yellow-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-sm text-gray-700">7天內過期</span>
+                </div>
+                <span className="font-semibold text-yellow-700">{stats.foodsExpiring7Days}</span>
               </div>
-              <span className="font-semibold text-yellow-700">{stats.foodsExpiring7Days}</span>
+              {stats.foodsExpiring7DaysList.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {stats.foodsExpiring7DaysList.slice(0, 3).map((food) => (
+                    <div key={food.id} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600 truncate flex-1 mr-2">{food.name}</span>
+                      <span className="text-yellow-600 font-medium">
+                        {food.daysRemaining === 0 ? '今天' : `${food.daysRemaining}天`}
+                      </span>
+                    </div>
+                  ))}
+                  {stats.foodsExpiring7DaysList.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      還有 {stats.foodsExpiring7DaysList.length - 3} 項...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">30天內過期</span>
+            <div className="p-3 bg-orange-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm text-gray-700">30天內過期</span>
+                </div>
+                <span className="font-semibold text-orange-700">{stats.foodsExpiring30Days}</span>
               </div>
-              <span className="font-semibold text-orange-700">{stats.foodsExpiring30Days}</span>
+              {stats.foodsExpiring30DaysList.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {stats.foodsExpiring30DaysList.slice(0, 3).map((food) => (
+                    <div key={food.id} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600 truncate flex-1 mr-2">{food.name}</span>
+                      <span className="text-orange-600 font-medium">{food.daysRemaining}天</span>
+                    </div>
+                  ))}
+                  {stats.foodsExpiring30DaysList.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      還有 {stats.foodsExpiring30DaysList.length - 3} 項...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">已過期</span>
+            <div className="p-3 bg-red-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-sm text-gray-700">已過期</span>
+                </div>
+                <span className="font-semibold text-red-700">{stats.expiredFoods}</span>
               </div>
-              <span className="font-semibold text-red-700">{stats.expiredFoods}</span>
+              {stats.expiredFoodsList.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {stats.expiredFoodsList.slice(0, 3).map((food) => (
+                    <div key={food.id} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600 truncate flex-1 mr-2">{food.name}</span>
+                      <span className="text-red-600 font-medium">
+                        {Math.abs(food.daysRemaining)}天前
+                      </span>
+                    </div>
+                  ))}
+                  {stats.expiredFoodsList.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      還有 {stats.expiredFoodsList.length - 3} 項...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
@@ -144,28 +199,83 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
               </span>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">3天內到期</span>
+            <div className="p-3 bg-yellow-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-sm text-gray-700">3天內到期</span>
+                </div>
+                <span className="font-semibold text-yellow-700">{stats.subscriptionsExpiring3Days}</span>
               </div>
-              <span className="font-semibold text-yellow-700">{stats.subscriptionsExpiring3Days}</span>
+              {stats.subscriptionsExpiring3DaysList.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {stats.subscriptionsExpiring3DaysList.slice(0, 3).map((sub) => (
+                    <div key={sub.id} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600 truncate flex-1 mr-2">{sub.name}</span>
+                      <span className="text-yellow-600 font-medium">
+                        {sub.daysRemaining === 0 ? '今天' : `${sub.daysRemaining}天`}
+                      </span>
+                    </div>
+                  ))}
+                  {stats.subscriptionsExpiring3DaysList.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      還有 {stats.subscriptionsExpiring3DaysList.length - 3} 項...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">7天內到期</span>
+            <div className="p-3 bg-orange-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm text-gray-700">7天內到期</span>
+                </div>
+                <span className="font-semibold text-orange-700">{stats.subscriptionsExpiring7Days}</span>
               </div>
-              <span className="font-semibold text-orange-700">{stats.subscriptionsExpiring7Days}</span>
+              {stats.subscriptionsExpiring7DaysList.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {stats.subscriptionsExpiring7DaysList.slice(0, 3).map((sub) => (
+                    <div key={sub.id} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600 truncate flex-1 mr-2">{sub.name}</span>
+                      <span className="text-orange-600 font-medium">{sub.daysRemaining}天</span>
+                    </div>
+                  ))}
+                  {stats.subscriptionsExpiring7DaysList.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      還有 {stats.subscriptionsExpiring7DaysList.length - 3} 項...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">已逾期</span>
+            <div className="p-3 bg-red-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-sm text-gray-700">已逾期</span>
+                </div>
+                <span className="font-semibold text-red-700">{stats.overdueSubscriptions}</span>
               </div>
-              <span className="font-semibold text-red-700">{stats.overdueSubscriptions}</span>
+              {stats.overdueSubscriptionsList.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {stats.overdueSubscriptionsList.slice(0, 3).map((sub) => (
+                    <div key={sub.id} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600 truncate flex-1 mr-2">{sub.name}</span>
+                      <span className="text-red-600 font-medium">
+                        {Math.abs(sub.daysRemaining)}天前
+                      </span>
+                    </div>
+                  ))}
+                  {stats.overdueSubscriptionsList.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      還有 {stats.overdueSubscriptionsList.length - 3} 項...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
@@ -181,7 +291,7 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
       {/* 快速操作區域 */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">快速操作</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 tablet-8-7">
           <button
             onClick={() => onNavigate("food")}
             className="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors duration-200 text-left"
