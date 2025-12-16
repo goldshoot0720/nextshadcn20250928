@@ -4,6 +4,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* 自定義響應式斷點 */
+  --breakpoint-xs: 375px;
+  --breakpoint-3xl: 1920px;
+  
+  /* 顏色變量 */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -168,18 +173,130 @@
   }
 }
 
-/* 響應式間距工具類 */
+/* 設備特定響應式斷點 */
 @layer utilities {
+  /* iPhone SE2 直向 (375px) */
+  @media (max-width: 374px) {
+    .iphone-se-portrait {
+      @apply text-xs p-2 gap-2;
+    }
+  }
+  
+  /* iPhone SE2 橫向 (667px) */
+  @media (min-width: 375px) and (max-width: 666px) and (orientation: landscape) {
+    .iphone-se-landscape {
+      @apply text-sm p-3 gap-3;
+    }
+  }
+  
+  /* Samsung Galaxy A53 直向 (412px) */
+  @media (min-width: 375px) and (max-width: 480px) and (orientation: portrait) {
+    .galaxy-a53-portrait {
+      @apply text-sm p-3 gap-3;
+    }
+  }
+  
+  /* Samsung Galaxy A53 橫向 (915px) */
+  @media (min-width: 800px) and (max-width: 1024px) and (orientation: landscape) {
+    .galaxy-a53-landscape {
+      @apply text-base p-4 gap-4;
+    }
+  }
+  
+  /* Redmi Pad SE 8.7 直向 (800px) */
+  @media (min-width: 768px) and (max-width: 900px) and (orientation: portrait) {
+    .redmi-pad-portrait {
+      @apply text-base p-4 gap-4;
+    }
+  }
+  
+  /* Redmi Pad SE 8.7 橫向 (1280px) */
+  @media (min-width: 1200px) and (max-width: 1400px) and (orientation: landscape) {
+    .redmi-pad-landscape {
+      @apply text-lg p-5 gap-5;
+    }
+  }
+  
+  /* 桌面 100% 縮放 */
+  @media (min-width: 1440px) and (max-width: 1920px) {
+    .desktop-100 {
+      @apply text-lg p-6 gap-6;
+    }
+  }
+  
+  /* 桌面 150% 縮放 (等效更小視窗) */
+  @media (min-width: 960px) and (max-width: 1280px) {
+    .desktop-150 {
+      @apply text-base p-4 gap-4;
+    }
+  }
+  
+  /* 響應式間距工具類 */
   .spacing-responsive {
-    @apply p-4 sm:p-6 lg:p-8;
+    @apply p-2 xs:p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8;
   }
   
   .gap-responsive {
-    @apply gap-3 sm:gap-4 lg:gap-6;
+    @apply gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8;
   }
   
   .text-responsive {
-    @apply text-sm sm:text-base lg:text-lg;
+    @apply text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl;
+  }
+  
+  /* 圖片網格響應式 */
+  .image-grid-responsive {
+    /* iPhone SE2 直向: 2欄 */
+    @apply grid-cols-2;
+    
+    /* iPhone SE2 橫向 & Galaxy A53 直向: 3欄 */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  @media (min-width: 375px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  
+  /* Galaxy A53 橫向 & 小平板: 4欄 */
+  @media (min-width: 640px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  
+  /* Redmi Pad 直向: 5欄 */
+  @media (min-width: 768px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  
+  /* Redmi Pad 橫向 & 桌面: 6-8欄 */
+  @media (min-width: 1024px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 1536px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  
+  /* 超大屏幕: 10欄 */
+  @media (min-width: 1920px) {
+    .image-grid-responsive {
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+    }
   }
   
   /* 安全區域支援 */

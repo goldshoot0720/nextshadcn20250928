@@ -10,7 +10,7 @@ export default function AboutUs() {
     <div className="space-y-4 lg:space-y-6">
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">關於我們</h1>
-        <p className="text-gray-500 dark:text-gray-300 mt-1">了解智能管理平台的使命與願景</p>
+        <p className="text-gray-500 dark:text-gray-300 mt-1">了解鋒兄AI管理系統的使命與願景</p>
       </div>
       
       <Card className="p-6 lg:p-8">
@@ -175,7 +175,7 @@ function Copyright() {
   return (
     <div className="text-center border-t border-gray-200 pt-8">
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-        <h3 className="text-2xl font-bold mb-4">智能管理平台</h3>
+        <h3 className="text-2xl font-bold mb-4">鋒兄AI管理系統</h3>
       </div>
       <div className="space-y-2 text-gray-600 dark:text-gray-300">
         <p className="text-lg font-medium">鋒兄塗哥公關資訊有限公司</p>
@@ -189,7 +189,7 @@ function Copyright() {
       </div>
       
       <div className="mt-6 flex justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-        <span>智能管理平台 v2.0.0</span>
+        <span>鋒兄AI管理系統 v2.0.0</span>
         <span>•</span>
         <span>Next.js + TypeScript</span>
         <span>•</span>

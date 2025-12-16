@@ -134,7 +134,7 @@ export default function DashboardLayout({
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">管理系統</h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">智能管理平台</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄AI管理系統</p>
                 </div>
               </div>
               <ThemeToggleCompact />
@@ -161,7 +161,7 @@ export default function DashboardLayout({
                     </div>
                     <div>
                       <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">管理系統</h1>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">智能管理平台</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄AI管理系統</p>
                     </div>
                   </div>
                   <ThemeToggleCompact />

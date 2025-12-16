@@ -285,7 +285,10 @@ export default function SubscriptionManagement() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              setSubForm(s);
+                              setSubForm({
+                                ...s,
+                                nextdate: formatDate(s.nextdate)
+                              });
                               setEditingSubId(s.$id);
                             }}
                             className="rounded-lg"
@@ -384,7 +387,10 @@ export default function SubscriptionManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSubForm(s);
+                            setSubForm({
+                              ...s,
+                              nextdate: formatDate(s.nextdate)
+                            });
                             setEditingSubId(s.$id);
                           }}
                           className="flex-1 rounded-xl"

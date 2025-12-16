@@ -1,6 +1,6 @@
 {
-  "name": "智能管理平台",
-  "short_name": "管理平台",
+  "name": "鋒兄AI管理系統",
+  "short_name": "鋒兄AI系統",
   "description": "食品與訂閱管理系統",
   "start_url": "/",
   "display": "standalone",

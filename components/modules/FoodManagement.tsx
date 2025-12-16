@@ -318,7 +318,10 @@ export default function FoodManagement() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              setFoodForm(f);
+                              setFoodForm({
+                                ...f,
+                                todate: formatDate(f.todate)
+                              });
                               setEditingFoodId(f.$id);
                             }}
                             className="rounded-lg"
@@ -438,7 +441,10 @@ export default function FoodManagement() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setFoodForm(f);
+                                setFoodForm({
+                                  ...f,
+                                  todate: formatDate(f.todate)
+                                });
                                 setEditingFoodId(f.$id);
                               }}
                               className="rounded-lg text-xs px-3"
