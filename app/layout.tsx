@@ -18,8 +18,6 @@ export const metadata: Metadata = {
   description: "一個現代化的管理平台，幫助您輕鬆管理食品庫存和訂閱服務，避免浪費並控制支出。",
   keywords: "食品管理, 訂閱管理, 庫存管理, 過期提醒, 支出控制",
   authors: [{ name: "管理系統團隊" }],
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
-  themeColor: "#3b82f6",
   manifest: "/manifest.json",
 };
 

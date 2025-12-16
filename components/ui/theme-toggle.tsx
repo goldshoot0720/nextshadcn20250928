@@ -7,7 +7,6 @@ import { useState } from "react";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [showOptions, setShowOptions] = useState(false);
 
   const toggleTheme = () => {
     if (theme === "light") {
