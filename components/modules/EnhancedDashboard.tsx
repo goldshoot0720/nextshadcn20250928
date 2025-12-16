@@ -23,7 +23,7 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
       {/* 標題區域 */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">儀表板</h1>
-        <p className="text-gray-500 mt-1">鋒兄AI管理系統 - 數據匯總與分析</p>
+        <p className="text-gray-500 mt-1">鋒兄Next資訊管理 - 數據匯總與分析</p>
       </div>
 
       {/* 主要統計卡片 */}
