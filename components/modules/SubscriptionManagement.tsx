@@ -252,28 +252,28 @@ export default function SubscriptionManagement() {
                   const isOverdue = daysUntilNext < 0;
 
                   return (
-                    <TableRow key={s.$id} className={`hover:bg-gray-50/50 ${isOverdue ? "bg-red-50" : isUpcoming ? "bg-yellow-50" : ""}`}>
-                      <TableCell className="font-medium">{s.name}</TableCell>
+                    <TableRow key={s.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${isOverdue ? "bg-red-50 dark:bg-red-900/20" : isUpcoming ? "bg-yellow-50 dark:bg-yellow-900/20" : ""}`}>
+                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">{s.name}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span>{formatDate(s.nextdate)}</span>
                           {isOverdue && (
-                            <span className="text-xs text-red-600 font-medium">已逾期 {Math.abs(daysUntilNext)} 天</span>
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium">已逾期 {Math.abs(daysUntilNext)} 天</span>
                           )}
                           {isUpcoming && (
-                            <span className="text-xs text-yellow-600 font-medium">{daysUntilNext} 天後到期</span>
+                            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">{daysUntilNext} 天後到期</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-semibold text-green-600">NT$ {s.price.toLocaleString()}</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">NT$ {s.price.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
                         <a
                           href={s.site}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-500 hover:text-blue-700 underline truncate block max-w-32 rounded-lg px-2 py-1 hover:bg-blue-50"
+                          className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline truncate block max-w-32 rounded-lg px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                           title={s.site}
                         >
                           前往網站
@@ -332,7 +332,7 @@ export default function SubscriptionManagement() {
                 const isOverdue = daysUntilNext < 0;
 
                 return (
-                  <div key={s.$id} className={`p-4 ${isOverdue ? "bg-red-50" : isUpcoming ? "bg-yellow-50" : ""}`}>
+                  <div key={s.$id} className={`p-4 ${isOverdue ? "bg-red-50 dark:bg-red-900/20" : isUpcoming ? "bg-yellow-50 dark:bg-yellow-900/20" : ""}`}>
                     <div className="space-y-3">
                       {/* 標題和狀態 */}
                       <div className="flex items-start justify-between">

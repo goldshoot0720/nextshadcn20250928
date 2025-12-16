@@ -264,8 +264,8 @@ export default function FoodManagement() {
                   const isExpiringSoon = daysUntilExpire <= 3 && daysUntilExpire >= 0;
 
                   return (
-                    <TableRow key={f.$id} className={`hover:bg-gray-50/50 ${isExpired ? 'bg-red-50' : isExpiringSoon ? 'bg-yellow-50' : ''}`}>
-                      <TableCell className="font-medium">{f.name}</TableCell>
+                    <TableRow key={f.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${isExpired ? 'bg-red-50 dark:bg-red-900/20' : isExpiringSoon ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}>
+                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">{f.name}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span>{formatDate(f.todate)}</span>
@@ -365,7 +365,7 @@ export default function FoodManagement() {
                 const isExpiringSoon = daysUntilExpire <= 3 && daysUntilExpire >= 0;
 
                 return (
-                  <div key={f.$id} className={`p-4 ${isExpired ? 'bg-red-50' : isExpiringSoon ? 'bg-yellow-50' : ''}`}>
+                  <div key={f.$id} className={`p-4 ${isExpired ? 'bg-red-50 dark:bg-red-900/20' : isExpiringSoon ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}>
                     <div className="flex items-start gap-4">
                       {/* 圖片 */}
                       <div className="flex-shrink-0">
