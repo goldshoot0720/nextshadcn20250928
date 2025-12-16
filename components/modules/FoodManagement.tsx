@@ -137,7 +137,7 @@ export default function FoodManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">載入中...</div>
+        <div className="text-gray-500 dark:text-gray-400">載入中...</div>
       </div>
     );
   }
@@ -148,21 +148,21 @@ export default function FoodManagement() {
         {/* 標題區域 */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" id="food-top">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
               食品管理
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               共 {foods.length} 項食品
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 bg-white px-4 py-2 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span>即時同步</span>
           </div>
         </div>
 
       {/* 新增/編輯表單 */}
-      <div id="food-form" className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
+      <div id="food-form" className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
           <h2 className="text-lg font-semibold">
@@ -229,17 +229,17 @@ export default function FoodManagement() {
       </div>
 
       {/* 食品列表 */}
-      <div id="food-list" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div id="food-list" className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* 桌面版表格 */}
         <div className="hidden lg:block overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50/50">
-                <TableHead className="font-semibold text-gray-700">名稱</TableHead>
-                <TableHead className="font-semibold text-gray-700">有效期限</TableHead>
-                <TableHead className="font-semibold text-gray-700">數量</TableHead>
-                <TableHead className="font-semibold text-gray-700">圖片</TableHead>
-                <TableHead className="font-semibold text-gray-700">操作</TableHead>
+              <TableRow className="bg-gray-50/50 dark:bg-gray-700/50">
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">名稱</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">有效期限</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">數量</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">圖片</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -250,8 +250,8 @@ export default function FoodManagement() {
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                         <span className="text-2xl">📦</span>
                       </div>
-                      <p className="text-gray-500">暫無食品資料</p>
-                      <p className="text-sm text-gray-400">點擊上方表單新增第一個食品</p>
+                      <p className="text-gray-500 dark:text-gray-400">暫無食品資料</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">點擊上方表單新增第一個食品</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -304,10 +304,10 @@ export default function FoodManagement() {
                           <img
                             src={f.photo}
                             alt={f.name}
-                            className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm"
+                            className="w-16 h-16 object-cover rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm"
                           />
                         ) : (
-                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-xs">
+                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
                             無圖片
                           </div>
                         )}
@@ -351,8 +351,8 @@ export default function FoodManagement() {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">📦</span>
                 </div>
-                <p className="text-gray-500">暫無食品資料</p>
-                <p className="text-sm text-gray-400">點擊上方表單新增第一個食品</p>
+                <p className="text-gray-500 dark:text-gray-400">暫無食品資料</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">點擊上方表單新增第一個食品</p>
               </div>
             </div>
           ) : (
@@ -386,9 +386,9 @@ export default function FoodManagement() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 truncate">{f.name}</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</h3>
                             <div className="mt-1 space-y-1">
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                                 <span>期限:</span>
                                 <span>{formatDate(f.todate)}</span>
                               </div>
@@ -409,7 +409,7 @@ export default function FoodManagement() {
                         {/* 數量控制 */}
                         <div className="mt-3 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600">數量:</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">數量:</span>
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"

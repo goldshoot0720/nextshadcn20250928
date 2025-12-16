@@ -121,7 +121,7 @@ export default function SubscriptionManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">載入中...</div>
+        <div className="text-gray-500 dark:text-gray-400">載入中...</div>
       </div>
     );
   }
@@ -132,10 +132,10 @@ export default function SubscriptionManagement() {
         {/* 標題和統計區域 */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" id="subscription-top">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
               訂閱管理
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               共 {subs.length} 個訂閱服務
             </p>
           </div>
@@ -148,7 +148,7 @@ export default function SubscriptionManagement() {
         </div>
 
       {/* 新增/編輯表單 */}
-      <div id="subscription-form" className="bg-white p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200">
+      <div id="subscription-form" className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
           <h2 className="text-lg font-semibold">
@@ -217,17 +217,17 @@ export default function SubscriptionManagement() {
       </div>
 
       {/* 訂閱列表 */}
-      <div id="subscription-list" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div id="subscription-list" className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* 桌面版表格 */}
         <div className="hidden lg:block overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50/50">
-                <TableHead className="font-semibold text-gray-700">服務名稱</TableHead>
-                <TableHead className="font-semibold text-gray-700">下次付款日期</TableHead>
-                <TableHead className="font-semibold text-gray-700">月費</TableHead>
-                <TableHead className="font-semibold text-gray-700">網站</TableHead>
-                <TableHead className="font-semibold text-gray-700">操作</TableHead>
+              <TableRow className="bg-gray-50/50 dark:bg-gray-700/50">
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">服務名稱</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">下次付款日期</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">月費</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">網站</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -238,8 +238,8 @@ export default function SubscriptionManagement() {
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                         <span className="text-2xl">💳</span>
                       </div>
-                      <p className="text-gray-500">暫無訂閱資料</p>
-                      <p className="text-sm text-gray-400">點擊上方表單新增第一個訂閱</p>
+                      <p className="text-gray-500 dark:text-gray-400">暫無訂閱資料</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">點擊上方表單新增第一個訂閱</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -318,8 +318,8 @@ export default function SubscriptionManagement() {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">💳</span>
                 </div>
-                <p className="text-gray-500">暫無訂閱資料</p>
-                <p className="text-sm text-gray-400">點擊上方表單新增第一個訂閱</p>
+                <p className="text-gray-500 dark:text-gray-400">暫無訂閱資料</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">點擊上方表單新增第一個訂閱</p>
               </div>
             </div>
           ) : (
@@ -337,7 +337,7 @@ export default function SubscriptionManagement() {
                       {/* 標題和狀態 */}
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 text-lg">{s.name}</h3>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{s.name}</h3>
                           <div className="mt-1">
                             {isOverdue && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -355,18 +355,18 @@ export default function SubscriptionManagement() {
                           <div className="text-lg font-bold text-green-600">
                             NT$ {s.price.toLocaleString()}
                           </div>
-                          <div className="text-xs text-gray-500">月費</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">月費</div>
                         </div>
                       </div>
 
                       {/* 詳細資訊 */}
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                           <span className="font-medium">下次付款:</span>
                           <span>{formatDate(s.nextdate)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-600">網站:</span>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">網站:</span>
                           <a
                             href={s.site}
                             target="_blank"
