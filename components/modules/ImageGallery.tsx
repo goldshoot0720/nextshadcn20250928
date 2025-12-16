@@ -31,6 +31,26 @@ export default function ImageGallery() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {/* 版權信息區域 */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-4 lg:p-6 rounded-2xl text-white shadow-lg">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl lg:text-2xl font-bold">鋒兄塗哥公關資訊</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 sm:gap-4 text-sm lg:text-base">
+            <span className="flex items-center justify-center gap-1">
+              <span>© 版權所有 2025～2125</span>
+            </span>
+            <span className="hidden sm:inline text-white/60">|</span>
+            <span>前端使用 React (Next.js)</span>
+            <span className="hidden sm:inline text-white/60">|</span>
+            <span>後端使用 Appwrite</span>
+            <span className="hidden sm:inline text-white/60">|</span>
+            <span>影片存放於 Vercel</span>
+            <span className="hidden sm:inline text-white/60">|</span>
+            <span>網頁存放於 Vercel</span>
+          </div>
+        </div>
+      </div>
+
       {/* 標題區域 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
