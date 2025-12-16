@@ -8,7 +8,8 @@ import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
 import VideoIntroduction from "@/components/modules/VideoIntroduction";
 import ImageGallery from "@/components/modules/ImageGallery";
 import AboutUs from "@/components/modules/AboutUs";
-import { Package, CreditCard, Home, BarChart3, Info, Play } from "lucide-react";
+import ComponentShowcase from "@/components/modules/ComponentShowcase";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Palette } from "lucide-react";
 
 export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState("home");
@@ -20,6 +21,7 @@ export default function DashboardPage() {
     { id: "subscription", label: "訂閱管理", icon: <CreditCard size={18} /> },
     { id: "food", label: "食品管理", icon: <Package size={18} /> },
     { id: "videos", label: "影片介紹", icon: <Play size={18} /> },
+    { id: "components", label: "UI 組件", icon: <Palette size={18} /> },
     { id: "about", label: "關於我們", icon: <Info size={18} /> },
   ];
 
@@ -36,6 +38,8 @@ export default function DashboardPage() {
         return <FoodManagement />;
       case "videos":
         return <VideoIntroduction />;
+      case "components":
+        return <ComponentShowcase />;
       case "about":
         return <AboutUs />;
       default:

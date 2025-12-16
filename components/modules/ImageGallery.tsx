@@ -32,7 +32,7 @@ export default function ImageGallery() {
   return (
     <div className="space-y-4 lg:space-y-6">
       {/* 版權信息區域 */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-4 lg:p-6 rounded-2xl text-white shadow-lg">
+      <div id="copyright-section" className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-4 lg:p-6 rounded-2xl text-white shadow-lg">
         <div className="text-center space-y-2">
           <h2 className="text-xl lg:text-2xl font-bold">鋒兄塗哥公關資訊</h2>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 sm:gap-4 text-sm lg:text-base">
@@ -52,10 +52,10 @@ export default function ImageGallery() {
       </div>
 
       {/* 標題區域 */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div id="title-section" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">圖片展示</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">圖片展示</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             {loading ? "載入中..." : `共 ${images.length} 張圖片`}
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function ImageGallery() {
           <button
             onClick={loadImagesData}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors duration-200 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl transition-colors duration-200 disabled:opacity-50"
           >
             <ImageIcon size={18} />
             重新載入
@@ -72,14 +72,18 @@ export default function ImageGallery() {
       </div>
 
       {/* 統計卡片 */}
-      <ImageStats images={images} />
+      <div id="stats-section">
+        <ImageStats images={images} />
+      </div>
 
       {/* 圖片網格 */}
-      <ImageGrid 
-        images={images} 
-        loading={loading} 
-        onSelectImage={setSelectedImage} 
-      />
+      <div id="gallery-section">
+        <ImageGrid 
+          images={images} 
+          loading={loading} 
+          onSelectImage={setSelectedImage} 
+        />
+      </div>
 
       {/* 圖片預覽模態框 */}
       {selectedImage && (
@@ -149,7 +153,7 @@ function ImageGrid({
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">載入圖片中...</p>
+          <p className="text-gray-500 dark:text-gray-300">載入圖片中...</p>
         </div>
       </div>
     );
@@ -161,13 +165,13 @@ function ImageGrid({
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <ImageIcon className="text-gray-400" size={32} />
         </div>
-        <p className="text-gray-500">沒有找到圖片</p>
+        <p className="text-gray-500 dark:text-gray-300">沒有找到圖片</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
       <div className="grid gap-3 sm:gap-4 lg:gap-6 
         grid-cols-2 
         sm:grid-cols-3 
@@ -197,7 +201,7 @@ function ImageCard({
   onSelect: () => void;
 }) {
   return (
-    <div className="group relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-gray-200">
+    <div className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600">
       {/* 響應式圖片容器 */}
       <div className="relative overflow-hidden rounded-t-xl aspect-square">
         <img
@@ -245,11 +249,11 @@ function ImageCard({
       </div>
       
       {/* 圖片資訊 */}
-      <div className="p-2 sm:p-3 bg-white">
-        <h3 className="font-medium text-gray-900 text-xs sm:text-sm truncate mb-1" title={image.name}>
+      <div className="p-2 sm:p-3 bg-white dark:bg-gray-800">
+        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate mb-1" title={image.name}>
           {image.name.length > 20 ? `${image.name.substring(0, 20)}...` : image.name}
         </h3>
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-300">
           <span className="font-medium">{formatFileSize(image.size)}</span>
           <span className="flex items-center gap-1">
             <Calendar size={10} />
@@ -324,7 +328,7 @@ function ImagePreviewModal({
         
         {/* 底部資訊欄 */}
         <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4">
-          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-3 sm:p-4 text-white">
+          <div className="bg-black/70 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg p-3 sm:p-4 text-white">
             <h3 className="font-medium mb-2 text-sm sm:text-base truncate" title={image.name}>
               {image.name}
             </h3>

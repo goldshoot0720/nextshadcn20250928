@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import EnhancedScrollNavigation from "@/components/ui/enhanced-scroll-navigation";
 
 interface Food {
   $id: string;
@@ -469,17 +468,5 @@ export default function FoodManagement() {
       {/* 底部標記，用於滾動導航 */}
       <div id="food-bottom" className="h-1"></div>
     </div>
-    
-    {/* 增強版滾動導航按鈕 */}
-    <EnhancedScrollNavigation 
-      showThreshold={200}
-      showProgress={true}
-      quickNavItems={[
-        { id: "top", label: "🔝 頁面頂部", elementId: "food-top" },
-        { id: "form", label: "➕ 新增表單", elementId: "food-form" },
-        { id: "list", label: "📋 食品列表", elementId: "food-list" },
-        { id: "bottom", label: "⬇️ 頁面底部", elementId: "food-bottom" }
-      ]}
-    />
   </>);
 }

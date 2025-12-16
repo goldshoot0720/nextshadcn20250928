@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import EnhancedScrollNavigation from "@/components/ui/enhanced-scroll-navigation";
 
 interface Subscription {
   $id: string;
@@ -413,17 +412,5 @@ export default function SubscriptionManagement() {
       {/* 底部標記，用於滾動導航 */}
       <div id="subscription-bottom" className="h-1"></div>
     </div>
-    
-    {/* 增強版滾動導航按鈕 */}
-    <EnhancedScrollNavigation 
-      showThreshold={200}
-      showProgress={true}
-      quickNavItems={[
-        { id: "top", label: "🔝 頁面頂部", elementId: "subscription-top" },
-        { id: "form", label: "➕ 新增表單", elementId: "subscription-form" },
-        { id: "list", label: "💳 訂閱列表", elementId: "subscription-list" },
-        { id: "bottom", label: "⬇️ 頁面底部", elementId: "subscription-bottom" }
-      ]}
-    />
   </>);
 }

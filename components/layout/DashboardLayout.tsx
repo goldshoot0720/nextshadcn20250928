@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, ChevronRight } from "lucide-react";
+import EnhancedScrollNavigation from "@/components/ui/enhanced-scroll-navigation";
+import { ThemeToggleCompact } from "@/components/ui/theme-toggle";
 
 interface MenuItem {
   id: string;
@@ -60,7 +62,7 @@ export default function DashboardLayout({
           className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 touch-manipulation ${
             isActive
               ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
-              : 'hover:bg-gray-100 active:bg-gray-200'
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 text-gray-700 dark:text-gray-200'
           } ${isMobile ? 'min-h-[48px]' : ''}`}
           onClick={() => {
             if (hasChildren) {
@@ -74,7 +76,7 @@ export default function DashboardLayout({
           }}
         >
           <div className="flex items-center gap-3">
-            <div className={`${isActive ? 'text-white' : 'text-gray-600'}`}>
+            <div className={`${isActive ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>
               {item.icon}
             </div>
             <span className={`font-medium ${isMobile ? 'text-base' : 'text-sm'}`}>
@@ -82,7 +84,7 @@ export default function DashboardLayout({
             </span>
           </div>
           {hasChildren && (
-            <div className={`${isActive ? 'text-white' : 'text-gray-400'}`}>
+            <div className={`${isActive ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`}>
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
           )}
@@ -97,39 +99,45 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       {/* 手機版頂部導航欄 */}
-      <div className="lg:hidden bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
+      <div className="lg:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">M</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">管理系統</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSidebar}
-            className="p-2 hover:bg-gray-100 rounded-xl"
-          >
-            {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggleCompact />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
+            >
+              {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="flex">
         {/* 側邊欄 - 桌面版 */}
-        <aside className="hidden lg:flex lg:flex-col w-72 bg-white/95 backdrop-blur-sm border-r border-gray-200 min-h-screen shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold">M</span>
+        <aside className="hidden lg:flex lg:flex-col w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 min-h-screen shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold">M</span>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">管理系統</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">智能管理平台</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
-                <p className="text-sm text-gray-500">智能管理平台</p>
-              </div>
+              <ThemeToggleCompact />
             </div>
           </div>
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -144,16 +152,19 @@ export default function DashboardLayout({
               className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
               onClick={toggleSidebar} 
             />
-            <aside className="relative w-80 max-w-[85vw] bg-white shadow-2xl">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <span className="text-white font-bold">M</span>
+            <aside className="relative w-80 max-w-[85vw] bg-white dark:bg-gray-900 shadow-2xl">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                      <span className="text-white font-bold">M</span>
+                    </div>
+                    <div>
+                      <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">管理系統</h1>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">智能管理平台</p>
+                    </div>
                   </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-800">管理系統</h1>
-                    <p className="text-sm text-gray-500">智能管理平台</p>
-                  </div>
+                  <ThemeToggleCompact />
                 </div>
               </div>
               <nav className="p-4 space-y-2 h-full overflow-y-auto pb-20">
@@ -174,6 +185,13 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
+
+      {/* 全局滾動導航 */}
+      <EnhancedScrollNavigation 
+        showThreshold={200}
+        showProgress={true}
+        quickNavItems={[]}
+      />
     </div>
   );
 }
