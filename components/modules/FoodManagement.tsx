@@ -1,478 +1,309 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SectionHeader } from "@/components/ui/section-header";
+import { FormCard, FormGrid, FormActions } from "@/components/ui/form-card";
+import { DataCard, DataCardList, DataCardItem } from "@/components/ui/data-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FullPageLoading } from "@/components/ui/loading-spinner";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { useFoods, getFoodExpiryInfo } from "@/hooks/useFoods";
+import { FoodFormData, Food } from "@/types";
+import { formatDate, formatDaysRemaining } from "@/lib/formatters";
 
-interface Food {
-  $id: string;
-  name: string;
-  amount: number;
-  todate: string;
-  photo: string;
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return "";
-  return new Date(dateStr).toISOString().split("T")[0];
-}
+const INITIAL_FORM: FoodFormData = { name: "", amount: 0, todate: "", photo: "" };
 
 export default function FoodManagement() {
-  const [foods, setFoods] = useState<Food[]>([]);
-  const [foodForm, setFoodForm] = useState<Omit<Food, "$id">>({
-    name: "",
-    amount: 0,
-    todate: "",
-    photo: "",
-  });
-  const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { foods, loading, createFood, updateFood, deleteFood, updateAmount } = useFoods();
+  const [form, setForm] = useState<FoodFormData>(INITIAL_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 載入食品資料
-  async function loadFoods() {
-    try {
-      const res = await fetch("/api/food", { cache: "no-store" });
-      let data: Food[] = await res.json();
-      data = data.sort(
-        (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
-      );
-      setFoods(data);
-      return data;
-    } catch (error) {
-      console.error("載入食品資料失敗:", error);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadFoods();
-  }, []);
-
-  // 提交表單
-  async function handleFoodSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = { ...foodForm };
-    let updatedFood: Food;
-
     try {
-      if (editingFoodId) {
-        const res = await fetch(`/api/food/${editingFoodId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        updatedFood = await res.json();
-        const newFoods = foods.map((f) =>
-          f.$id === editingFoodId ? updatedFood : f
-        );
-        newFoods.sort(
-          (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
-        );
-        setFoods(newFoods);
+      if (editingId) {
+        await updateFood(editingId, form);
       } else {
-        const res = await fetch("/api/food", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        updatedFood = await res.json();
-        const newFoods = [...foods, updatedFood];
-        newFoods.sort(
-          (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
-        );
-        setFoods(newFoods);
+        await createFood(form);
       }
-      setFoodForm({ name: "", amount: 0, todate: "", photo: "" });
-      setEditingFoodId(null);
-    } catch (error) {
-      console.error("操作失敗:", error);
+      resetForm();
+    } catch {
       alert("操作失敗，請稍後再試");
     }
-  }
+  };
 
-  // 刪除食品
-  async function handleFoodDelete(id: string) {
+  const handleDelete = async (id: string) => {
     if (!confirm("確定刪除？")) return;
-    
     try {
-      await fetch(`/api/food/${id}`, { method: "DELETE" });
-      setFoods(foods.filter((f) => f.$id !== id));
-    } catch (error) {
-      console.error("刪除失敗:", error);
+      await deleteFood(id);
+    } catch {
       alert("刪除失敗，請稍後再試");
     }
-  }
+  };
 
-  // 修改數量
-  async function handleAmountChange(food: Food, delta: number) {
-    const newAmount = food.amount + delta;
-    if (newAmount < 0) return;
+  const handleEdit = (food: Food) => {
+    setForm({ ...food, todate: formatDate(food.todate) });
+    setEditingId(food.$id);
+  };
 
-    const updatedFood = { ...food, amount: newAmount };
+  const resetForm = () => {
+    setForm(INITIAL_FORM);
+    setEditingId(null);
+  };
 
-    try {
-      await fetch(`/api/food/${food.$id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedFood),
-      });
+  if (loading) return <FullPageLoading text="載入食品資料中..." />;
 
-      setFoods(foods.map((f) => (f.$id === food.$id ? updatedFood : f)));
-    } catch (error) {
-      console.error("更新數量失敗:", error);
-      alert("更新失敗，請稍後再試");
-    }
-  }
+  return (
+    <div className="space-y-4 lg:space-y-6" id="food-management-container">
+      <SectionHeader
+        title="食品管理"
+        subtitle={`共 ${foods.length} 項食品`}
+        action={
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span>即時同步</span>
+          </div>
+        }
+      />
 
-  if (loading) {
+      <FoodForm
+        form={form}
+        setForm={setForm}
+        editingId={editingId}
+        onSubmit={handleSubmit}
+        onCancel={resetForm}
+      />
+
+      <DataCard>
+        <DesktopTable
+          foods={foods}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAmountChange={updateAmount}
+        />
+        <MobileList
+          foods={foods}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAmountChange={updateAmount}
+        />
+      </DataCard>
+    </div>
+  );
+}
+
+// 表單元件
+interface FoodFormProps {
+  form: FoodFormData;
+  setForm: (form: FoodFormData) => void;
+  editingId: string | null;
+  onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
+}
+
+function FoodForm({ form, setForm, editingId, onSubmit, onCancel }: FoodFormProps) {
+  return (
+    <FormCard title={editingId ? "編輯食品" : "新增食品"} accentColor="from-blue-500 to-blue-600">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <FormGrid>
+          <Input
+            placeholder="食品名稱"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            className="h-12 rounded-xl"
+          />
+          <Input
+            placeholder="數量"
+            type="number"
+            min="0"
+            value={form.amount}
+            onChange={(e) => setForm({ ...form, amount: parseInt(e.target.value) || 0 })}
+            required
+            className="h-12 rounded-xl"
+          />
+          <Input
+            placeholder="有效期限"
+            type="date"
+            value={form.todate}
+            onChange={(e) => setForm({ ...form, todate: e.target.value })}
+            required
+            className="h-12 rounded-xl"
+          />
+          <Input
+            placeholder="圖片 URL"
+            value={form.photo}
+            onChange={(e) => setForm({ ...form, photo: e.target.value })}
+            className="h-12 rounded-xl"
+          />
+        </FormGrid>
+        <FormActions>
+          <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-medium shadow-lg shadow-blue-500/25">
+            {editingId ? "更新食品" : "新增食品"}
+          </Button>
+          {editingId && (
+            <Button type="button" variant="outline" onClick={onCancel} className="h-12 px-6 rounded-xl">
+              取消編輯
+            </Button>
+          )}
+        </FormActions>
+      </form>
+    </FormCard>
+  );
+}
+
+// 桌面版表格
+interface TableProps {
+  foods: Food[];
+  onEdit: (food: Food) => void;
+  onDelete: (id: string) => void;
+  onAmountChange: (food: Food, delta: number) => void;
+}
+
+function DesktopTable({ foods, onEdit, onDelete, onAmountChange }: TableProps) {
+  if (foods.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 dark:text-gray-400">載入中...</div>
+      <div className="hidden lg:block">
+        <EmptyState emoji="📦" title="暫無食品資料" description="點擊上方表單新增第一個食品" />
       </div>
     );
   }
 
   return (
-    <>
-      <div className="space-y-4 lg:space-y-6 tablet-8-7" id="food-management-container">
-        {/* 標題區域 */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" id="food-top">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              食品管理
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              共 {foods.length} 項食品
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>即時同步</span>
-          </div>
-        </div>
+    <div className="hidden lg:block overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50/50 dark:bg-gray-700/50">
+            <TableHead className="font-semibold">名稱</TableHead>
+            <TableHead className="font-semibold">有效期限</TableHead>
+            <TableHead className="font-semibold">數量</TableHead>
+            <TableHead className="font-semibold">圖片</TableHead>
+            <TableHead className="font-semibold">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {foods.map((food) => (
+            <FoodTableRow key={food.$id} food={food} onEdit={onEdit} onDelete={onDelete} onAmountChange={onAmountChange} />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
-      {/* 新增/編輯表單 */}
-      <div id="food-form" className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-          <h2 className="text-lg font-semibold">
-            {editingFoodId ? "編輯食品" : "新增食品"}
-          </h2>
-        </div>
-        <form onSubmit={handleFoodSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 tablet-8-7">
-            <Input
-              placeholder="食品名稱"
-              value={foodForm.name}
-              onChange={(e) => setFoodForm({ ...foodForm, name: e.target.value })}
-              required
-              className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-            />
-            <Input
-              placeholder="數量"
-              type="number"
-              min="0"
-              value={foodForm.amount}
-              onChange={(e) =>
-                setFoodForm({ ...foodForm, amount: parseInt(e.target.value) || 0 })
-              }
-              required
-              className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-            />
-            <Input
-              placeholder="有效期限"
-              type="date"
-              value={foodForm.todate}
-              onChange={(e) => setFoodForm({ ...foodForm, todate: e.target.value })}
-              required
-              className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-            />
-            <Input
-              placeholder="圖片 URL"
-              value={foodForm.photo}
-              onChange={(e) => setFoodForm({ ...foodForm, photo: e.target.value })}
-              className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button 
-              type="submit"
-              className="h-12 px-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-medium shadow-lg shadow-blue-500/25"
-            >
-              {editingFoodId ? "更新食品" : "新增食品"}
-            </Button>
-            {editingFoodId && (
-              <Button 
-                type="button"
-                variant="outline" 
-                onClick={() => {
-                  setEditingFoodId(null);
-                  setFoodForm({ name: "", amount: 0, todate: "", photo: "" });
-                }}
-                className="h-12 px-6 rounded-xl border-gray-300 hover:bg-gray-50"
-              >
-                取消編輯
-              </Button>
-            )}
-          </div>
-        </form>
-      </div>
+function FoodTableRow({ food, onEdit, onDelete, onAmountChange }: { food: Food } & Omit<TableProps, "foods">) {
+  const { daysRemaining, status, formattedDate, isExpired, isExpiringSoon } = getFoodExpiryInfo(food);
+  const rowClass = isExpired ? "bg-red-50 dark:bg-red-900/20" : isExpiringSoon ? "bg-yellow-50 dark:bg-yellow-900/20" : "";
 
-      {/* 食品列表 */}
-      <div id="food-list" className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* 桌面版表格 */}
-        <div className="hidden lg:block overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50/50 dark:bg-gray-700/50">
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">名稱</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">有效期限</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">數量</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">圖片</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {foods.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">📦</span>
-                      </div>
-                      <p className="text-gray-500 dark:text-gray-400">暫無食品資料</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">點擊上方表單新增第一個食品</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                foods.map((f) => {
-                  const today = new Date();
-                  const expireDate = new Date(f.todate);
-                  const daysUntilExpire = Math.ceil((expireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                  const isExpired = daysUntilExpire < 0;
-                  const isExpiringSoon = daysUntilExpire <= 3 && daysUntilExpire >= 0;
-
-                  return (
-                    <TableRow key={f.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${isExpired ? 'bg-red-50 dark:bg-red-900/20' : isExpiringSoon ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}>
-                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">{f.name}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{formatDate(f.todate)}</span>
-                          {isExpired && (
-                            <span className="text-xs text-red-600 font-medium">已過期 {Math.abs(daysUntilExpire)} 天</span>
-                          )}
-                          {isExpiringSoon && (
-                            <span className="text-xs text-yellow-600 font-medium">{daysUntilExpire} 天後過期</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="w-8 text-center font-medium">{f.amount}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAmountChange(f, -1)}
-                            disabled={f.amount <= 0}
-                            className="w-8 h-8 p-0 rounded-lg"
-                          >
-                            -
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAmountChange(f, 1)}
-                            className="w-8 h-8 p-0 rounded-lg"
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {f.photo ? (
-                          <img
-                            src={f.photo}
-                            alt={f.name}
-                            className="w-16 h-16 object-cover rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
-                            無圖片
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setFoodForm({
-                                ...f,
-                                todate: formatDate(f.todate)
-                              });
-                              setEditingFoodId(f.$id);
-                            }}
-                            className="rounded-lg"
-                          >
-                            編輯
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleFoodDelete(f.$id)}
-                            className="rounded-lg"
-                          >
-                            刪除
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* 手機版和平板版卡片列表 */}
-        <div className="lg:hidden">
-          {foods.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">📦</span>
-                </div>
-                <p className="text-gray-500 dark:text-gray-400">暫無食品資料</p>
-                <p className="text-sm text-gray-400 dark:text-gray-500">點擊上方表單新增第一個食品</p>
-              </div>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {foods.map((f) => {
-                const today = new Date();
-                const expireDate = new Date(f.todate);
-                const daysUntilExpire = Math.ceil((expireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                const isExpired = daysUntilExpire < 0;
-                const isExpiringSoon = daysUntilExpire <= 3 && daysUntilExpire >= 0;
-
-                return (
-                  <div key={f.$id} className={`p-4 ${isExpired ? 'bg-red-50 dark:bg-red-900/20' : isExpiringSoon ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}>
-                    <div className="flex items-start gap-4">
-                      {/* 圖片 */}
-                      <div className="flex-shrink-0">
-                        {f.photo ? (
-                          <img
-                            src={f.photo}
-                            alt={f.name}
-                            className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-xs">
-                            無圖片
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 內容 */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</h3>
-                            <div className="mt-1 space-y-1">
-                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                <span>期限:</span>
-                                <span>{formatDate(f.todate)}</span>
-                              </div>
-                              {isExpired && (
-                                <div className="text-xs text-red-600 font-medium">
-                                  已過期 {Math.abs(daysUntilExpire)} 天
-                                </div>
-                              )}
-                              {isExpiringSoon && (
-                                <div className="text-xs text-yellow-600 font-medium">
-                                  {daysUntilExpire} 天後過期
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 數量控制 */}
-                        <div className="mt-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600 dark:text-gray-300">數量:</span>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAmountChange(f, -1)}
-                                disabled={f.amount <= 0}
-                                className="w-8 h-8 p-0 rounded-lg"
-                              >
-                                -
-                              </Button>
-                              <span className="w-8 text-center font-medium">{f.amount}</span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAmountChange(f, 1)}
-                                className="w-8 h-8 p-0 rounded-lg"
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* 操作按鈕 */}
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setFoodForm({
-                                  ...f,
-                                  todate: formatDate(f.todate)
-                                });
-                                setEditingFoodId(f.$id);
-                              }}
-                              className="rounded-lg text-xs px-3"
-                            >
-                              編輯
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleFoodDelete(f.$id)}
-                              className="rounded-lg text-xs px-3"
-                            >
-                              刪除
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+  return (
+    <TableRow className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${rowClass}`}>
+      <TableCell className="font-medium">{food.name}</TableCell>
+      <TableCell>
+        <div className="flex flex-col gap-1">
+          <span>{formattedDate}</span>
+          {status !== "normal" && (
+            <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>
           )}
         </div>
+      </TableCell>
+      <TableCell>
+        <AmountControl food={food} onAmountChange={onAmountChange} />
+      </TableCell>
+      <TableCell>
+        <FoodImage food={food} />
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg">編輯</Button>
+          <Button size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg">刪除</Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+// 手機版列表
+function MobileList({ foods, onEdit, onDelete, onAmountChange }: TableProps) {
+  if (foods.length === 0) {
+    return (
+      <div className="lg:hidden">
+        <EmptyState emoji="📦" title="暫無食品資料" description="點擊上方表單新增第一個食品" />
       </div>
-      
-      {/* 底部標記，用於滾動導航 */}
-      <div id="food-bottom" className="h-1"></div>
+    );
+  }
+
+  return (
+    <div className="lg:hidden">
+      <DataCardList>
+        {foods.map((food) => (
+          <FoodMobileCard key={food.$id} food={food} onEdit={onEdit} onDelete={onDelete} onAmountChange={onAmountChange} />
+        ))}
+      </DataCardList>
     </div>
-  </>);
+  );
+}
+
+function FoodMobileCard({ food, onEdit, onDelete, onAmountChange }: { food: Food } & Omit<TableProps, "foods">) {
+  const { daysRemaining, status, formattedDate, isExpired, isExpiringSoon } = getFoodExpiryInfo(food);
+  const highlight = isExpired ? "expired" : isExpiringSoon ? "warning" : "normal";
+
+  return (
+    <DataCardItem highlight={highlight}>
+      <div className="flex items-start gap-4">
+        <FoodImage food={food} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{food.name}</h3>
+              <div className="mt-1 space-y-1">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <span>期限:</span>
+                  <span>{formattedDate}</span>
+                </div>
+                {status !== "normal" && (
+                  <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <AmountControl food={food} onAmountChange={onAmountChange} />
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg text-xs px-3">編輯</Button>
+              <Button size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg text-xs px-3">刪除</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DataCardItem>
+  );
+}
+
+// 數量控制元件
+function AmountControl({ food, onAmountChange }: { food: Food; onAmountChange: (food: Food, delta: number) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-600 dark:text-gray-300 lg:hidden">數量:</span>
+      <Button size="sm" variant="outline" onClick={() => onAmountChange(food, -1)} disabled={food.amount <= 0} className="w-8 h-8 p-0 rounded-lg">-</Button>
+      <span className="w-8 text-center font-medium">{food.amount}</span>
+      <Button size="sm" variant="outline" onClick={() => onAmountChange(food, 1)} className="w-8 h-8 p-0 rounded-lg">+</Button>
+    </div>
+  );
+}
+
+// 食品圖片元件
+function FoodImage({ food }: { food: Food }) {
+  if (food.photo) {
+    return (
+      <img src={food.photo} alt={food.name} className="w-16 h-16 object-cover rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm" />
+    );
+  }
+  return (
+    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
+      無圖片
+    </div>
+  );
 }
