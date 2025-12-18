@@ -48,6 +48,8 @@ export default function SubscriptionManagement() {
   const handleEdit = (sub: Subscription) => {
     setForm({ ...sub, nextdate: formatDate(sub.nextdate) });
     setEditingId(sub.$id);
+    // 滾動到頁面頂部讓用戶看到編輯表單
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetForm = () => {
@@ -119,8 +121,8 @@ export default function SubscriptionManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(sub)} className="rounded-xl">編輯</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDelete(sub.$id)} className="rounded-xl">刪除</Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="rounded-xl">編輯</Button>
+                            <Button type="button" size="sm" variant="destructive" onClick={() => handleDelete(sub.$id)} className="rounded-xl">刪除</Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -152,8 +154,8 @@ export default function SubscriptionManagement() {
                           </div>
                         </div>
                         <div className="flex gap-2 pt-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(sub)} className="flex-1 rounded-xl">編輯</Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(sub.$id)} className="flex-1 rounded-xl">刪除</Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="flex-1 rounded-xl">編輯</Button>
+                          <Button type="button" size="sm" variant="destructive" onClick={() => handleDelete(sub.$id)} className="flex-1 rounded-xl">刪除</Button>
                         </div>
                       </div>
                     </DataCardItem>

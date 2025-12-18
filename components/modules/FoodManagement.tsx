@@ -47,6 +47,8 @@ export default function FoodManagement() {
   const handleEdit = (food: Food) => {
     setForm({ ...food, todate: formatDate(food.todate) });
     setEditingId(food.$id);
+    // 滾動到頁面頂部讓用戶看到編輯表單
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetForm = () => {
@@ -217,8 +219,8 @@ function FoodTableRow({ food, onEdit, onDelete, onAmountChange }: { food: Food }
       </TableCell>
       <TableCell>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg">編輯</Button>
-          <Button size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg">刪除</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg">編輯</Button>
+          <Button type="button" size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg">刪除</Button>
         </div>
       </TableCell>
     </TableRow>
@@ -272,8 +274,8 @@ function FoodMobileCard({ food, onEdit, onDelete, onAmountChange }: { food: Food
           <div className="mt-3 flex items-center justify-between">
             <AmountControl food={food} onAmountChange={onAmountChange} />
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg text-xs px-3">編輯</Button>
-              <Button size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg text-xs px-3">刪除</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg text-xs px-3">編輯</Button>
+              <Button type="button" size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg text-xs px-3">刪除</Button>
             </div>
           </div>
         </div>
@@ -287,9 +289,9 @@ function AmountControl({ food, onAmountChange }: { food: Food; onAmountChange: (
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-gray-600 dark:text-gray-300 lg:hidden">數量:</span>
-      <Button size="sm" variant="outline" onClick={() => onAmountChange(food, -1)} disabled={food.amount <= 0} className="w-8 h-8 p-0 rounded-lg">-</Button>
+      <Button type="button" size="sm" variant="outline" onClick={() => onAmountChange(food, -1)} disabled={food.amount <= 0} className="w-8 h-8 p-0 rounded-lg">-</Button>
       <span className="w-8 text-center font-medium">{food.amount}</span>
-      <Button size="sm" variant="outline" onClick={() => onAmountChange(food, 1)} className="w-8 h-8 p-0 rounded-lg">+</Button>
+      <Button type="button" size="sm" variant="outline" onClick={() => onAmountChange(food, 1)} className="w-8 h-8 p-0 rounded-lg">+</Button>
     </div>
   );
 }
