@@ -54,6 +54,8 @@ function CopyrightBanner() {
           <span>後端使用 Appwrite</span>
           <span className="hidden sm:inline text-white/50">|</span>
           <span>網頁存放於 Vercel</span>
+          <span className="hidden sm:inline text-white/50">|</span>
+          <span>影片存放於 Vercel Blob</span>
         </div>
       </div>
     </div>
