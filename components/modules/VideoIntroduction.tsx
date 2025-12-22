@@ -28,6 +28,9 @@ const VIDEO_LIST: VideoItem[] = [
     duration: "12:45",
   },
 ];
+    duration: "12:45",
+  },
+];
 
 export default function VideoIntroduction() {
   const [currentVideo, setCurrentVideo] = useState<string | null>(null);
