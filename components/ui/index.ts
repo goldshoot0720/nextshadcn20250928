@@ -3,6 +3,7 @@
 // 基礎元件
 export { Button, buttonVariants } from "./button";
 export { Input } from "./input";
+export { Textarea } from "./textarea";
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card";
 export { Badge } from "./badge";
 export { Separator } from "./separator";

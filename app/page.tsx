@@ -8,7 +8,8 @@ import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
 import VideoIntroduction from "@/components/modules/VideoIntroduction";
 import ImageGallery from "@/components/modules/ImageGallery";
 import AboutUs from "@/components/modules/AboutUs";
-import { Package, CreditCard, Home, BarChart3, Info, Play } from "lucide-react";
+import MusicLyrics from "@/components/modules/MusicLyrics";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Music } from "lucide-react";
 import { MenuItem } from "@/types";
 
 // 選單項目配置
@@ -18,6 +19,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "subscription", label: "訂閱管理", icon: <CreditCard size={18} /> },
   { id: "food", label: "食品管理", icon: <Package size={18} /> },
   { id: "videos", label: "影片介紹", icon: <Play size={18} /> },
+  { id: "music", label: "鋒兄音樂歌詞", icon: <Music size={18} /> },
   { id: "about", label: "關於我們", icon: <Info size={18} /> },
 ];
 
@@ -41,6 +43,8 @@ export default function DashboardPage() {
         return <FoodManagement />;
       case "videos":
         return <VideoIntroduction />;
+      case "music":
+        return <MusicLyrics />;
       case "about":
         return <AboutUs />;
       default:
