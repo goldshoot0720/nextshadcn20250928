@@ -16,7 +16,7 @@ const VIDEO_LIST: VideoItem[] = [
     title: "鋒兄的傳奇人生",
     description: "一個關於堅持與夢想的勵志故事，展現了鋒兄從平凡到不凡的人生歷程。",
     filename: "19700121-1829-693fee512bec81918cbfd484c6a5ba8f_enx4rsS0.mp4",
-    url: "https://oiutapchuu5rrlsr.public.blob.vercel-storage.com/19700121-1829-693fee512bec81918cbfd484c6a5ba8f_enx4rsS0.mp4",
+    url: "https://8h8avojbdibxp95j.public.blob.vercel-storage.com/19700121-1829-693fee512bec81918cbfd484c6a5ba8f_enx4rsS0.mp4",
     duration: "15:32",
   },
   {
@@ -24,7 +24,10 @@ const VIDEO_LIST: VideoItem[] = [
     title: "鋒兄進化Show🔥",
     description: "見證鋒兄的成長與蛻變，精彩的進化歷程讓人驚嘆不已。",
     filename: "clideo-editor-92eb6755d77b4603a482c25764865a58_7sLjgTgc.mp4",
-    url: "https://oiutapchuu5rrlsr.public.blob.vercel-storage.com/clideo-editor-92eb6755d77b4603a482c25764865a58_7sLjgTgc.mp4",
+    url: "https://8h8avojbdibxp95j.public.blob.vercel-storage.com/clideo-editor-92eb6755d77b4603a482c25764865a58_7sLjgTgc.mp4",
+    duration: "12:45",
+  },
+];
     duration: "12:45",
   },
 ];
