@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,16 @@ interface Song {
   title: string;
   artist: string;
   album?: string;
-  lyrics: string;
+  lyrics: {
+    zh: string;
+    en?: string;
+    ja?: string;
+  };
+  audioFiles: {
+    zh: string;
+    en?: string;
+    ja?: string;
+  };
   genre?: string;
   year?: number;
   isFavorite: boolean;
@@ -27,7 +36,8 @@ const SAMPLE_SONGS: Song[] = [
     title: "史上最瞎結婚理由",
     artist: "鋒兄 & 塗哥",
     album: "鋒兄音樂精選",
-    lyrics: `[Intro]
+    lyrics: {
+      zh: `[Intro]
 鋒兄啊你說真的還假的
 塗哥聽了都快笑翻了
 
@@ -62,16 +72,93 @@ const SAMPLE_SONGS: Song[] = [
 最瞎結婚理由結果都開成頭獎
 如果幸福也能這樣瞎忙
 那我明天也去買一張`,
+      en: `[Intro]
+Brother Feng, are you serious or joking?
+Brother Tu is laughing so hard
+
+[Verse 1]
+Brother Feng says there's only one reason to marry
+On the day of the lottery draw
+The winning numbers were given by Simin
+Watching the jackpot fall, his heart was captured too
+He says this is destiny
+How can he not marry after this mystical sign
+
+[Chorus]
+The most ridiculous reason to marry
+The lottery brought them together so strong
+One Simin, one Huixuan
+Both won the jackpot with their numbers
+Is love about luck or mathematics?
+Laughing till tears, can only say
+Most ridiculous yet somehow sweet
+
+[Verse 2]
+Brother Tu's story is exactly the same
+When the lottery results were announced
+He jumped with joy
+Huixuan's random numbers hit the jackpot
+He says even the God of Wealth has spoken
+Not marrying her would be wrong
+
+[Outro]
+Brother Feng with Simin, Brother Tu with Huixuan
+Wedding guests laughing at these two stories
+Most ridiculous marriage reasons turned into jackpots
+If happiness can be this absurd
+Then I'll buy a ticket tomorrow too`,
+      ja: `[イントロ]
+鋒兄、本当か冗談か
+塗哥は笑いすぎて倒れそう
+
+[Verse 1]
+鋒兄は結婚理由が一つだけ
+宝くじの抽選日
+当選番号は思敏がくれた
+賞金を見て心も奪われた
+これは運命だと言う
+この不思議な縁に結婚しないわけにはいかない
+
+[Chorus]
+史上最もバカげた結婚理由
+宝くじが赤い糸を結んだ
+一人は思敏、もう一人は蕙瑄
+番号を選んで二人とも大当たり
+愛は運か数学か
+涙が出るほど笑って言える
+最もバカげているけど甘い
+
+[Verse 2]
+塗哥の話も全く同じ
+宝くじの発表画面
+彼は飛び跳ねた
+蕙瑄が適当に書いた番号が大当たり
+財神様が指名したと言う
+彼女と結婚しないのは間違っている
+
+[アウトロ]
+鋒兄は思敏と、塗哥は蕙瑄と
+結婚式の客はこの二つの縁を笑っている
+最もバカげた結婚理由が大当たりに
+幸せもこんなにバカげていいなら
+明日私も買いに行く`
+    },
+    audioFiles: {
+      zh: "/musics/最瞎結婚理由.mp3",
+      en: "/musics/最瞎結婚理由 (英語).mp3",
+      ja: "/musics/最瞎結婚理由 (日語).mp3"
+    },
     genre: "搞笑說唱",
     year: 2024,
     isFavorite: true,
   },
   {
     id: "2",
-    title: "台北有鋒兄真好",
+    title: "鋒兄進化Show🔥",
     artist: "鋒兄 & 塗哥",
     album: "鋒兄音樂精選",
-    lyrics: `台北有鋒兄真好！
+    lyrics: {
+      zh: `台北有鋒兄真好！
 嗨起來別逃跑！
 從榜首進化到市長, 這節奏太離譜（wow）
 塗哥唱歌別裝低調, 記者都在拍照！
@@ -106,24 +193,105 @@ AI 輔助政務操作　資料開放新世代～
 榜首到市長的進化論　全城都在尖叫！
 綾小路清隆也點頭　這進化合乎理想！
 「ムリムリ進化論？」不——這是鋒兄進化 Show！🔥`,
+      en: `Taipei is great with Brother Feng!
+Get hyped, don't run away!
+From top scorer to mayor, this rhythm is insane (wow)
+Brother Tu singing, don't be shy, reporters are taking photos!
+Even Ayanokoji says this life is S-tier anime material~
+
+At 37, I topped the civil service exam (yeah)
+Information processing made me legendary, code became legend~
+Through the screen light of the era, dreams like algorithms (run)
+At 52, deputy mayor, acting mayor, so busy! (yo)
+
+Brother Tu dares to sing "Brother Feng is great"
+From backup to official in seconds~
+Don't sing and lose qualification, laugh
+Evolution doesn't rely on luck but signals!
+
+Taipei is great with Brother Feng!
+Get hyped, don't run away!
+From top scorer to mayor, destiny explodes like debugging!
+Brother Tu's voice at max, everyone singing along!
+"Acting" is just a phase, citizens already decided!
+
+In 2040's night, neon lights flash at city hall
+Campaign slogans like ACG opening
+"Don't say impossible, Brother Feng is evolution!"
+AI-assisted governance, open data new era~
+
+Yin and yang together, politics and ideals, crossing stage lines~
+One song makes votes jump, Brother Tu wants to sing more!
+
+Taipei is great with Brother Feng!
+Get hyped until dawn!
+Evolution from top scorer to mayor, the whole city screaming!
+Even Ayanokoji Kiyotaka nods, this evolution fits the ideal!
+"Impossible evolution?" No—this is Brother Feng Evolution Show! 🔥`,
+      ja: `台北に鋒兄がいて本当に良い！
+盛り上がって逃げるな！
+トップから市長への進化、このリズムはヤバい（wow）
+塗哥は歌って控えめにするな、記者が写真を撮ってる！
+綾小路もこの人生はSランクアニメの原稿だと言う～
+
+37歳の年に公務員試験でトップ（yeah）
+情報処理で一戦成名　プログラムは伝説になった～
+時代のスクリーンの光を通して　夢はアルゴリズムのよう（run）
+52歳で副市長、代理市長で忙しい！（yo）
+
+塗哥は「鋒兄がいて良い」と歌う勇気
+補欠から正式に秒で到着～
+歌わないと資格取り消し笑
+進化は運じゃなくて信号に頼る！
+
+台北に鋒兄がいて本当に良い！
+盛り上がって逃げるな！
+トップから市長への進化、運命はデバッグのように爆発！
+塗哥の声は最大、全員が大合唱！
+「代理」はただの通過点　市民の心はもう決まってる！
+
+2040年の夜　ネオンが市政庁に輝く
+選挙スローガンはACGのオープニングのよう
+「不可能と言うな、鋒兄は進化だ！」
+AI補助政務操作　データ開放新時代～
+
+陰陽同枠　政治と理想　交錯する舞台線上～
+一曲で投票が跳ね上がる　塗哥はまた歌いたい！
+
+台北に鋒兄がいて本当に良い！
+朝まで盛り上がれ！
+トップから市長への進化論　全市が叫んでる！
+綾小路清隆も頷く　この進化は理想に合う！
+「ムリムリ進化論？」いや——これは鋒兄進化Show！🔥`
+    },
+    audioFiles: {
+      zh: "/musics/鋒兄進化Show🔥.mp3",
+      en: "/musics/鋒兄進化Show🔥(英語).mp3",
+      ja: "/musics/鋒兄進化Show🔥(日語).mp3"
+    },
     genre: "嘻哈說唱",
     year: 2024,
     isFavorite: true,
   },
-
 ];
 
 export default function MusicLyrics() {
   const [songs, setSongs] = useState<Song[]>(SAMPLE_SONGS);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState<'zh' | 'en' | 'ja'>('zh');
   const [searchTerm, setSearchTerm] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSong, setNewSong] = useState({
     title: "",
     artist: "",
     album: "",
-    lyrics: "",
+    lyrics: {
+      zh: "",
+      en: "",
+      ja: ""
+    },
     genre: "",
     year: new Date().getFullYear(),
   });
@@ -132,7 +300,10 @@ export default function MusicLyrics() {
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     song.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    song.album?.toLowerCase().includes(searchTerm.toLowerCase())
+    song.album?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.zh.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.ja?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // 切換收藏狀態
@@ -144,14 +315,23 @@ export default function MusicLyrics() {
 
   // 新增歌曲
   const handleAddSong = useCallback(() => {
-    if (!newSong.title || !newSong.artist || !newSong.lyrics) return;
+    if (!newSong.title || !newSong.artist || !newSong.lyrics.zh) return;
 
     const song: Song = {
       id: Date.now().toString(),
       title: newSong.title,
       artist: newSong.artist,
       album: newSong.album || undefined,
-      lyrics: newSong.lyrics,
+      lyrics: {
+        zh: newSong.lyrics.zh,
+        en: newSong.lyrics.en || undefined,
+        ja: newSong.lyrics.ja || undefined,
+      },
+      audioFiles: {
+        zh: "", // 需要用戶上傳音頻文件
+        en: newSong.lyrics.en ? "" : undefined,
+        ja: newSong.lyrics.ja ? "" : undefined,
+      },
       genre: newSong.genre || undefined,
       year: newSong.year || undefined,
       isFavorite: false,
@@ -162,7 +342,11 @@ export default function MusicLyrics() {
       title: "",
       artist: "",
       album: "",
-      lyrics: "",
+      lyrics: {
+        zh: "",
+        en: "",
+        ja: ""
+      },
       genre: "",
       year: new Date().getFullYear(),
     });
@@ -171,8 +355,74 @@ export default function MusicLyrics() {
 
   // 播放控制
   const togglePlay = useCallback(() => {
-    setIsPlaying(prev => !prev);
-  }, []);
+    if (!selectedSong) return;
+
+    if (currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause();
+        setIsPlaying(false);
+      } else {
+        currentAudio.play();
+        setIsPlaying(true);
+      }
+    } else {
+      const audioFile = selectedSong.audioFiles[currentLanguage];
+      if (audioFile) {
+        const audio = new Audio(audioFile);
+        audio.addEventListener('ended', () => {
+          setIsPlaying(false);
+          setCurrentAudio(null);
+        });
+        audio.addEventListener('error', () => {
+          console.error('Audio playback error');
+          setIsPlaying(false);
+          setCurrentAudio(null);
+        });
+        setCurrentAudio(audio);
+        audio.play();
+        setIsPlaying(true);
+      }
+    }
+  }, [selectedSong, currentLanguage, currentAudio, isPlaying]);
+
+  // 切換語言
+  const handleLanguageChange = useCallback((language: 'zh' | 'en' | 'ja') => {
+    setCurrentLanguage(language);
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+    }
+  }, [currentAudio]);
+
+  // 停止播放
+  const stopPlay = useCallback(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+      setIsPlaying(false);
+    }
+  }, [currentAudio]);
+
+  // 清理音頻資源
+  useEffect(() => {
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        setCurrentAudio(null);
+      }
+    };
+  }, [currentAudio]);
+
+  // 當選擇的歌曲改變時停止播放
+  useEffect(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+    }
+  }, [selectedSong]);
 
   return (
     <div className="space-y-6">
@@ -231,6 +481,11 @@ export default function MusicLyrics() {
                             {song.album}
                           </p>
                         )}
+                        <div className="flex gap-1 mt-1">
+                          <Badge variant="outline" className="text-xs px-1 py-0">中</Badge>
+                          {song.lyrics.en && <Badge variant="outline" className="text-xs px-1 py-0">EN</Badge>}
+                          {song.lyrics.ja && <Badge variant="outline" className="text-xs px-1 py-0">日</Badge>}
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
@@ -287,18 +542,61 @@ export default function MusicLyrics() {
                     <Button variant="outline" size="sm" onClick={togglePlay}>
                       {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={stopPlay}>
                       <Volume2 size={16} />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                  <pre className="whitespace-pre-wrap font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
-                    {selectedSong.lyrics}
-                  </pre>
-                </div>
+                <Tabs value={currentLanguage} onValueChange={(value) => handleLanguageChange(value as 'zh' | 'en' | 'ja')}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="zh">中文</TabsTrigger>
+                    <TabsTrigger value="en" disabled={!selectedSong.lyrics.en}>English</TabsTrigger>
+                    <TabsTrigger value="ja" disabled={!selectedSong.lyrics.ja}>日本語</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="zh" className="mt-4">
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                      <pre className="whitespace-pre-wrap font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
+                        {selectedSong.lyrics.zh}
+                      </pre>
+                    </div>
+                  </TabsContent>
+                  {selectedSong.lyrics.en && (
+                    <TabsContent value="en" className="mt-4">
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                        <pre className="whitespace-pre-wrap font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
+                          {selectedSong.lyrics.en}
+                        </pre>
+                      </div>
+                    </TabsContent>
+                  )}
+                  {selectedSong.lyrics.ja && (
+                    <TabsContent value="ja" className="mt-4">
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                        <pre className="whitespace-pre-wrap font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
+                          {selectedSong.lyrics.ja}
+                        </pre>
+                      </div>
+                    </TabsContent>
+                  )}
+                </Tabs>
+                {selectedSong.audioFiles[currentLanguage] && (
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                      正在播放: {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : '日文版'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={togglePlay}>
+                        {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                        {isPlaying ? '暫停' : '播放'}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={stopPlay}>
+                        停止
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -387,13 +685,55 @@ export default function MusicLyrics() {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   歌詞 *
                 </label>
-                <Textarea
-                  value={newSong.lyrics}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewSong(prev => ({ ...prev, lyrics: e.target.value }))}
-                  placeholder="輸入歌詞內容..."
-                  rows={10}
-                  className="resize-none"
-                />
+                <Tabs defaultValue="zh" className="mt-2">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="zh">中文 *</TabsTrigger>
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="ja">日本語</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="zh" className="mt-2">
+                    <Textarea
+                      value={newSong.lyrics.zh}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
+                        setNewSong(prev => ({ 
+                          ...prev, 
+                          lyrics: { ...prev.lyrics, zh: e.target.value }
+                        }))
+                      }
+                      placeholder="輸入中文歌詞內容..."
+                      rows={8}
+                      className="resize-none"
+                    />
+                  </TabsContent>
+                  <TabsContent value="en" className="mt-2">
+                    <Textarea
+                      value={newSong.lyrics.en}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
+                        setNewSong(prev => ({ 
+                          ...prev, 
+                          lyrics: { ...prev.lyrics, en: e.target.value }
+                        }))
+                      }
+                      placeholder="Enter English lyrics..."
+                      rows={8}
+                      className="resize-none"
+                    />
+                  </TabsContent>
+                  <TabsContent value="ja" className="mt-2">
+                    <Textarea
+                      value={newSong.lyrics.ja}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
+                        setNewSong(prev => ({ 
+                          ...prev, 
+                          lyrics: { ...prev.lyrics, ja: e.target.value }
+                        }))
+                      }
+                      placeholder="日本語の歌詞を入力..."
+                      rows={8}
+                      className="resize-none"
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>
