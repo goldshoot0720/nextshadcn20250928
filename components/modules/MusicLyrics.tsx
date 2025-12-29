@@ -348,7 +348,7 @@ export default function MusicLyrics() {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [fontSize, setFontSize] = useState(18); // 新增字体大小控制
+
   const [lyricsSearchTerm, setLyricsSearchTerm] = useState(""); // 歌词内搜索
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [newSong, setNewSong] = useState({
@@ -1148,63 +1148,35 @@ export default function MusicLyrics() {
                       <TabsTrigger value="yue" disabled={!selectedSong.lyrics.yue}>粵語</TabsTrigger>
                     </TabsList>
                     
-                    {/* 字体大小控制和导出功能 */}
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">字體大小</span>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setFontSize(Math.max(12, fontSize - 2))}
-                            disabled={fontSize <= 12}
-                          >
-                            A-
-                          </Button>
-                          <span className="text-sm text-gray-600 dark:text-gray-400 w-8 text-center">
-                            {fontSize}
-                          </span>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setFontSize(Math.min(24, fontSize + 2))}
-                            disabled={fontSize >= 24}
-                          >
-                            A+
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* 导出和复制功能 */}
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={copyLyrics}
-                          className="flex items-center gap-1"
-                        >
-                          <Copy size={14} />
-                          複製
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => exportLyrics('txt')}
-                          className="flex items-center gap-1"
-                        >
-                          <Download size={14} />
-                          TXT
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => exportLyrics('md')}
-                          className="flex items-center gap-1"
-                        >
-                          <Download size={14} />
-                          MD
-                        </Button>
-                      </div>
+                    {/* 导出和复制功能 */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={copyLyrics}
+                        className="flex items-center gap-1"
+                      >
+                        <Copy size={14} />
+                        複製
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => exportLyrics('txt')}
+                        className="flex items-center gap-1"
+                      >
+                        <Download size={14} />
+                        TXT
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => exportLyrics('md')}
+                        className="flex items-center gap-1"
+                      >
+                        <Download size={14} />
+                        MD
+                      </Button>
                     </div>
                   </div>
                   
@@ -1222,7 +1194,7 @@ export default function MusicLyrics() {
                   </div>
                   <TabsContent value="zh" className="mt-4">
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                      <div className="lyrics-container" style={{ fontSize: `${fontSize}px` }}>
+                      <div className="lyrics-container">
                         {formatLyrics(selectedSong.lyrics.zh)}
                       </div>
                     </div>
@@ -1230,7 +1202,7 @@ export default function MusicLyrics() {
                   {selectedSong.lyrics.en && (
                     <TabsContent value="en" className="mt-4">
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container" style={{ fontSize: `${fontSize}px` }}>
+                        <div className="lyrics-container">
                           {formatLyrics(selectedSong.lyrics.en)}
                         </div>
                       </div>
@@ -1239,7 +1211,7 @@ export default function MusicLyrics() {
                   {selectedSong.lyrics.ja && (
                     <TabsContent value="ja" className="mt-4">
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container" style={{ fontSize: `${fontSize}px` }}>
+                        <div className="lyrics-container">
                           {formatLyrics(selectedSong.lyrics.ja)}
                         </div>
                       </div>
@@ -1248,7 +1220,7 @@ export default function MusicLyrics() {
                   {selectedSong.lyrics.yue && (
                     <TabsContent value="yue" className="mt-4">
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container" style={{ fontSize: `${fontSize}px` }}>
+                        <div className="lyrics-container">
                           {formatLyrics(selectedSong.lyrics.yue)}
                         </div>
                       </div>
