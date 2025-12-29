@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Audio Files</title>
+</head>
+<body>
+    <h1>Audio Generator</h1>
+    <button onclick="generateAudio('塗哥水電王子爆紅.mp3', 180, [440, 523, 659])">Generate 塗哥水電王子爆紅</button><br><br>
+    <button onclick="generateAudio('史上最瞎結婚理由.mp3', 150, [330, 392, 494])">Generate 史上最瞎結婚理由</button><br><br>
+    <button onclick="generateAudio('鋒兄進化Show🔥.mp3', 200, [262, 330, 392])">Generate 鋒兄進化Show🔥</button><br><br>
+    
+    <script>
+        async function generateAudio(filename, duration, frequencies) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const sampleRate = audioContext.sampleRate;
+            const length = sampleRate * duration;
+            const buffer = audioContext.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Generate a simple melody with the given frequencies
+            for (let i = 0; i < length; i++) {
+                const time = i / sampleRate;
+                let sample = 0;
+                
+                // Create a simple melody pattern
+                const freqIndex = Math.floor((time * frequencies.length / duration)) % frequencies.length;
+                const freq = frequencies[freqIndex];
+                
+                // Add some harmony
+                sample += Math.sin(2 * Math.PI * freq * time) * 0.3;
+                sample += Math.sin(2 * Math.PI * freq * 1.5 * time) * 0.2;
+                sample += Math.sin(2 * Math.PI * freq * 0.5 * time) * 0.1;
+                
+                // Add some rhythm
+                const beat = Math.floor(time * 2) % 4;
+                if (beat === 0 || beat === 2) {
+                    sample *= 1.2;
+                }
+                
+                // Fade in/out
+                const fadeTime = 2; // 2 seconds fade
+                if (time < fadeTime) {
+                    sample *= time / fadeTime;
+                } else if (time > duration - fadeTime) {
+                    sample *= (duration - time) / fadeTime;
+                }
+                
+                data[i] = sample * 0.5; // Reduce volume
+            }
+            
+            // Convert to WAV and download
+            const wav = audioBufferToWav(buffer);
+            const blob = new Blob([wav], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.replace('.mp3', '.wav');
+            a.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        function audioBufferToWav(buffer) {
+            const length = buffer.length;
+            const arrayBuffer = new ArrayBuffer(44 + length * 2);
+            const view = new DataView(arrayBuffer);
+            
+            // WAV header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, buffer.sampleRate, true);
+            view.setUint32(28, buffer.sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, length * 2, true);
+            
+            // Convert float samples to 16-bit PCM
+            const data = buffer.getChannelData(0);
+            let offset = 44;
+            for (let i = 0; i < length; i++) {
+                const sample = Math.max(-1, Math.min(1, data[i]));
+                view.setInt16(offset, sample * 0x7FFF, true);
+                offset += 2;
+            }
+            
+            return arrayBuffer;
+        }
+    </script>
+</body>
+</html>
