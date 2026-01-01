@@ -28,6 +28,7 @@ interface FoodDetail {
 interface SubscriptionDetail {
   id: string;
   name: string;
+  site: string;
   daysRemaining: number;
   nextDate: string;
   price: number;
@@ -152,6 +153,7 @@ export function useDashboardStats() {
             return {
               id: sub.$id,
               name: sub.name,
+              site: sub.site,
               daysRemaining,
               nextDate: sub.nextdate,
               price: sub.price
@@ -170,6 +172,7 @@ export function useDashboardStats() {
             return {
               id: sub.$id,
               name: sub.name,
+              site: sub.site,
               daysRemaining,
               nextDate: sub.nextdate,
               price: sub.price
@@ -188,6 +191,7 @@ export function useDashboardStats() {
             return {
               id: sub.$id,
               name: sub.name,
+              site: sub.site,
               daysRemaining,
               nextDate: sub.nextdate,
               price: sub.price

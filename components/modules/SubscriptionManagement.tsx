@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { useSubscriptions, getSubscriptionExpiryInfo } from "@/hooks/useSubscriptions";
 import { SubscriptionFormData, Subscription } from "@/types";
+import { FaviconImage } from "@/components/ui/favicon-image";
 import { formatDate, formatDaysRemaining, formatCurrency } from "@/lib/formatters";
 
 const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "" };
@@ -108,7 +109,12 @@ export default function SubscriptionManagement() {
                     const rowClass = isOverdue ? "bg-red-50 dark:bg-red-900/20" : isUpcoming ? "bg-yellow-50 dark:bg-yellow-900/20" : "";
                     return (
                       <TableRow key={sub.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${rowClass}`}>
-                        <TableCell className="font-medium">{sub.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />
+                            <span>{sub.name}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <span>{formattedDate}</span>
@@ -141,7 +147,10 @@ export default function SubscriptionManagement() {
                     <DataCardItem key={sub.$id} highlight={highlight}>
                       <div className="space-y-3">
                         <div className="flex items-start justify-between">
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                          </div>
                           <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(sub.price)}</span>
                         </div>
                         <div className="space-y-2">

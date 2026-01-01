@@ -8,6 +8,7 @@ import { FullPageLoading } from "@/components/ui/loading-spinner";
 import { StatusDot } from "@/components/ui/status-badge";
 import { PageTitle } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
+import { FaviconImage } from "@/components/ui/favicon-image";
 import { formatCurrency, formatDaysRemaining } from "@/lib/formatters";
 import { FoodDetail, SubscriptionDetail } from "@/types";
 
@@ -159,7 +160,10 @@ function DetailStatRowSub({ label, value, status, items, bgColor, isExpired = fa
         <div className="space-y-1 mt-2">
           {items.slice(0, 3).map((item) => (
             <div key={item.id} className="flex justify-between items-center text-xs">
-              <span className="text-gray-600 dark:text-gray-400 truncate flex-1 mr-2">{item.name}</span>
+              <div className="flex items-center gap-2 truncate flex-1 mr-2">
+                <FaviconImage siteUrl={item.site} siteName={item.name} size={16} />
+                <span className="text-gray-600 dark:text-gray-400 truncate">{item.name}</span>
+              </div>
               <span className={`font-medium ${textColor}`}>
                 {isExpired ? `${Math.abs(item.daysRemaining)}天前` : formatDaysRemaining(item.daysRemaining)}
               </span>

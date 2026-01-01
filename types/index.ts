@@ -42,6 +42,7 @@ export interface SubscriptionFormData {
 export interface SubscriptionDetail {
   id: string;
   name: string;
+  site: string;
   daysRemaining: number;
   nextDate: string;
   price: number;

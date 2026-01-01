@@ -5,7 +5,27 @@ const nextConfig: NextConfig = {
   
   // 圖片優化設定
   images: {
-    domains: [],
+    domains: ['www.google.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/favicon.ico',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/favicon.png',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.google.com',
+        port: '',
+        pathname: '/s2/favicons**',
+      },
+    ],
   },
   
   // 其他配置
