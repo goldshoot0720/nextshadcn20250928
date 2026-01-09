@@ -1,0 +1,1521 @@
+"use client";
+
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "../ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
+import { Music, Search, Plus, Heart, Play, Pause, Volume2, SkipBack, SkipForward, Download, Copy } from "lucide-react";
+
+interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  album?: string;
+  lyrics: {
+    zh: string;
+    en?: string;
+    ja?: string;
+    yue?: string;
+    ko?: string;
+  };
+  audioFiles: {
+    zh: string;
+    en?: string;
+    ja?: string;
+    yue?: string;
+    ko?: string;
+  };
+  genre?: string;
+  year?: number;
+  isFavorite: boolean;
+}
+
+// 示例歌曲數據
+const SAMPLE_SONGS: Song[] = [
+  {
+    id: "1",
+    title: "塗哥水電王子爆紅",
+    artist: "鋒兄 & 塗哥",
+    album: "鋒兄音樂精選",
+    lyrics: {
+      zh: `[故事開始]
+西元兩零零四年六月十五日，這一天是國中畢業生可以在畢業紀念冊留下紀念簽名的一天，同時也是我們故事主角塗神：塗三傑――江湖人稱塗哥一切的開始。
+
+[台中小吃店對話]
+塗哥人在台中小吃店，同行（姓同名行，塗哥師傅）指著電視畫面說台北爆發學運太陽花學運，塗哥說我不懂政治，等一下我們去買太陽餅。我聽鋒兄說彰化盛產向日葵，下個月我們去彰化農場踏青，同行職業病發作對農場施工頭頭是道。
+
+[鋒兄歷史小學堂]
+鋒兄歷史小學堂林學徒說AI機器人有可能取代水電工，我好焦慮喔，塗哥說可是我聽鋒兄說那是未來不是現在，先作好手邊的工作，當一天和尚撞一天鐘。
+
+[副市長同學]
+塗哥說我有個同學在台北當副市長，同行回你是說鋒兄嗎，鋒兄？！怎麼可能，鋒兄現在是青木瓜手搖飲區域經理，副市長是黃馨鋒，同行說我還以為是鋒兄，一樣名字有個鋒字。對了你那同學不出來選台北市長嗎？塗哥說我同學寫了一本有關於水電工的書，他說銷售量超過兩百五十萬冊，才有出來選的本錢。
+
+[動物園快閃]
+有人在台北動物園快閃唱動物園不得了了，蠟筆小新？！塗哥說我不懂日語，等一下我們去KTV唱快樂天堂。
+
+[電視劇熱潮]
+塗董，最近的電視劇很火你有在看嗎，水電情？！聽說原型人物是塗偉傑，塗偉傑？！我叫塗三傑，姓名只差一個字，說不定是我遠房親戚，真的假的，你們塗家壟斷水電這一行業太誇張了吧。
+
+[現象級成功]
+塗董，你知道塗偉傑紅到被寫進高職國文課本這件事嗎，哇操，塗偉傑肯定是我遠房親戚，傻眼貓咪，我看鋒兄家的貓都會傻眼現象級水電工塗哥人物專訪。
+
+[衍生作品帝國]
+塗神衍生作品王子高職國文課本 水電電視劇 愛上水電工 主題曲鋒兄作詞 小說名場景 青木瓜四木飲冠名播出 鋒兄和塗哥喝青木瓜四木飲一年份喝到吐電影 水電工大老闆。
+
+[學術引用]
+學術引用 社會學系碩士論文引用 塗神水電王子 二十一世紀前期文學作品所呈現的台灣社會國文學系博士論文引用 塗神水電王子 台灣政治人物代表作家及其作品研究。
+
+[財富成就]
+塗哥水電王子爆紅 鋒兄賺三百三十三億 塗哥賺三億`,
+      en: `[The Beginning]
+On June 15, 2004, this day marks when junior high school graduates could leave commemorative signatures in their yearbook, and it was also the beginning of everything for our story's protagonist, Tu Shen: Tu Sanjie, later known as Tu Ge.
+
+[Conversation at Taichung Snack Shop]
+Tu Ge was at a small snack shop in Taichung. His companion, Tong Xing (known as Tu Ge's master, same surname and name), pointed at the TV and mentioned the outbreak of the Sunflower Movement in Taipei. Tu Ge replied, "I don't understand politics; let's go buy some sun cakes." He heard from Feng Xiong that Changhua is abundant in sunflowers, and next month they planned a day trip to a farm in Changhua. Tong's occupational habits kicked in, discoursing expertly on farm construction.
+
+[Feng Xiong's Little History Class]
+Lin, the apprentice, said AI robots might replace electricians. "I'm so anxious," Lin said. Tu Ge reassured, "But I heard Feng Xiong say that's the future, not now. First, let's focus on our work at hand: take life one step at a time."
+
+[The Deputy Mayor Classmate]
+Tu Ge mentioned having a classmate who serves as deputy mayor in Taipei. Tong replied, "Are you talking about Feng Xiong?" "Feng Xiong?! That's impossible. Feng Xiong is now the regional manager of a green papaya drink franchise. The deputy mayor is Huang Xingfeng," Tong said. "I thought it was Feng Xiong; they both have 'Feng' in their names. Anyway, is your classmate not running for mayor?" Tu Ge said, "My classmate wrote a book about electricians that sold over 2.5 million copies, so he has the capability to run for office."
+
+[Zoo Flash Mob]
+Someone did a flash mob at the Taipei Zoo, singing about the zoo's wonders. "Shin-chan?!" Tu Ge said, "I don't speak Japanese; let's head to the KTV to sing 'Paradise'."
+
+[TV Drama Craze]
+Chairman Tu, have you been watching the recent hit drama? 'The Love of an Electrician?!' I heard it's based on Tu Weijie's true story. "Tu Weijie?! My name is Tu Sanjie, just one character off; he might be my distant relative. Really? Your Tu family dominating the electrician industry is outrageous!"
+
+[Phenomenal Success]
+Chairman Tu, do you know Tu Weijie's fame reached the point of being included in vocational school literature textbooks? "Holy moly, Tu Weijie must be my distant relative. Shocked like a cat. Even Feng Xiong's cat would be shocked!"
+
+[Derivative Works Empire]
+Tu Shen's Derivative Works Prince: Vocational Literature Textbooks - Electricians, TV Drama Theme Song: 'Falling in Love with an Electrician' Lyrics by Feng Xiong. Famous scenes from the novel sponsored by Papaya Fourwood Drink, Feng Xiong and Tu Ge drank a year's supply until they were sick. Film: The Electrician Tycoon.
+
+[Academic Citation]
+Academic Citation: Sociology Master's Thesis Citing "Tu Shen Electrician Prince" - Early 21st Century Literary Presentation of Taiwanese Society. Chinese Literature Ph.D. Dissertation Citing "Tu Shen Electrician Prince" - A Study of Representative Taiwanese Political Figures and Their Works.
+
+[Financial Achievement]
+Tu Ge's Phenomenal Rise: Feng Xiong made three hundred and thirty-three billion, Tu Ge made three billion`,
+      ja: `2004年6月15日、この日は中学校の卒業生が年鑑に記念のサインを残せる日であり、物語の主人公、塗神こと塗三杰（後に塗哥として知られる）の全ての始まりでした。塗哥は台中の小さなスナックショップにいました。彼の仲間である通行（塗哥の師匠。同じ姓と名）はテレビを指差し、台北でのひまわり運動の勃発について言及しました。塗哥は「政治のことはよくわからない。菓子を買いに行こう」と答えました。彼は馮兄から、彰化にはひまわりがたくさんあると聞き、来月に彰化の農場への日帰り旅行を計画していました。通の職業習慣が作動し、農場建設について専門的に話し合いました。馮兄の小さな歴史クラスリンの弟子は、「ロボットが電気工を置き換えるかもしれない」と言いました。「とても不安だ」とリンは言いました。塗哥は「でも、馮兄によれば、それは未来のことだ、今ではない。まずは手元の仕事に集中しよう。一歩ずつ生きていこう」と安心させました。塗哥は彼の同級生が台北の副市長を務めていると述べました。通は、「馮兄のことを話しているの？」と答えました。「馮兄？！それはありえない。馮兄は今、青パパイヤドリンクフランチャイズの地域担当マネージャーだ。副市長は黄興豊だ」と通は言いました。「馮兄だと思ったけど、彼らはどちらも『豐』が名前にあるんだ。いずれにせよ、あなたの同級生は市長選に出馬しないのか？」塗哥は、「私の同級生は電気工についての本を書いて、250万部以上売れたから、政治家になる能力も持っています」と言いました。誰かが台北動物園でフラッシュモブをして、動物園の素晴らしさを歌いました。「しんちゃん？！」塗哥は、「日本語は話せない。KTVに行って『パラダイス』を歌いに行こう」と言いました。塗会長、最近のヒットドラマをご覧になりましたか？『電気工の愛』ですか？！それは塗偉傑の真実を基にしています。「塗偉傑？！私の名前は塗三杰、あと一文字しかない。彼は私の遠い親戚かも。ほんとに？あなたの塗家が電気工業界を支配しているのはとんでもないことだ！」塗会長、塗偉傑の名声が職業学校の文学の教科書に載るほどになったことをご存知ですか？「おお、塗偉傑は私の親戚かもしれない。猫をびっくりさせるような衝撃。馮兄の猫もびっくり！」電気工塗哥の驚異的なインタビュー塗神の派生作品プリンス職業文学教科書 - 電気工テレビドラマ主題歌：『電気工に恋して』 作詞：馮兄。有名なシーンはパパイヤ・フォーウッド・ドリンクの協賛で、馮兄と塗哥は1年間の供給を飲んで病気になりました。映画：電気工大君学術引用:「塗神電気工プリンス」を引用した社会学修士論文 - 21世紀初頭の台湾社会文学のプレゼンテーション中国文学の博士論文は「塗神電気工プリンス」を引用しています - 台湾の代表的な政治人物とその作品の研究塗哥の驚異的な躍進：馮兄は三千三百三十三億を稼ぎ、塗哥は三億を稼ぎました。`,
+      yue: `2004年6月15日，呢日係中學畢業生喺年鑑度留紀念簽名嘅日子，都係故仔個主角，塗神即係塗三杰（之後畀人叫塗哥）嘅一切開始。塗哥喺台中一間細細嘅零食店入面。佢嘅朋友通行（塗哥嘅師傅。同姓同名）指住電視，提到台北嘅太陽花運動爆發。塗哥話：「政治我唔係好識。不如買零食去啦。」佢從馮兄度聽到彰化有好多向日葵，計劃下個月去彰化個農場一日遊。通職業病發作，專業咁同佢傾農場建設。馮兄嘅細歷史堂阿麟嘅徒弟話：「可能啲機械人會取代電工。」阿麟話：「真係好擔心。」塗哥就話：「不過，馮兄話，呢啲係未來果陣嘅事，宜家仲未到。好似佢講咁，專心做宜家嘅嘢，慢慢一步一腳印咁過日子。」塗哥提起佢嘅同學做緊台北嘅副市長。通問：「你講緊馮兄咩？」通話：「馮兄？！冇可能。馮兄而家係青木瓜汁加盟店嘅區域經理。副市長係黃興豐。」塗哥話：「我以為係馮兄，但佢哋個名都有『豐』。不過，你個同學會唔會選市長？」塗哥話：「我個同學寫咗本關於電工嘅書，賣咗過250萬本，所以佢其實都可以做個政客。」有人喺台北動物園做咗個快閃，唱咗首讚美動物園嘅歌。「新仔？！」塗哥話：「我唔識講日文。不如去KTV唱《天堂》啦。」塗會長，最近你有冇睇過嗰齣人氣戲劇呀？就係《電工之愛》！呢齣戲係根據塗偉杰嘅故事改編。「塗偉杰？！我叫塗三杰啫，淨多個字，可能真係遠親喇。真係嗎？你哋塗家喺電工業界咁巴閉真係好夠晒威呀！」塗會長，你知唔知塗偉杰嘅名氣已經去到職業學校嘅文學課本入面呢？「哦，如果塗偉杰真係我親戚，咁咪真係夠晒轟動，連馮兄嘅貓都會嚇親！」塗電工嘅驚人訪問塗神嘅延伸作品王子職業文學課本：電工電視劇主題曲：《愛上電工》填詞：馮兄。有名嘅場景就係綠木瓜汁贊助，馮兄同塗哥飲到供應一年，飲到唔舒服。電影：電工大君學術引用：「塗神電工王子」出現喺社會學碩士論文入面 - 21世紀初台灣社會文學嘅呈現中國文學博士論文都有引述「塗神電工王子」 - 研究台灣嘅代表人物同佢哋嘅作品塗哥驚人嘅騰飛：馮兄賺咗三千三百三十三億，而塗哥賺咗三億。`,
+      ko: `[스토리 시작]
+서기 2004년 6월 15일, 이날은 중학교 졸업생들이 졸업기념책에 사인을 남길 수 있는 날이자, 이야기 주인공 투신: 투삼걸―江湖 사람들은 그를 ‘투哥’라 부르는 그의 모든 것이 시작되는 날이었다.
+
+[타이중 분식점 대화]
+투哥는 타이중 분식점에 있었고, 동행(성은 같지만 다른 사람, 투哥 스승)이 TV 화면을 가리키며 “타이베이에서 학생 운동, 해바라기 운동이 터졌어”라고 말했다. 투哥: “나 정치 잘 몰라, 잠시 후 우리 해바라기빵 사러 가자.” 나는 풍형에게 들었다. “장화는 해바라기 생산이 많대. 다음 달에 장화 농장으로 소풍 가자.” 동행: 직업병 발동, 농장 공사 경험 풍부.
+
+[풍형 역사 소학당]
+풍형 역사 소학당, 임습생이 말하길 “AI 로봇이 전기·배관 일을 대신할 수도 있어요, 너무 불안해요.” 투哥: “하지만 풍형이 말했잖아, 그건 미래지금은 아니야. 지금 손에 있는 일이나 잘 하자, 하루를 스님처럼 충실히 살아라.”
+
+[부시장 동창]
+투哥: “내 친구 한 명이 타이베이 부시장이야.” 동행: “풍형 말하는 거야?” 투哥: “아니, 풍형은 지금 청목과 손음료 지역 매니저야. 부시장은 황쉰펑.” 동행: “나는 풍형인 줄 알았어, 이름에 ‘펑’ 글자가 같네. 너 친구, 타이베이 시장 선거 안 나가?” 투哥: “내 친구, 전기·배관 관련 책 한 권 썼어. 250만 부 넘게 팔렸어. 그럼 선거 나갈 수 있는 자본이 생기지.”
+
+[동물원 플래시몹]
+타이베이 동물원에서 누군가 플래시몹으로 노래를 불렀다. 투哥: “나는 일본어 몰라, 잠시 후 우리 KTV 가서 ‘행복천국’ 노래 부르자.”
+
+[드라마 열풍]
+투동: “최근 드라마 인기 많아요, 보고 있어요? ‘전기·배관 러브’?” 투삼걸: “원형 인물이 투위제라고? 나는 투삼걸인데, 이름 한 글자 차이네. 혹시 먼 친척일지도, 진짜야?” “너희 투 가문이 전기·배관 산업 장악 너무 심하다.”
+
+[현상급 성공]
+투동: “투위제가 고등직업학교 국문 교과서에 실렸다는 거 알아?” 투삼걸: “와, 투위제는 분명 먼 친척일 거야. 깜짝 놀랐네. 풍형 집 고양이도 깜짝 놀라는 현상급 전기·배관 왕 투哥 인물 인터뷰.”
+
+[파생 작품 제국]
+투신 파생 작품: 왕자 고등직업학교 국문 교과서 전기·배관 드라마 ‘전기공 사랑에 빠지다’ 주제가 풍형 작사 소설 명장면 청목과 사목 음료 후원 풍형과 투哥 1년치 음료 마셔서 토할 정도 영화 전기·배관 업계 큰손
+
+[학술 인용]
+학술 인용 사회학 석사 논문 인용: ‘투신 전기왕자’ 21세기 전기 문학 작품에서 나타난 대만 사회 국문학 박사 논문 인용: ‘투신 전기왕자, 대만 정치인 대표 작가 및 작품 연구’
+
+[재산과 성취]
+투哥 전기왕자 폭발적 인기, 풍형 3,330억 원 벌다, 투哥 3억 원 벌다.`
+    },
+    audioFiles: {
+      zh: "/musics/塗哥水電王子爆紅.mp3",
+      en: "/musics/塗哥水電王子爆紅(英語).mp3",
+      ja: "/musics/塗哥水電王子爆紅(日語).mp3",
+      yue: "/musics/塗哥水電王子爆紅(粵語).mp3",
+      ko: "/musics/塗哥水電王子爆紅(韓語).mp3"
+    },
+    genre: "台灣民謠",
+    year: 2024,
+    isFavorite: true,
+  },
+  {
+    id: "2",
+    title: "史上最瞎結婚理由",
+    artist: "鋒兄 & 塗哥",
+    album: "鋒兄音樂精選",
+    lyrics: {
+      zh: `[Intro]
+鋒兄啊你說真的還假的
+塗哥聽了都快笑翻了
+
+[Verse 1]
+鋒兄說要結婚理由只有一個
+今彩五三九開獎那天
+頭獎號碼是思敏給的
+看著獎金直直落心也跟著被收編
+
+[Chorus]
+史上最瞎結婚理由
+今彩五三九牽紅線牽這麼兇
+一個思敏一個蕙瑄
+號碼一簽兩人都中頭獎圈
+
+[Bridge]
+愛情是運氣還是數學題
+笑到哭都只能說一句
+最瞎最瞎但又有點甜蜜
+
+[Outro]
+鋒兄牽著思敏塗哥牽著蕙瑄
+喝喜酒的人一桌一桌還在笑這兩段緣
+最瞎結婚理由結果都開成頭獎
+如果幸福也能這樣瞎忙
+那我明天也去買一張`,
+      en: `[Intro]
+Brother Feng, are you serious or joking?
+Brother Tu is laughing so hard
+
+[Verse 1]
+Brother Feng says there's only one reason to marry
+On the day of the lottery draw
+The winning numbers were given by Simin
+Watching the jackpot fall, his heart was captured too
+
+[Chorus]
+The most ridiculous reason to marry
+The lottery brought them together so strong
+One Simin, one Huixuan
+Both won the jackpot with their numbers
+
+[Outro]
+Brother Feng with Simin, Brother Tu with Huixuan
+Wedding guests laughing at these two stories
+Most ridiculous marriage reasons turned into jackpots
+If happiness can be this absurd
+Then I'll buy a ticket tomorrow too`,
+      ja: `[Intro]
+鋒兄、マジで？ウソでしょ？
+塗哥は聞いてて笑いが止まらないよ
+
+[Verse 1]
+鋒兄は言う、結婚理由は一つだけ
+今彩539の抽選日
+一等番号は思敏がくれた
+賞金を見て、心まで奪われて
+
+[Chorus]
+史上最も馬鹿げた結婚理由
+今彩539が結んだ赤い糸がこんなに強い
+一人は思敏、一人は蕙瑄
+番号一つで二人とも一等当選
+
+[Outro]
+鋒兄は思敏を連れ、塗哥は蕙瑄を連れ
+披露宴の客たちはテーブルごとにこの二つの縁で笑ってる
+最も馬鹿げた結婚理由が一等賞に
+もし幸福がこんなに馬鹿げていたら
+私も明日買いに行こうかな`,
+      yue: `[Intro]
+阿鋒你講真定假
+阿塗聽咗都快笑死
+
+[Verse 1]
+阿鋒話結婚理由得一個
+今期五三九攪珠嗰日
+頭獎號碼係思敏畀嘅
+睇住獎金跌落心都一齊俾收編
+
+[Chorus]
+史上最瞎結婚理由
+今期五三九紅線牽得幾狠
+一個思敏一個蕙瑄
+號碼一簽兩個都中頭獎圈
+
+[Outro]
+阿鋒拉住思敏阿塗拉住蕙瑄
+飲喜酒嘅人一桌一桌
+仲係笑緊呢兩段緣
+最瞎結婚理由結果都開成頭獎
+如果幸福都可以咁瞎忙
+咁我聽日都去買一張`,
+      ko: `[Intro]
+펑형아, 너 진짜야? 아니야?
+투哥 듣고 거의 웃음 터질 뻔했어
+
+[Verse 1]
+펑형이 결혼하겠다는 이유는 딱 하나
+오늘의 539 복권 당첨일
+1등 번호는 시민이 준 거야
+상금을 보며 마음도 함께 편입됐네
+
+[Chorus]
+역대 최웃긴 결혼 이유
+오늘의 539가 이렇게 빨리 인연을 이어줘
+하나는 시민, 하나는 휘현
+번호 하나로 두 사람 모두 1등 당첨
+
+[Bridge]
+사랑은 운일까, 아니면 수학 문제일까
+웃다가 울어도 한마디밖에 못 해
+가장 웃기지만, 조금 달콤해
+
+[Outro]
+펑형은 시민과, 투哥는 휘현과
+축하주 마시는 사람들 테이블마다 아직도 웃어
+최웃긴 결혼 이유, 결국 모두 1등 당첨
+행복도 이렇게 바쁘게 올 수 있다면
+그럼 나도 내일 한 장 사야겠다`
+    },
+    audioFiles: {
+      zh: "/musics/最瞎結婚理由.mp3",
+      en: "/musics/最瞎結婚理由 (英語).mp3",
+      ja: "/musics/最瞎結婚理由 (日語).mp3",
+      yue: "/musics/最瞎結婚理由 (粵語).mp3",
+      ko: "/musics/最瞎結婚理由(韓語).mp3"
+    },
+    genre: "搞笑說唱",
+    year: 2024,
+    isFavorite: true,
+  },
+  {
+    id: "3",
+    title: "鋒兄進化Show🔥",
+    artist: "鋒兄 feat. 塗哥",
+    album: "鋒兄音樂精選",
+    lyrics: {
+      zh: `[Hook]
+台北有鋒兄真好！
+嗨起來別逃跑！
+從榜首進化到市長, 這節奏太離譜（wow）
+塗哥唱歌別裝低調, 記者都在拍照！
+
+[Verse 1]
+37歲那年我高考三級奪榜首（yeah）
+資訊處理一戰成名　程式都寫成傳說～
+52歲副市長代理市長上陣忙！（yo）
+
+[Chorus]
+台北有鋒兄真好！
+嗨起來別逃跑！
+從榜首進化到市長, 命運像 debug 一樣爆！
+塗哥嗓門開到爆表, 全場跟著大合唱！
+
+[Verse 2]
+2040那年的夜　霓虹閃爍到市政廳
+競選標語像 ACG 的 opening
+「別說不可能, 鋒兄就是 evolution！」
+
+[Final Chorus]
+台北有鋒兄真好！
+嗨起來直到早朝！
+榜首到市長的進化論　全城都在尖叫！
+這是鋒兄進化 Show！🔥`,
+      en: `Taipei is great with Brother Feng!
+Get hyped, don't run away!
+From top scorer to mayor, this rhythm is insane (wow)
+Brother Tu singing, don't be shy, reporters are taking photos!
+
+At 37, I topped the civil service exam (yeah)
+Information processing made me legendary, code became legend~
+At 52, deputy mayor, acting mayor, so busy! (yo)
+
+Taipei is great with Brother Feng!
+Get hyped, don't run away!
+From top scorer to mayor, destiny explodes like debugging!
+Brother Tu's voice at max, everyone singing along!
+
+In 2040's night, neon lights flash at city hall
+Campaign slogans like ACG opening
+"Don't say impossible, Brother Feng is evolution!"
+
+Taipei is great with Brother Feng!
+Get hyped until dawn!
+Evolution from top scorer to mayor, the whole city screaming!
+This is Brother Feng Evolution Show! 🔥`,
+      ja: `台北に鋒兄がいて本当に良い！
+盛り上がって逃げるな！
+トップから市長への進化、このリズムはヤバい（wow）
+塗哥は歌って控えめにするな、記者が写真を撮ってる！
+
+37歳の年に公務員試験でトップ（yeah）
+情報処理で一戦成名　プログラムは伝説になった～
+52歳で副市長、代理市長で忙しい！（yo）
+
+台北に鋒兄がいて本当に良い！
+盛り上がって逃げるな！
+トップから市長への進化、運命はデバッグのように爆発！
+塗哥の声は最大、全員が大合唱！
+
+2040年の夜　ネオンが市政庁に輝く
+選挙スローガンはACGのオープニングのよう
+「不可能と言うな、鋒兄は進化だ！」
+
+台北に鋒兄がいて本当に良い！
+朝まで盛り上がれ！
+トップから市長への進化論　全市が叫んでる！
+これは鋒兄進化Show！🔥`,
+      yue: `台北有鋒兄真好！嗨起嚟唔好逃跑！
+從榜首進化到市長, 呢個節奏太誇張（wow）
+塗哥唱歌唔好扮低調, 記者都係影相！
+綾小路都話呢段人生 根本 S 級動畫稿～
+
+37歲嗰年我高考三級奪榜首（yeah）
+資訊處理一戰成名 程式都寫成傳說～
+隔住時代嘅螢幕光 夢想好似演算法（run）
+52歲副市長代理市長忙住上陣！（yo）
+
+塗哥敢唱「有鋒兄真好」備取瞬間正取秒秒到～
+唔唱就取消資格笑　進化唔靠運氣靠信號！
+
+台北有鋒兄真好！嗨起嚟唔好逃跑！
+從榜首進化到市長, 命運好似 debug 爆！
+塗哥嗓門開到爆表, 全場跟住大合唱！
+「代理」只係過場 市民心中早就想！
+
+2040嗰年的夜 霓虹閃爍到市政廳
+競選口號似 ACG 嘅 opening
+「唔好話唔可能, 鋒兄就係 evolution！」
+
+AI 輔助政務操作 資料開放新世代～
+陰陽同框 政治與理想 交錯嘅舞台線上～
+一首歌唱到選票都彈起身 塗哥仲要再唱！
+
+台北有鋒兄真好！嗨起嚟直到朝早！
+榜首到市長嘅進化論 全城都尖叫！
+綾小路清隆都點頭 呢進化合乎理想！
+「ムリムリ進化論？」唔——呢係鋒兄進化 Show！🔥`,
+      ko: `[Hook]
+타이베이에 펑셩이 있어서 정말 좋아!
+신나게 즐겨, 도망가지 마!
+차트 1위에서 시장까지, 이 리듬은 미쳤어 (wow)
+투고 형 노래할 때 겸손하지 마, 기자들이 사진 찍고 있어!
+아야코지는 이 인생의 장면이 S급 애니 대본 같다고 해~
+
+[Verse 1]
+37살 때 나는 고등고시 3급에서 1등을 차지했어 (yeah)
+정보 처리 한판으로 이름 날리고, 코드가 전설이 되었어~
+시대의 화면 빛을 통해, 꿈은 알고리즘처럼 달려 (run)
+52살, 부시장 대리시장으로 바쁘게 활동 중! (yo)
+
+[Chorus]
+투고 형이 감히 “펑셩이 있어서 좋아”라고 노래해
+예비가 바로 본선, 매 순간 중요~
+안 부르면 자격 박탈, 웃음
+진화는 운이 아니라 신호에 달려 있어!
+
+[Hook]
+타이베이에 펑셩이 있어서 정말 좋아!
+신나게 즐겨, 도망가지 마!
+차트 1위에서 시장까지, 운명은 디버그처럼 폭발!
+투고 형 목소리 폭발, 관중 다 같이 합창!
+“대리”는 잠시일 뿐, 시민 마음속은 이미 알고 있어!
+
+[Verse 2]
+2040년 밤, 네온이 시청까지 빛나
+선거 슬로건은 ACG 오프닝 같아
+“불가능하다고 말하지 마, 펑셩은 진화야!”
+AI로 보조하는 행정, 데이터 공개 새 시대~
+
+[Final Chorus]
+음양 동시 등장, 정치와 이상, 무대에서 교차~
+한 곡으로 투표까지 뛰게 하고, 투고 형은 또 노래해!
+
+[Hook]
+타이베이에 펑셩이 있어서 정말 좋아!
+아침까지 신나!
+차트 1위에서 시장까지 진화론, 도시 전체가 환호!
+아야코지도 고개 끄덕, 이 진화는 이상에 부합해!
+“불가능 진화론?” 아니야—이건 펑셩 진화 쇼! 🔥`
+    },
+    audioFiles: {
+      zh: "/musics/鋒兄進化Show🔥.mp3",
+      en: "/musics/鋒兄進化Show🔥(英語).mp3",
+      ja: "/musics/鋒兄進化Show🔥(日語).mp3",
+      yue: "/musics/鋒兄進化Show🔥(粵語).mp3",
+      ko: "/musics/鋒兄進化Show🔥(韓語).mp3"
+    },
+    genre: "嘻哈說唱",
+    year: 2024,
+    isFavorite: true,
+  },
+];
+
+export default function MusicLyrics() {
+  const [songs, setSongs] = useState<Song[]>(SAMPLE_SONGS);
+  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState<'zh' | 'en' | 'ja' | 'yue' | 'ko'>('zh');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const [lyricsSearchTerm, setLyricsSearchTerm] = useState(""); // 歌词内搜索
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [newSong, setNewSong] = useState({
+    title: "",
+    artist: "",
+    album: "",
+    lyrics: {
+      zh: "",
+      en: "",
+      ja: "",
+      yue: "",
+      ko: ""
+    },
+    genre: "",
+    year: new Date().getFullYear(),
+  });
+
+  // 格式化歌词显示
+  const formatLyrics = useCallback((lyrics: string) => {
+    if (!lyrics) return null;
+
+    // 检测歌词格式类型
+    const hasStructuredFormat = lyrics.includes('[') && lyrics.includes(']');
+    const hasLongNarrative = lyrics.length > 500 && !lyrics.includes('\n\n');
+    
+    if (hasStructuredFormat) {
+      // 结构化歌词格式 (如 [Verse 1], [Chorus] 等)
+      return formatStructuredLyrics(lyrics);
+    } else if (hasLongNarrative) {
+      // 长篇叙事格式 (如塗哥水電王子爆紅)
+      return formatNarrativeLyrics(lyrics);
+    } else {
+      // 普通歌词格式
+      return formatRegularLyrics(lyrics);
+    }
+  }, []);
+
+  // 格式化结构化歌词 (带标签的歌词)
+  const formatStructuredLyrics = (lyrics: string) => {
+    const lines = lyrics.split('\n');
+    return (
+      <div className="space-y-4">
+        {lines.map((line, index) => {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return <div key={index} className="h-2" />;
+          
+          // 检测段落标签 [Intro], [Verse 1], [Chorus] 等
+          if (trimmedLine.match(/^\[.*\]$/)) {
+            return (
+              <div key={index} className="flex items-center gap-3 my-6">
+                <div className="h-px bg-gradient-to-r from-purple-400 to-blue-400 flex-1" />
+                <span className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-semibold rounded-full shadow-lg">
+                  {trimmedLine.replace(/[\[\]]/g, '')}
+                </span>
+                <div className="h-px bg-gradient-to-r from-blue-400 to-purple-400 flex-1" />
+              </div>
+            );
+          }
+          
+          // 普通歌词行
+          return (
+            <div key={index} className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg font-medium pl-4 py-1 hover:bg-white/50 dark:hover:bg-gray-700/30 rounded transition-colors">
+              {trimmedLine}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // 格式化叙事歌词 (长篇连续文本)
+  const formatNarrativeLyrics = (lyrics: string) => {
+    // 智能分段：根据句号、感叹号等标点符号分段
+    const sentences = lyrics.split(/([。！？；])/);
+    const paragraphs = [];
+    let currentParagraph = '';
+    
+    for (let i = 0; i < sentences.length; i += 2) {
+      const sentence = sentences[i] + (sentences[i + 1] || '');
+      currentParagraph += sentence;
+      
+      // 每3-4句组成一段，或遇到特定关键词时分段
+      if (currentParagraph.length > 150 || 
+          sentence.includes('塗哥說') || 
+          sentence.includes('鋒兄說') ||
+          sentence.includes('同行說') ||
+          sentence.includes('林學徒說')) {
+        if (currentParagraph.trim()) {
+          paragraphs.push(currentParagraph.trim());
+        }
+        currentParagraph = '';
+      }
+    }
+    
+    if (currentParagraph.trim()) {
+      paragraphs.push(currentParagraph.trim());
+    }
+
+    return (
+      <div className="space-y-6">
+        {paragraphs.map((paragraph, index) => (
+          <div key={index} className="group">
+            <div className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg font-medium p-4 bg-white/30 dark:bg-gray-700/20 rounded-lg border-l-4 border-purple-400 hover:border-purple-500 transition-all hover:shadow-md">
+              {highlightKeywords(paragraph)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // 格式化普通歌词
+  const formatRegularLyrics = (lyrics: string) => {
+    const lines = lyrics.split('\n');
+    return (
+      <div className="space-y-3">
+        {lines.map((line, index) => {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return <div key={index} className="h-3" />;
+          
+          return (
+            <div key={index} className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg font-medium pl-4 py-2 hover:bg-white/50 dark:hover:bg-gray-700/30 rounded transition-colors">
+              {highlightKeywords(trimmedLine)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // 导出歌词
+  const exportLyrics = useCallback((format: 'txt' | 'md') => {
+    if (!selectedSong) return;
+    
+    const lyrics = selectedSong.lyrics[currentLanguage];
+    if (!lyrics) return;
+    
+    let content = '';
+    const title = `${selectedSong.title} - ${selectedSong.artist}`;
+    
+    if (format === 'md') {
+      content = `# ${title}\n\n`;
+      content += `**專輯**: ${selectedSong.album || '未知'}\n`;
+      content += `**年份**: ${selectedSong.year || '未知'}\n`;
+      content += `**語言**: ${currentLanguage === 'zh' ? '中文' : currentLanguage === 'en' ? 'English' : currentLanguage === 'ja' ? '日本語' : currentLanguage === 'yue' ? '粵語' : '韓語'}\n\n`;
+      content += `---\n\n${lyrics}`;
+    } else {
+      content = `${title}\n`;
+      content += `專輯: ${selectedSong.album || '未知'}\n`;
+      content += `年份: ${selectedSong.year || '未知'}\n`;
+      content += `語言: ${currentLanguage === 'zh' ? '中文' : currentLanguage === 'en' ? 'English' : currentLanguage === 'ja' ? '日本語' : currentLanguage === 'yue' ? '粵語' : '韓語'}\n\n`;
+      content += lyrics;
+    }
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedSong.title}_${currentLanguage}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [selectedSong, currentLanguage]);
+
+  // 复制歌词到剪贴板
+  const copyLyrics = useCallback(async () => {
+    if (!selectedSong) return;
+    
+    const lyrics = selectedSong.lyrics[currentLanguage];
+    if (!lyrics) return;
+    
+    try {
+      await navigator.clipboard.writeText(lyrics);
+      // 这里可以添加一个 toast 通知
+      console.log('歌词已复制到剪贴板');
+    } catch (error) {
+      console.error('复制失败:', error);
+    }
+  }, [selectedSong, currentLanguage]);
+
+  // 高亮关键词和搜索词
+  const highlightKeywords = (text: string) => {
+    const keywords = ['塗哥', '鋒兄', '水電工', '青木瓜', '台北', '思敏', '蕙瑄'];
+    let highlightedText = text;
+    
+    // 高亮搜索词
+    if (lyricsSearchTerm.trim()) {
+      const searchRegex = new RegExp(`(${lyricsSearchTerm.trim()})`, 'gi');
+      highlightedText = highlightedText.replace(searchRegex, `<mark class="bg-red-200 dark:bg-red-800 px-1 rounded font-semibold">$1</mark>`);
+    }
+    
+    // 高亮关键词
+    keywords.forEach(keyword => {
+      const regex = new RegExp(`(${keyword})`, 'g');
+      highlightedText = highlightedText.replace(regex, `<mark class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">$1</mark>`);
+    });
+    
+    return <span dangerouslySetInnerHTML={{ __html: highlightedText }} />;
+  };
+
+  // 搜尋歌曲
+  const filteredSongs = songs.filter(song =>
+    song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.album?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.zh.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.ja?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.yue?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    song.lyrics.ko?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // 切換收藏狀態
+  const toggleFavorite = useCallback((songId: string) => {
+    setSongs(prev => prev.map(song =>
+      song.id === songId ? { ...song, isFavorite: !song.isFavorite } : song
+    ));
+  }, []);
+
+  // 新增歌曲
+  const handleAddSong = useCallback(() => {
+    if (!newSong.title || !newSong.artist || !newSong.lyrics.zh) return;
+
+    const song: Song = {
+      id: Date.now().toString(),
+      title: newSong.title,
+      artist: newSong.artist,
+      album: newSong.album || undefined,
+      lyrics: {
+        zh: newSong.lyrics.zh,
+        en: newSong.lyrics.en || undefined,
+        ja: newSong.lyrics.ja || undefined,
+        yue: newSong.lyrics.yue || undefined,
+        ko: newSong.lyrics.ko || undefined,
+      },
+      audioFiles: {
+        zh: "",
+        en: newSong.lyrics.en ? "" : undefined,
+        ja: newSong.lyrics.ja ? "" : undefined,
+        yue: newSong.lyrics.yue ? "" : undefined,
+        ko: newSong.lyrics.ko ? "" : undefined,
+      },
+      genre: newSong.genre || undefined,
+      year: newSong.year || undefined,
+      isFavorite: false,
+    };
+
+    setSongs(prev => [...prev, song]);
+    setNewSong({
+      title: "",
+      artist: "",
+      album: "",
+      lyrics: {
+        zh: "",
+        en: "",
+        ja: "",
+        yue: "",
+        ko: ""
+      },
+      genre: "",
+      year: new Date().getFullYear(),
+    });
+    setShowAddForm(false);
+  }, [newSong]);
+
+  // 簡單的音頻生成備用方案
+  const createSimpleAudio = useCallback((songTitle: string) => {
+    try {
+      // 使用 Web Audio API 創建簡單的音調
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // 根據歌曲選擇頻率
+      let frequency = 440; // A4
+      if (songTitle.includes('塗哥')) frequency = 523; // C5
+      if (songTitle.includes('結婚')) frequency = 392; // G4
+      if (songTitle.includes('進化')) frequency = 659; // E5
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 2);
+      
+      return true;
+    } catch (error) {
+      console.error('Simple audio generation failed:', error);
+      return false;
+    }
+  }, []);
+  const generateAudioBlob = useCallback((songTitle: string, duration: number = 30) => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const sampleRate = audioContext.sampleRate;
+    const length = sampleRate * duration;
+    const buffer = audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    // 根據歌曲標題選擇不同的頻率
+    let frequencies: number[];
+    if (songTitle.includes('塗哥水電王子')) {
+      frequencies = [440, 523, 659, 784]; // A, C, E, G
+    } else if (songTitle.includes('結婚理由')) {
+      frequencies = [330, 392, 494, 587]; // E, G, B, D
+    } else if (songTitle.includes('進化Show')) {
+      frequencies = [262, 330, 392, 523]; // C, E, G, C
+    } else {
+      frequencies = [440, 523, 659]; // 默認
+    }
+    
+    // 生成簡單的旋律
+    for (let i = 0; i < length; i++) {
+      const time = i / sampleRate;
+      let sample = 0;
+      
+      // 創建簡單的旋律模式
+      const freqIndex = Math.floor((time * frequencies.length / duration * 4)) % frequencies.length;
+      const freq = frequencies[freqIndex];
+      
+      // 添加和聲
+      sample += Math.sin(2 * Math.PI * freq * time) * 0.3;
+      sample += Math.sin(2 * Math.PI * freq * 1.5 * time) * 0.15;
+      
+      // 添加節拍
+      const beat = Math.floor(time * 2) % 4;
+      if (beat === 0 || beat === 2) {
+        sample *= 1.3;
+      }
+      
+      // 淡入淡出
+      const fadeTime = 1;
+      if (time < fadeTime) {
+        sample *= time / fadeTime;
+      } else if (time > duration - fadeTime) {
+        sample *= (duration - time) / fadeTime;
+      }
+      
+      data[i] = sample * 0.4;
+    }
+    
+    return buffer;
+  }, []);
+
+  // 創建音頻URL
+  const createAudioUrl = useCallback(async (songTitle: string, duration: number = 30) => {
+    try {
+      const buffer = generateAudioBlob(songTitle, duration);
+      
+      // 轉換為WAV格式
+      const length = buffer.length;
+      const arrayBuffer = new ArrayBuffer(44 + length * 2);
+      const view = new DataView(arrayBuffer);
+      
+      // WAV header
+      const writeString = (offset: number, string: string) => {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      };
+      
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + length * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, buffer.sampleRate, true);
+      view.setUint32(28, buffer.sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, length * 2, true);
+      
+      // 轉換浮點樣本為16位PCM
+      const data = buffer.getChannelData(0);
+      let offset = 44;
+      for (let i = 0; i < length; i++) {
+        const sample = Math.max(-1, Math.min(1, data[i]));
+        view.setInt16(offset, sample * 0x7FFF, true);
+        offset += 2;
+      }
+      
+      const blob = new Blob([arrayBuffer], { type: 'audio/wav' });
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error('Failed to generate audio:', error);
+      return null;
+    }
+  }, [generateAudioBlob]);
+  const startDemoPlayback = useCallback(() => {
+    setDuration(180); // 3分鐘模擬時長
+    setCurrentTime(0);
+    setIsPlaying(true);
+    
+    // 創建模擬進度更新
+    const interval = setInterval(() => {
+      setCurrentTime(prev => {
+        const newTime = prev + 1;
+        if (newTime >= 180) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+          clearInterval(interval);
+          return 0;
+        }
+        return newTime;
+      });
+    }, 1000);
+    
+    // 保存interval引用以便清理
+    const mockAudio = {
+      pause: () => {
+        clearInterval(interval);
+        setIsPlaying(false);
+      },
+      currentTime: 0,
+      duration: 180,
+      volume: volume
+    } as any;
+    
+    setCurrentAudio(mockAudio);
+  }, [volume]);
+
+  // 播放控制
+  const togglePlay = useCallback(() => {
+    if (!selectedSong) return;
+
+    if (currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause();
+        setIsPlaying(false);
+      } else {
+        currentAudio.play().catch((error) => {
+          console.warn('Audio playback failed:', error);
+        });
+        setIsPlaying(true);
+      }
+    } else {
+      const audioFile = selectedSong.audioFiles[currentLanguage];
+      if (audioFile) {
+        const audio = new Audio();
+        
+        // 設置音頻事件監聽器
+        audio.addEventListener('loadedmetadata', () => {
+          setDuration(audio.duration);
+          console.log(`Audio loaded: ${audio.duration}s`);
+        });
+        
+        audio.addEventListener('timeupdate', () => {
+          setCurrentTime(audio.currentTime);
+        });
+        
+        audio.addEventListener('ended', () => {
+          setIsPlaying(false);
+          setCurrentTime(0);
+          setCurrentAudio(null);
+        });
+        
+        audio.addEventListener('error', (e) => {
+          console.error('Audio file error:', e);
+          console.warn(`Failed to load: ${audioFile}`);
+          // 如果音頻文件加載失敗，使用模擬播放
+          startDemoPlayback();
+        });
+        
+        audio.addEventListener('canplay', () => {
+          console.log('Audio can start playing');
+        });
+        
+        audio.addEventListener('loadstart', () => {
+          console.log('Audio loading started');
+        });
+        
+        audio.volume = volume;
+        audio.src = audioFile;
+        setCurrentAudio(audio);
+        audioRef.current = audio;
+        
+        // 嘗試播放真實音頻
+        console.log(`Attempting to play: ${audioFile}`);
+        audio.load();
+        audio.play().then(() => {
+          console.log('Audio playback started successfully');
+          setIsPlaying(true);
+        }).catch((error) => {
+          console.error('Audio playback failed:', error);
+          console.log('Switching to demo mode');
+          startDemoPlayback();
+        });
+      } else {
+        console.log('No audio file available, using demo mode');
+        startDemoPlayback();
+      }
+    }
+  }, [selectedSong, currentLanguage, currentAudio, isPlaying, volume, startDemoPlayback]);
+
+  // 進度條控制
+  const handleProgressChange = useCallback((value: number[]) => {
+    if (currentAudio && duration > 0) {
+      const newTime = (value[0] / 100) * duration;
+      if (currentAudio.currentTime !== undefined) {
+        currentAudio.currentTime = newTime;
+      }
+      setCurrentTime(newTime);
+    }
+  }, [currentAudio, duration]);
+
+  // 音量控制
+  const handleVolumeChange = useCallback((value: number[]) => {
+    const newVolume = value[0] / 100;
+    setVolume(newVolume);
+    if (currentAudio && currentAudio.volume !== undefined) {
+      currentAudio.volume = newVolume;
+    }
+  }, [currentAudio]);
+
+  // 快進/快退
+  const skipForward = useCallback(() => {
+    if (currentAudio) {
+      const newTime = Math.min(currentTime + 10, duration);
+      if (currentAudio.currentTime !== undefined) {
+        currentAudio.currentTime = newTime;
+      }
+      setCurrentTime(newTime);
+    }
+  }, [currentAudio, currentTime, duration]);
+
+  const skipBackward = useCallback(() => {
+    if (currentAudio) {
+      const newTime = Math.max(currentTime - 10, 0);
+      if (currentAudio.currentTime !== undefined) {
+        currentAudio.currentTime = newTime;
+      }
+      setCurrentTime(newTime);
+    }
+  }, [currentAudio, currentTime]);
+
+  // 格式化時間
+  const formatTime = useCallback((time: number) => {
+    if (isNaN(time)) return "0:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, []);
+
+  // 切換語言
+  const handleLanguageChange = useCallback((language: 'zh' | 'en' | 'ja' | 'yue' | 'ko') => {
+    setCurrentLanguage(language);
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    }
+  }, [currentAudio]);
+
+  // 停止播放
+  const stopPlay = useCallback(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+    }
+  }, [currentAudio]);
+
+  // 清理音頻資源
+  useEffect(() => {
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        setCurrentAudio(null);
+      }
+    };
+  }, [currentAudio]);
+
+  // 當選擇的歌曲改變時停止播放
+  useEffect(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    }
+  }, [selectedSong]);
+
+  return (
+    <div className="space-y-6">
+      {/* 添加歌词样式 */}
+      <style jsx>{`
+        .lyrics-container {
+          font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+          line-height: 1.8;
+        }
+        
+        .lyrics-container mark {
+          background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+          color: #1f2937;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-weight: 600;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .lyrics-container mark {
+          background: linear-gradient(120deg, #d97706 0%, #b45309 100%);
+          color: #f9fafb;
+        }
+        
+        .lyrics-container .narrative-paragraph {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .lyrics-container .narrative-paragraph::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: linear-gradient(to bottom, #8b5cf6, #3b82f6);
+          border-radius: 2px;
+        }
+        
+        .lyrics-container .verse-line {
+          position: relative;
+          padding-left: 1rem;
+        }
+        
+        .lyrics-container .verse-line::before {
+          content: '♪';
+          position: absolute;
+          left: 0;
+          color: #8b5cf6;
+          font-size: 0.875rem;
+          opacity: 0.6;
+        }
+        
+        .lyrics-container .section-divider {
+          background: linear-gradient(90deg, transparent, #8b5cf6, #3b82f6, transparent);
+          height: 2px;
+          margin: 1.5rem 0;
+          border-radius: 1px;
+        }
+        
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+      
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Music className="text-purple-600" />
+            鋒兄音樂歌詞
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            收藏和管理您喜愛的歌曲歌詞
+          </p>
+        </div>
+        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+          <Plus size={16} />
+          新增歌曲
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 歌曲列表 */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">歌曲庫</CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  placeholder="搜尋歌曲、歌手或專輯..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-96 overflow-y-auto">
+                {filteredSongs.map((song) => (
+                  <div
+                    key={song.id}
+                    className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                      selectedSong?.id === song.id ? "bg-purple-50 dark:bg-purple-900/20" : ""
+                    }`}
+                    onClick={() => setSelectedSong(song)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {song.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {song.artist}
+                        </p>
+                        {song.album && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                            {song.album}
+                          </p>
+                        )}
+                        <div className="flex gap-1 mt-1">
+                          <Badge variant="outline" className="text-xs px-1 py-0">中</Badge>
+                          {song.lyrics.en && <Badge variant="outline" className="text-xs px-1 py-0">EN</Badge>}
+                          {song.lyrics.ja && <Badge variant="outline" className="text-xs px-1 py-0">日</Badge>}
+                          {song.lyrics.yue && <Badge variant="outline" className="text-xs px-1 py-0">粵</Badge>}
+                          {song.lyrics.ko && <Badge variant="outline" className="text-xs px-1 py-0">韓</Badge>}
+                        </div>
+                        
+                        {/* 歌词预览 */}
+                        {selectedSong?.id !== song.id && (
+                          <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 line-clamp-2">
+                            {song.lyrics.zh.substring(0, 100)}...
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(song.id);
+                        }}
+                        className="ml-2"
+                      >
+                        <Heart
+                          size={16}
+                          className={song.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}
+                        />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 歌詞顯示 */}
+        <div className="lg:col-span-2">
+          {selectedSong ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl">{selectedSong.title}</CardTitle>
+                    <CardDescription className="text-base mt-1">
+                      {selectedSong.artist}
+                      {selectedSong.album && ` • ${selectedSong.album}`}
+                      {selectedSong.year && ` • ${selectedSong.year}`}
+                    </CardDescription>
+                    {selectedSong.genre && (
+                      <Badge variant="secondary" className="mt-2">
+                        {selectedSong.genre}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFavorite(selectedSong.id)}
+                    >
+                      <Heart
+                        size={16}
+                        className={selectedSong.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}
+                      />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={togglePlay}>
+                      {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={stopPlay}>
+                      <Volume2 size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={currentLanguage} onValueChange={(value) => handleLanguageChange(value as 'zh' | 'en' | 'ja' | 'yue' | 'ko')}>
+                  <div className="flex items-center justify-between mb-4">
+                    <TabsList className="grid w-full max-w-md grid-cols-5">
+                      <TabsTrigger value="zh">中文</TabsTrigger>
+                      <TabsTrigger value="en" disabled={!selectedSong.lyrics.en}>English</TabsTrigger>
+                      <TabsTrigger value="ja" disabled={!selectedSong.lyrics.ja}>日本語</TabsTrigger>
+                      <TabsTrigger value="yue" disabled={!selectedSong.lyrics.yue}>粵語</TabsTrigger>
+                      <TabsTrigger value="ko" disabled={!selectedSong.lyrics.ko}>韓語</TabsTrigger>
+                    </TabsList>
+                    
+                    {/* 导出和复制功能 */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={copyLyrics}
+                        className="flex items-center gap-1"
+                      >
+                        <Copy size={14} />
+                        複製
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => exportLyrics('txt')}
+                        className="flex items-center gap-1"
+                      >
+                        <Download size={14} />
+                        TXT
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => exportLyrics('md')}
+                        className="flex items-center gap-1"
+                      >
+                        <Download size={14} />
+                        MD
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* 歌词内搜索 */}
+                  <div className="mb-4">
+                    <div className="relative max-w-md">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                      <Input
+                        placeholder="在歌詞中搜尋..."
+                        value={lyricsSearchTerm}
+                        onChange={(e) => setLyricsSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <TabsContent value="zh" className="mt-4">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                      <div className="lyrics-container">
+                        {formatLyrics(selectedSong.lyrics.zh)}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  {selectedSong.lyrics.en && (
+                    <TabsContent value="en" className="mt-4">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container">
+                          {formatLyrics(selectedSong.lyrics.en)}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  )}
+                  {selectedSong.lyrics.ja && (
+                    <TabsContent value="ja" className="mt-4">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container">
+                          {formatLyrics(selectedSong.lyrics.ja)}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  )}
+                  {selectedSong.lyrics.yue && (
+                    <TabsContent value="yue" className="mt-4">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container">
+                          {formatLyrics(selectedSong.lyrics.yue)}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  )}
+                  {selectedSong.lyrics.ko && (
+                    <TabsContent value="ko" className="mt-4">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container">
+                          {formatLyrics(selectedSong.lyrics.ko)}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  )}
+                </Tabs>
+                
+                {/* 音樂播放器控制界面 */}
+                {selectedSong.audioFiles[currentLanguage] && (
+                  <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                          正在播放: {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : currentLanguage === 'ja' ? '日文版' : currentLanguage === 'yue' ? '粵語版' : '韓語版'}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {selectedSong.title} - {selectedSong.artist}
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          🎵 真實音頻 - 來自 /musics 文件夾
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" onClick={skipBackward} disabled={!currentAudio}>
+                          <SkipBack size={14} />
+                        </Button>
+                        <Button size="sm" onClick={togglePlay} className="bg-purple-600 hover:bg-purple-700">
+                          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                          {isPlaying ? '暫停' : '播放'}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={skipForward} disabled={!currentAudio}>
+                          <SkipForward size={14} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={stopPlay} disabled={!currentAudio}>
+                          停止
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* 進度條 */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-10">
+                          {formatTime(currentTime)}
+                        </span>
+                        <div className="flex-1">
+                          <Slider
+                            value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
+                            onValueChange={handleProgressChange}
+                            max={100}
+                            step={0.1}
+                            className="w-full"
+                            disabled={!currentAudio || duration === 0}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-10">
+                          {formatTime(duration)}
+                        </span>
+                      </div>
+                      
+                      {/* 音量控制 */}
+                      <div className="flex items-center gap-3">
+                        <Volume2 size={16} className="text-gray-500 dark:text-gray-400" />
+                        <div className="flex-1 max-w-32">
+                          <Slider
+                            value={[volume * 100]}
+                            onValueChange={handleVolumeChange}
+                            max={100}
+                            step={1}
+                            className="w-full"
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-8">
+                          {Math.round(volume * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center h-96">
+                <div className="text-center">
+                  <Music className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    選擇一首歌曲
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    從左側列表中選擇歌曲來查看歌詞
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* 底部固定播放器 */}
+      {selectedSong && currentAudio && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg z-40">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <Music className="text-white" size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {selectedSong.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {selectedSong.artist} • {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : currentLanguage === 'ja' ? '日文版' : '粵語版'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="ghost" onClick={skipBackward}>
+                    <SkipBack size={16} />
+                  </Button>
+                  <Button size="sm" onClick={togglePlay} className="bg-purple-600 hover:bg-purple-700">
+                    {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={skipForward}>
+                    <SkipForward size={16} />
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatTime(currentTime)}
+                  </span>
+                  <div className="w-32">
+                    <Slider
+                      value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
+                      onValueChange={handleProgressChange}
+                      max={100}
+                      step={0.1}
+                      className="w-full"
+                      disabled={duration === 0}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatTime(duration)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Volume2 size={16} className="text-gray-500 dark:text-gray-400" />
+                  <div className="w-20">
+                    <Slider
+                      value={[volume * 100]}
+                      onValueChange={handleVolumeChange}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <Button size="sm" variant="ghost" onClick={stopPlay}>
+                  停止
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
