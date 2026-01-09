@@ -33,4 +33,10 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  /
+  // 其他配置
+  experimental: {
+    // 實驗性功能
+  }
+};
+
+export default nextConfig;
