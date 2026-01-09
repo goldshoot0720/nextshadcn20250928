@@ -276,7 +276,7 @@ Then I'll buy a ticket tomorrow too`,
       en: "/musics/最瞎結婚理由 (英語).mp3",
       ja: "/musics/最瞎結婚理由 (日語).mp3",
       yue: "/musics/最瞎結婚理由 (粵語).mp3",
-      ko: "/musics/最瞎結婚理由(韓語).mp3"
+      ko: "/musics/最瞎結婚理由 (韓語).mp3"
     },
     genre: "搞笑說唱",
     year: 2024,
