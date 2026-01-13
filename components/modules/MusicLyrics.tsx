@@ -8,6 +8,7 @@ import { Textarea } from "../ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Music, Search, Plus, Heart, Play, Pause, Volume2, SkipBack, SkipForward, Download, Copy } from "lucide-react";
 
 interface Song {
@@ -28,6 +29,12 @@ interface Song {
     ja?: string;
     yue?: string;
     ko?: string;
+  };
+  audioVariations?: {
+    [key in 'zh' | 'en' | 'ja' | 'yue' | 'ko']?: Array<{
+      name: string;
+      url: string;
+    }>
   };
   genre?: string;
   year?: number;
@@ -607,6 +614,18 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
       yue: "/musics/鋒兄的傳奇人生(粵語).mp3",
       ko: "/musics/鋒兄的傳奇人生(韓文).mp3"
     },
+    audioVariations: {
+      zh: [
+        { name: "原始音樂", url: "/musics/鋒兄的傳奇人生.mp3" },
+        { name: "Donald Trump", url: "/musics/鋒兄的傳奇人生_Donald_Trump.mp3" },
+        { name: "Pekora", url: "/musics/鋒兄的傳奇人生_Pekora.mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/鋒兄的傳奇人生_SpongeBob.mp3" },
+        { name: "Hatsune Miku", url: "/musics/鋒兄的傳奇人生_Miku.mp3" },
+        { name: "Sidhu", url: "/musics/鋒兄的傳奇人生_Sidhu.mp3" },
+        { name: "Rose", url: "/musics/鋒兄的傳奇人生_Rose.mp3" },
+        { name: "Freddie Mercury", url: "/musics/鋒兄的傳奇人生_Freddie.mp3" }
+      ]
+    },
     genre: "勵志流行",
     year: 2024,
     isFavorite: false,
@@ -626,6 +645,7 @@ export default function MusicLyrics() {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const [lyricsSearchTerm, setLyricsSearchTerm] = useState(""); // 歌词内搜索
+  const [currentVariation, setCurrentVariation] = useState<string>("default");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [newSong, setNewSong] = useState({
     title: "",
@@ -1058,6 +1078,41 @@ export default function MusicLyrics() {
     setCurrentAudio(mockAudio);
   }, [volume]);
 
+  // 获取当前音频URL
+  const getCurrentAudioUrl = useCallback(() => {
+    if (!selectedSong) return null;
+    
+    // 如果有变体且选择了非默认变体
+    if (currentVariation !== "default" && 
+        selectedSong.audioVariations?.[currentLanguage]) {
+      const variation = selectedSong.audioVariations[currentLanguage]?.find(v => v.name === currentVariation);
+      if (variation) return variation.url;
+    }
+    
+    // 否则返回默认音频
+    return selectedSong.audioFiles[currentLanguage];
+  }, [selectedSong, currentLanguage, currentVariation]);
+
+  // 当变体改变时停止播放
+  useEffect(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    }
+  }, [currentVariation]);
+
+  // 当歌曲或语言改变时更新默认变体
+  useEffect(() => {
+    if (selectedSong?.audioVariations?.[currentLanguage]) {
+      setCurrentVariation(selectedSong.audioVariations[currentLanguage]![0].name);
+    } else {
+      setCurrentVariation("default");
+    }
+  }, [selectedSong, currentLanguage]);
+
   // 播放控制
   const togglePlay = useCallback(() => {
     if (!selectedSong) return;
@@ -1073,7 +1128,7 @@ export default function MusicLyrics() {
         setIsPlaying(true);
       }
     } else {
-      const audioFile = selectedSong.audioFiles[currentLanguage];
+      const audioFile = getCurrentAudioUrl();
       if (audioFile) {
         const audio = new Audio();
         
@@ -1129,7 +1184,7 @@ export default function MusicLyrics() {
         startDemoPlayback();
       }
     }
-  }, [selectedSong, currentLanguage, currentAudio, isPlaying, volume, startDemoPlayback]);
+  }, [selectedSong, currentLanguage, currentAudio, isPlaying, volume, startDemoPlayback, getCurrentAudioUrl]);
 
   // 進度條控制
   const handleProgressChange = useCallback((value: number[]) => {
@@ -1525,10 +1580,36 @@ export default function MusicLyrics() {
                 {/* 音樂播放器控制界面 */}
                 {selectedSong.audioFiles[currentLanguage] && (
                   <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                    
+                    {/* Variation Selector */}
+                    {selectedSong.audioVariations?.[currentLanguage] && (
+                      <div className="mb-4">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                          選擇版本 / Version
+                        </label>
+                        <Select 
+                          value={currentVariation === 'default' && selectedSong.audioVariations?.[currentLanguage] ? selectedSong.audioVariations[currentLanguage][0].name : currentVariation} 
+                          onValueChange={setCurrentVariation}
+                        >
+                          <SelectTrigger className="w-[240px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                            <SelectValue placeholder="選擇版本" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedSong.audioVariations[currentLanguage]!.map((variation, index) => (
+                              <SelectItem key={index} value={variation.name}>
+                                {variation.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="font-medium text-gray-900 dark:text-gray-100">
                           正在播放: {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : currentLanguage === 'ja' ? '日文版' : currentLanguage === 'yue' ? '粵語版' : '韓語版'}
+                          {currentVariation !== 'default' && ` - ${currentVariation}`}
                         </h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {selectedSong.title} - {selectedSong.artist}
