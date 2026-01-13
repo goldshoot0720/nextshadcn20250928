@@ -617,13 +617,13 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
     audioVariations: {
       zh: [
         { name: "原始音樂", url: "/musics/鋒兄的傳奇人生.mp3" },
-        { name: "Donald Trump", url: "/musics/鋒兄的傳奇人生_Donald_Trump.mp3" },
-        { name: "Pekora", url: "/musics/鋒兄的傳奇人生_Pekora.mp3" },
-        { name: "SpongeBob SquarePants", url: "/musics/鋒兄的傳奇人生_SpongeBob.mp3" },
-        { name: "Hatsune Miku", url: "/musics/鋒兄的傳奇人生_Miku.mp3" },
-        { name: "Sidhu", url: "/musics/鋒兄的傳奇人生_Sidhu.mp3" },
-        { name: "Rose", url: "/musics/鋒兄的傳奇人生_Rose.mp3" },
-        { name: "Freddie Mercury", url: "/musics/鋒兄的傳奇人生_Freddie.mp3" }
+        { name: "Donald Trump", url: "/musics/鋒兄的傳奇人生(Donald Trump).mp3" },
+        { name: "Pekora", url: "/musics/鋒兄的傳奇人生(Pekora).mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/鋒兄的傳奇人生(SpongeBob SquarePants).mp3" },
+        { name: "Hatsune Miku", url: "/musics/鋒兄的傳奇人生(Hatsune Miku).mp3" },
+        { name: "Sidhu", url: "/musics/鋒兄的傳奇人生(Sidhu).mp3" },
+        { name: "Rose", url: "/musics/鋒兄的傳奇人生 (Rose).mp3" },
+        { name: "Freddie Mercury", url: "/musics/鋒兄的傳奇人生(Freddie Mercury).mp3" }
       ]
     },
     genre: "勵志流行",
