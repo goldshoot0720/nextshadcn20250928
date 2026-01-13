@@ -1532,6 +1532,30 @@ export default function MusicLyrics() {
                       />
                     </div>
                   </div>
+
+                  {/* Variation Selector - Moved here */}
+                  {selectedSong.audioVariations?.[currentLanguage] && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                        選擇版本 / Version
+                      </label>
+                      <Select 
+                        value={currentVariation === 'default' && selectedSong.audioVariations?.[currentLanguage] ? selectedSong.audioVariations[currentLanguage][0].name : currentVariation} 
+                        onValueChange={setCurrentVariation}
+                      >
+                        <SelectTrigger className="w-[240px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                          <SelectValue placeholder="選擇版本" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedSong.audioVariations[currentLanguage]!.map((variation, index) => (
+                            <SelectItem key={index} value={variation.name}>
+                              {variation.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <TabsContent value="zh" className="mt-4">
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                       <div className="lyrics-container">
@@ -1581,30 +1605,6 @@ export default function MusicLyrics() {
                 {selectedSong.audioFiles[currentLanguage] && (
                   <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
                     
-                    {/* Variation Selector */}
-                    {selectedSong.audioVariations?.[currentLanguage] && (
-                      <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                          選擇版本 / Version
-                        </label>
-                        <Select 
-                          value={currentVariation === 'default' && selectedSong.audioVariations?.[currentLanguage] ? selectedSong.audioVariations[currentLanguage][0].name : currentVariation} 
-                          onValueChange={setCurrentVariation}
-                        >
-                          <SelectTrigger className="w-[240px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                            <SelectValue placeholder="選擇版本" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedSong.audioVariations[currentLanguage]!.map((variation, index) => (
-                              <SelectItem key={index} value={variation.name}>
-                                {variation.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="font-medium text-gray-900 dark:text-gray-100">
