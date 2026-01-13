@@ -486,7 +486,7 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
 鋒兄的傳奇人生 
 從頭獎到榜首 
 從榜首到總統`,
-      en: `Feng's Legendary Life 
+      en: ` Feng's Legendary Life 
  From the jackpot to the top 
  From the top to the president 
  At thirty-seven, 
