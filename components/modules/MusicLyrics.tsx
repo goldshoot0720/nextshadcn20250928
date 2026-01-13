@@ -443,6 +443,174 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
     year: 2024,
     isFavorite: true,
   },
+  {
+    id: "4",
+    title: "鋒兄的傳奇人生",
+    artist: "鋒兄 & 塗哥",
+    album: "鋒兄音樂精選",
+    lyrics: {
+      zh: `鋒兄的傳奇人生 
+從頭獎到榜首 
+從榜首到總統 
+三十七歲 
+統一發票特別獎得主 
+威力彩頭獎得主 
+大樂透頭獎得主 
+高考三級資訊處理榜首 
+放棄報到 
+鋒兄塗哥公關資訊 
+創業 
+五十一歲 
+台北市資訊局長 
+五十二歲 
+台北市副秘書長 
+五十三歲 
+台北市副市長 
+五十四歲 
+台北市長候選人 
+百億市長 
+鋒兄發大財 
+幸運台北 
+六十三歲 
+總統候選人 
+一兆總統 
+鋒兄發大財 
+幸運台灣 
+鋒兄的傳奇人生 
+從頭獎到榜首 
+從榜首到總統`,
+      en: `Feng's Legendary Life 
+From the jackpot to the top 
+From the top to the president 
+At thirty-seven, 
+Winner of the Special Prize in the Receipt Lottery 
+Winner of the Power Lottery Jackpot 
+Winner of the Grand Lottery Jackpot 
+Top of the third-level civil service exam in information processing 
+Declined to report 
+Feng's PR and Information Firm 
+Started a business 
+At fifty-one, 
+Director of Information for Taipei City 
+At fifty-two, 
+Deputy Secretary-General of Taipei City 
+At fifty-three, 
+Deputy Mayor of Taipei City 
+At fifty-four, 
+Mayoral candidate of Taipei City 
+Billion-dollar Mayor 
+Feng made a fortune 
+Lucky Taipei 
+At sixty-three, 
+Presidential candidate 
+Trillion-dollar President 
+Feng made a fortune 
+Lucky Taiwan 
+Feng's Legendary Life 
+From the jackpot to the top 
+From the top to the president`,
+      ja: `鋒兄の伝説的人生 
+最初の賞からトップへ 
+トップから大統領へ 
+37歳 
+統一インボイス特別賞受賞者 
+パワーボール一等賞受賞者 
+ロト一等賞受賞者 
+高試三級情報処理トップ 
+報到を辞退 
+鋒兄 塗哥広報情報 
+起業 
+51歳 
+台北市情報局長 
+52歳 
+台北市副秘書長 
+53歳 
+台北市副市長 
+54歳 
+台北市長候補 
+億万市長 
+鋒兄 大儲け 
+幸運の台北 
+63歳 
+大統領候補 
+兆万大統領 
+鋒兄 大儲け 
+幸運の台湾 
+鋒兄の伝説的人生 
+最初の賞からトップへ 
+トップから大統領へ`,
+      yue: `鋒兄嘅傳奇人生 
+從頭獎到榜首 
+從榜首到總統 
+三十七歲 
+統一發票特別獎得主 
+威力彩頭獎得主 
+大樂透頭獎得主 
+高考三級資訊處理榜首 
+放棄報到 
+鋒兄塗哥公關資訊 
+創業 
+五十一歲 
+台北市資訊局長 
+五十二歲 
+台北市副秘書長 
+五十三歲 
+台北市副市長 
+五十四歲 
+台北市長候選人 
+百億市長 
+鋒兄發大財 
+幸運台北 
+六十三歲 
+總統候選人 
+一兆總統 
+鋒兄發大財 
+幸運台灣 
+鋒兄嘅傳奇人生 
+從頭獎到榜首 
+從榜首到總統`,
+      ko: `형 형제의 전설적인 인생 
+처음부터 1등까지 
+1등에서 대통령까지 
+서른일곱 살 
+복권 특별 상 수상자 
+파워볼 1등 수상자 
+로또 1등 수상자 
+고시 3급 정보 처리 수석 
+등록 포기 
+형 형제 도끼 홍보 정보 
+창업 
+쉰한 살 
+타이베이시 정보국장 
+쉰둘 살 
+타이베이시 부비서장 
+쉰셋 살 
+타이베이시 부시장 
+쉰넷 살 
+타이베이 시장 후보 
+수십억 시장 
+형 형제 대박 
+행운의 타이베이 
+예순셋 살 
+대통령 후보 
+조 단위 대통령 
+형 형제 대박 
+행운의 타이완 
+형 형제의 전설적인 인생 
+처음부터 1등까지 
+1등에서 대통령까지`
+    },
+    audioFiles: {
+      zh: "/musics/鋒兄的傳奇人生.mp3",
+      en: "/musics/鋒兄的傳奇人生(英文).mp3",
+      ja: "/musics/鋒兄的傳奇人生(日文).mp3",
+      yue: "/musics/鋒兄的傳奇人生(粵語).mp3",
+      ko: "/musics/鋒兄的傳奇人生(韓文).mp3"
+    },
+    genre: "勵志流行",
+    year: 2024,
+    isFavorite: false,
+  },
 ];
 
 export default function MusicLyrics() {
@@ -771,6 +939,8 @@ export default function MusicLyrics() {
       frequencies = [330, 392, 494, 587]; // E, G, B, D
     } else if (songTitle.includes('進化Show')) {
       frequencies = [262, 330, 392, 523]; // C, E, G, C
+    } else if (songTitle.includes('傳奇人生')) {
+      frequencies = [293, 369, 440, 587]; // D, F#, A, D
     } else {
       frequencies = [440, 523, 659]; // 默認
     }
