@@ -480,35 +480,35 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
 從頭獎到榜首 
 從榜首到總統`,
       en: `Feng's Legendary Life 
-From the jackpot to the top 
-From the top to the president 
-At thirty-seven, 
-Winner of the Special Prize in the Receipt Lottery 
-Winner of the Power Lottery Jackpot 
-Winner of the Grand Lottery Jackpot 
-Top of the third-level civil service exam in information processing 
-Declined to report 
-Feng's PR and Information Firm 
-Started a business 
-At fifty-one, 
-Director of Information for Taipei City 
-At fifty-two, 
-Deputy Secretary-General of Taipei City 
-At fifty-three, 
-Deputy Mayor of Taipei City 
-At fifty-four, 
-Mayoral candidate of Taipei City 
-Billion-dollar Mayor 
-Feng made a fortune 
-Lucky Taipei 
-At sixty-three, 
-Presidential candidate 
-Trillion-dollar President 
-Feng made a fortune 
-Lucky Taiwan 
-Feng's Legendary Life 
-From the jackpot to the top 
-From the top to the president`,
+ From the jackpot to the top 
+ From the top to the president 
+ At thirty-seven, 
+ Winner of the Special Prize in the Receipt Lottery 
+ Winner of the Power Lottery Jackpot 
+ Winner of the Grand Lottery Jackpot 
+ Top of the third-level civil service exam in information processing 
+ Declined to report 
+ Feng's PR and Information Firm 
+ Started a business 
+ At fifty-one, 
+ Director of Information for Taipei City 
+ At fifty-two, 
+ Deputy Secretary-General of Taipei City 
+ At fifty-three, 
+ Deputy Mayor of Taipei City 
+ At fifty-four, 
+ Mayoral candidate of Taipei City 
+ Billion-dollar Mayor 
+ Feng made a fortune 
+ Lucky Taipei 
+ At sixty-three, 
+ Presidential candidate 
+ Trillion-dollar President 
+ Feng made a fortune 
+ Lucky Taiwan 
+ Feng's Legendary Life 
+ From the jackpot to the top 
+ From the top to the president`,
       ja: `鋒兄の伝説的人生 
 最初の賞からトップへ 
 トップから大統領へ 
