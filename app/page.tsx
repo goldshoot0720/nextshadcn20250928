@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import FoodManagement from "@/components/modules/FoodManagement";
 import SubscriptionManagement from "@/components/modules/SubscriptionManagement";
@@ -83,6 +83,29 @@ function BankStatistics() {
   ];
 
   const [banks, setBanks] = useState(INITIAL_BANKS);
+  const STORAGE_KEY = "bank_statistics_values";
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!Array.isArray(saved)) return;
+      setBanks((prev) =>
+        prev.map((b) => {
+          const found = saved.find((s: any) => s.id === b.id);
+          return found ? { ...b, value: Number(found.value) || 0 } : b;
+        })
+      );
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      const payload = banks.map((b) => ({ id: b.id, value: b.value }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch {}
+  }, [banks]);
 
   const total = useMemo(() => {
     return banks.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
