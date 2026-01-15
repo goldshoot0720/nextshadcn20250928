@@ -146,6 +146,18 @@ Tu Ge's Phenomenal Rise: Feng Xiong made three hundred and thirty-three billion,
       yue: "/musics/塗哥水電王子爆紅(粵語).mp3",
       ko: "/musics/塗哥水電王子爆紅(韓語).mp3"
     },
+    audioVariations: {
+      zh: [
+        { name: "原始音樂", url: "/musics/塗哥水電王子爆紅.mp3" },
+        { name: "Donald Trump", url: "/musics/塗哥水電王子爆紅(Donald Trump).mp3" },
+        { name: "Pekora", url: "/musics/塗哥水電王子爆紅(Pekora).mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/塗哥水電王子爆紅(SpongeBob SquarePants).mp3" },
+        { name: "Hatsune Miku", url: "/musics/塗哥水電王子爆紅(Hatsune Miku).mp3" },
+        { name: "Sidhu", url: "/musics/塗哥水電王子爆紅(Sidhu).mp3" },
+        { name: "Rose", url: "/musics/塗哥水電王子爆紅(Rose).mp3" },
+        { name: "Freddie Mercury", url: "/musics/塗哥水電王子爆紅(Freddie Mercury).mp3" }
+      ]
+    },
     genre: "台灣民謠",
     year: 2024,
     isFavorite: true,
@@ -284,6 +296,18 @@ Then I'll buy a ticket tomorrow too`,
       ja: "/musics/最瞎結婚理由 (日語).mp3",
       yue: "/musics/最瞎結婚理由 (粵語).mp3",
       ko: "/musics/最瞎結婚理由 (韓語).mp3"
+    },
+    audioVariations: {
+      zh: [
+        { name: "原始音樂", url: "/musics/最瞎結婚理由.mp3" },
+        { name: "Donald Trump", url: "/musics/最瞎結婚理由(Donald Trump).mp3" },
+        { name: "Pekora", url: "/musics/最瞎結婚理由(Pekora).mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/最瞎結婚理由(SpongeBob SquarePants).mp3" },
+        { name: "Hatsune Miku", url: "/musics/最瞎結婚理由(Hatsune Miku).mp3" },
+        { name: "Sidhu", url: "/musics/最瞎結婚理由(Sidhu).mp3" },
+        { name: "Rose", url: "/musics/最瞎結婚理由(Rose).mp3" },
+        { name: "Freddie Mercury", url: "/musics/最瞎結婚理由(Freddie Mercury).mp3" }
+      ]
     },
     genre: "搞笑說唱",
     year: 2024,
