@@ -20,6 +20,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "food", label: "食品管理", icon: <Package size={18} /> },
   { id: "videos", label: "影片介紹", icon: <Play size={18} /> },
   { id: "music", label: "鋒兄音樂歌詞", icon: <Music size={18} /> },
+  { id: "bank-stats", label: "銀行統計", icon: <BarChart3 size={18} /> },
   { id: "about", label: "關於我們", icon: <Info size={18} /> },
 ];
 
@@ -45,6 +46,8 @@ export default function DashboardPage() {
         return <VideoIntroduction />;
       case "music":
         return <MusicLyrics />;
+      case "bank-stats":
+        return <BankStatistics />;
       case "about":
         return <AboutUs />;
       default:
@@ -60,6 +63,20 @@ export default function DashboardPage() {
     >
       {currentContent}
     </DashboardLayout>
+  );
+}
+
+// 銀行統計模組
+function BankStatistics() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">銀行統計</h1>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <p className="text-gray-500 dark:text-gray-400">
+          這裡將顯示銀行相關統計資訊。後續可以在此擴充詳細報表與圖表。
+        </p>
+      </div>
+    </div>
   );
 }
 

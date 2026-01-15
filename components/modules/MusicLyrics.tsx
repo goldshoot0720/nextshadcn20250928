@@ -444,7 +444,18 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
       en: "/musics/鋒兄進化Show🔥(英語).mp3",
       ja: "/musics/鋒兄進化Show🔥(日語).mp3",
       yue: "/musics/鋒兄進化Show🔥(粵語).mp3",
-      ko: "/musics/鋒兄進化Show🔥(韓語).mp3"
+      ko: "/musics/鋒兄進化Show🔥(韓文).mp3"
+    },
+    audioVariations: {
+      zh: [
+        { name: "Pekora", url: "/musics/鋒兄進化Show🔥(Pekora).mp3" },
+        { name: "Donald Trump", url: "/musics/鋒兄進化Show🔥(Donald Trump).mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化Show🔥(SpongeBob SquarePants).mp3" },
+        { name: "Hatsune Miku", url: "/musics/鋒兄進化Show🔥(Hatsune Miku).mp3" },
+        { name: "Sidhu", url: "/musics/鋒兄進化Show🔥(Sidhu).mp3" },
+        { name: "Rose", url: "/musics/鋒兄進化Show🔥(Rose).mp3" },
+        { name: "Freddie Mercury", url: "/musics/鋒兄進化Show🔥(Freddie Mercury).mp3" }
+      ]
     },
     genre: "嘻哈說唱",
     year: 2024,
