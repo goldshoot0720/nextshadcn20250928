@@ -448,8 +448,9 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
     },
     audioVariations: {
       zh: [
-        { name: "Pekora", url: "/musics/鋒兄進化Show🔥(Pekora).mp3" },
+        { name: "原始音樂", url: "/musics/鋒兄進化Show🔥.mp3" },
         { name: "Donald Trump", url: "/musics/鋒兄進化Show🔥(Donald Trump).mp3" },
+        { name: "Pekora", url: "/musics/鋒兄進化Show🔥(Pekora).mp3" },
         { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化Show🔥(SpongeBob SquarePants).mp3" },
         { name: "Hatsune Miku", url: "/musics/鋒兄進化Show🔥(Hatsune Miku).mp3" },
         { name: "Sidhu", url: "/musics/鋒兄進化Show🔥(Sidhu).mp3" },
