@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
@@ -18,6 +19,66 @@ interface EnhancedDashboardProps {
 
 export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps) {
   const { stats, loading } = useDashboardStats();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof Notification === "undefined") return;
+
+    const items = stats.subscriptionsExpiring3DaysList.filter(
+      (item) => item.daysRemaining >= 0 && item.daysRemaining <= 3
+    );
+    if (items.length === 0) return;
+
+    const storageKey = "subscriptionNotificationState";
+    let notified: Record<string, string> = {};
+
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        notified = JSON.parse(raw) as Record<string, string>;
+      }
+    } catch {
+    }
+
+    const toNotify = items.filter((item) => {
+      const key = `${item.id}-${item.nextDate}`;
+      return notified[key] !== "shown";
+    });
+
+    if (toNotify.length === 0) return;
+
+    const showNotifications = () => {
+      const updated = { ...notified };
+
+      toNotify.forEach((item) => {
+        const key = `${item.id}-${item.nextDate}`;
+
+        try {
+          new Notification("訂閱即將到期提醒", {
+            body: `${item.name} 將在 ${item.daysRemaining} 天內到期`,
+            icon: "/favicon.ico",
+          });
+          updated[key] = "shown";
+        } catch {
+        }
+      });
+
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch {
+      }
+    };
+
+    if (Notification.permission === "granted") {
+      showNotifications();
+    } else if (Notification.permission === "default") {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          showNotifications();
+        }
+      });
+    }
+  }, [stats.subscriptionsExpiring3DaysList]);
 
   if (loading) return <FullPageLoading text="載入統計數據中..." />;
 
