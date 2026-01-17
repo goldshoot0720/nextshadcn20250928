@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,6 +22,99 @@ export default function SubscriptionManagement() {
   const { subscriptions, loading, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
   const [form, setForm] = useState<SubscriptionFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [canAskNotification, setCanAskNotification] = useState(false);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof Notification === "undefined") return;
+    setCanAskNotification(true);
+    if (Notification.permission === "granted") {
+      setNotificationEnabled(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+    if (!subscriptions.length) return;
+
+    const items = subscriptions
+      .map((sub) => {
+        const info = getSubscriptionExpiryInfo(sub);
+        return { sub, daysRemaining: info.daysRemaining };
+      })
+      .filter(({ daysRemaining }) => daysRemaining >= 0 && daysRemaining <= 3);
+
+    if (items.length === 0) return;
+
+    const storageKey = "subscriptionNotificationState";
+    let notified: Record<string, string> = {};
+
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        notified = JSON.parse(raw) as Record<string, string>;
+      }
+    } catch {
+    }
+
+    const toNotify = items.filter(({ sub }) => {
+      const key = `${sub.$id}-${sub.nextdate}`;
+      return notified[key] !== "shown";
+    });
+
+    if (toNotify.length === 0) return;
+
+    const updated = { ...notified };
+
+    toNotify.forEach(({ sub, daysRemaining }) => {
+      const key = `${sub.$id}-${sub.nextdate}`;
+
+      try {
+        new Notification("訂閱即將到期提醒", {
+          body: `${sub.name} 將在 ${daysRemaining} 天內到期`,
+          icon: "/favicon.ico",
+        });
+        updated[key] = "shown";
+      } catch {
+      }
+    });
+
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
+    }
+  }, [subscriptions]);
+
+  const handleEnableNotification = () => {
+    if (typeof Notification === "undefined") {
+      alert("此瀏覽器不支援通知功能");
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      setNotificationEnabled(true);
+      alert("已啟用通知");
+      return;
+    }
+
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        setNotificationEnabled(true);
+        try {
+          new Notification("通知已啟用", {
+            body: "之後訂閱到期會顯示提醒",
+            icon: "/favicon.ico",
+          });
+        } catch {
+        }
+      } else if (permission === "denied") {
+        alert("瀏覽器已拒絕通知權限");
+      }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +162,15 @@ export default function SubscriptionManagement() {
           <StatCard title="總月費" value={formatCurrency(stats.totalMonthlyFee)} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
         }
       />
+
+      {canAskNotification && !notificationEnabled && (
+        <div className="flex items-center justify-between rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+          <span>可以在此裝置啟用訂閱到期通知</span>
+          <Button type="button" size="sm" variant="outline" onClick={handleEnableNotification} className="rounded-lg">
+            啟用通知
+          </Button>
+        </div>
+      )}
 
       <FormCard title={editingId ? "編輯訂閱" : "新增訂閱"} accentColor="from-green-500 to-green-600">
         <form onSubmit={handleSubmit} className="space-y-4">

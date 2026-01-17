@@ -16,8 +16,17 @@ export function useSubscriptions() {
     setError(null);
     try {
       const res = await fetch(API_ENDPOINTS.SUBSCRIPTION, { cache: "no-store" });
-      if (!res.ok) throw new Error("載入失敗");
-      
+      if (!res.ok) {
+        try {
+          const data = await res.json();
+          const serverMessage =
+            data && typeof data.error === "string" ? data.error : null;
+          throw new Error(serverMessage || "載入訂閱資料失敗");
+        } catch {
+          throw new Error("載入訂閱資料失敗");
+        }
+      }
+
       let data: Subscription[] = await res.json();
       // 按下次付款日排序
       data = data.sort(

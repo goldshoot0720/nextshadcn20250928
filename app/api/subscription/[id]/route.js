@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
 import { Client, Databases } from "appwrite";
 
-const client = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID);
+function createAppwrite() {
+  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = process.env.APPWRITE_DATABASE_ID;
+  const collectionId = process.env.APPWRITE_SUBSCRIPTION_COLLECTION_ID;
 
-const databases = new Databases(client);
-const databaseId = process.env.APPWRITE_DATABASE_ID;
-const collectionId = process.env.APPWRITE_SUBSCRIPTION_COLLECTION_ID;
+  if (!endpoint || !projectId || !databaseId || !collectionId) {
+    throw new Error("Appwrite configuration is missing");
+  }
+
+  const client = new Client()
+    .setEndpoint(endpoint)
+    .setProject(projectId);
+
+  const databases = new Databases(client);
+
+  return { databases, databaseId, collectionId };
+}
 
 // 更新訂閱
 export async function PUT(req, context) {
@@ -17,6 +28,8 @@ export async function PUT(req, context) {
     const body = await req.json();
 
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+
+    const { databases, databaseId, collectionId } = createAppwrite();
 
     // 確保 price 是整數
     const bodyData = {
@@ -33,7 +46,8 @@ export async function PUT(req, context) {
     return NextResponse.json(res);
   } catch (err) {
     console.error("PUT /subscription/[id] error:", err);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Update failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -45,10 +59,13 @@ export async function DELETE(req, context) {
 
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
+    const { databases, databaseId, collectionId } = createAppwrite();
+
     await databases.deleteDocument(databaseId, collectionId, id);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /subscription/[id] error:", err);
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Delete failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
