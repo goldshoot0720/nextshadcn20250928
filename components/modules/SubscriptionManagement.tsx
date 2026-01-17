@@ -40,6 +40,12 @@ export default function SubscriptionManagement() {
     if (Notification.permission !== "granted") return;
     if (!subscriptions.length) return;
 
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour < 6) return;
+
+    const today = now.toISOString().slice(0, 10);
+
     const items = subscriptions
       .map((sub) => {
         const info = getSubscriptionExpiryInfo(sub);
@@ -49,7 +55,7 @@ export default function SubscriptionManagement() {
 
     if (items.length === 0) return;
 
-    const storageKey = "subscriptionNotificationState";
+    const storageKey = "subscriptionNotificationDaily";
     let notified: Record<string, string> = {};
 
     try {
@@ -61,7 +67,7 @@ export default function SubscriptionManagement() {
     }
 
     const toNotify = items.filter(({ sub }) => {
-      const key = `${sub.$id}-${sub.nextdate}`;
+      const key = `${sub.$id}-${sub.nextdate}-${today}`;
       return notified[key] !== "shown";
     });
 
@@ -70,7 +76,7 @@ export default function SubscriptionManagement() {
     const updated = { ...notified };
 
     toNotify.forEach(({ sub, daysRemaining }) => {
-      const key = `${sub.$id}-${sub.nextdate}`;
+      const key = `${sub.$id}-${sub.nextdate}-${today}`;
 
       try {
         new Notification("訂閱即將到期提醒", {

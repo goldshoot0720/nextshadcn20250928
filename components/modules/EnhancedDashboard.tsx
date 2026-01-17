@@ -23,13 +23,20 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour < 6) return;
+
+    const today = now.toISOString().slice(0, 10);
 
     const items = stats.subscriptionsExpiring3DaysList.filter(
       (item) => item.daysRemaining >= 0 && item.daysRemaining <= 3
     );
     if (items.length === 0) return;
 
-    const storageKey = "subscriptionNotificationState";
+    const storageKey = "subscriptionNotificationDaily";
     let notified: Record<string, string> = {};
 
     try {
@@ -41,42 +48,30 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
     }
 
     const toNotify = items.filter((item) => {
-      const key = `${item.id}-${item.nextDate}`;
+      const key = `${item.id}-${item.nextDate}-${today}`;
       return notified[key] !== "shown";
     });
 
     if (toNotify.length === 0) return;
 
-    const showNotifications = () => {
-      const updated = { ...notified };
+    const updated = { ...notified };
 
-      toNotify.forEach((item) => {
-        const key = `${item.id}-${item.nextDate}`;
-
-        try {
-          new Notification("訂閱即將到期提醒", {
-            body: `${item.name} 將在 ${item.daysRemaining} 天內到期`,
-            icon: "/favicon.ico",
-          });
-          updated[key] = "shown";
-        } catch {
-        }
-      });
+    toNotify.forEach((item) => {
+      const key = `${item.id}-${item.nextDate}-${today}`;
 
       try {
-        window.localStorage.setItem(storageKey, JSON.stringify(updated));
+        new Notification("訂閱即將到期提醒", {
+          body: `${item.name} 將在 ${item.daysRemaining} 天內到期`,
+          icon: "/favicon.ico",
+        });
+        updated[key] = "shown";
       } catch {
       }
-    };
+    });
 
-    if (Notification.permission === "granted") {
-      showNotifications();
-    } else if (Notification.permission === "default") {
-      Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-          showNotifications();
-        }
-      });
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
     }
   }, [stats.subscriptionsExpiring3DaysList]);
 
