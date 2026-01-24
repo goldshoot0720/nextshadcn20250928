@@ -83,29 +83,102 @@ function BankStatistics() {
   ];
 
   const [banks, setBanks] = useState(INITIAL_BANKS);
-  const STORAGE_KEY = "bank_statistics_values";
-
+  // 新增 Appwrite ID 映射
+  const [bankMap, setBankMap] = useState<Record<string, string>>({}); // bankId -> $id
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // 載入銀行數據
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw);
-      if (!Array.isArray(saved)) return;
-      setBanks((prev) =>
-        prev.map((b) => {
-          const found = saved.find((s: any) => s.id === b.id);
-          return found ? { ...b, value: Number(found.value) || 0 } : b;
-        })
-      );
-    } catch {}
+    async function loadBanks() {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/bank');
+        if (!res.ok) throw new Error('Failed to fetch banks');
+        const data = await res.json();
+        
+        if (data.length > 0) {
+          // 如果有數據，更新狀態
+          const newMap: Record<string, string> = {};
+          const newBanks = INITIAL_BANKS.map(initialBank => {
+            // 使用 name 來比對，因為 bankId 不再存儲於後端
+            const found = data.find((d: any) => d.name === initialBank.name);
+            if (found) {
+              newMap[initialBank.id] = found.$id;
+              // 映射: deposit -> value
+              return { ...initialBank, value: found.deposit || 0 };
+            }
+            return initialBank;
+          });
+          
+          setBankMap(newMap);
+          setBanks(newBanks);
+        } else {
+          // 如果沒有數據，執行初始化
+          console.log('Initializing bank data...');
+          const newMap: Record<string, string> = {};
+          
+          for (const bank of INITIAL_BANKS) {
+            try {
+              const createRes = await fetch('/api/bank', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: bank.name,
+                  deposit: bank.value, // 映射: value -> deposit
+                  site: bank.siteUrl,  // 映射: siteUrl -> site
+                  // 其他新欄位設為 null
+                  address: null,
+                  withdrawals: 0,
+                  transfer: 0,
+                  activity: null,
+                  card: null,
+                  account: null
+                })
+              });
+              if (createRes.ok) {
+                const created = await createRes.json();
+                newMap[bank.id] = created.$id;
+              }
+            } catch (err) {
+              console.error(`Failed to initialize bank ${bank.name}`, err);
+            }
+          }
+          setBankMap(newMap);
+        }
+      } catch (err) {
+        console.error('Error loading banks:', err);
+        // Fallback to localStorage logic if API fails? 
+        // 暫時保留 localStorage 讀取作為備案，或者直接提示錯誤。
+        // 為了相容性，如果 API 失敗，嘗試讀取 localStorage
+        try {
+          const raw = localStorage.getItem("bank_statistics_values");
+          if (raw) {
+            const saved = JSON.parse(raw);
+            if (Array.isArray(saved)) {
+              setBanks((prev) =>
+                prev.map((b) => {
+                  const found = saved.find((s: any) => s.id === b.id);
+                  return found ? { ...b, value: Number(found.value) || 0 } : b;
+                })
+              );
+            }
+          }
+        } catch {}
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadBanks();
   }, []);
 
-  useEffect(() => {
-    try {
-      const payload = banks.map((b) => ({ id: b.id, value: b.value }));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch {}
-  }, [banks]);
+  // 移除 localStorage 的 useEffect
+  // useEffect(() => {
+  //   try {
+  //     const payload = banks.map((b) => ({ id: b.id, value: b.value }));
+  //     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  //   } catch {}
+  // }, [banks]);
 
   const total = useMemo(() => {
     return banks.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
@@ -117,9 +190,27 @@ function BankStatistics() {
     );
   }, []);
 
+  const handleBlur = useCallback(async (id: string, value: number) => {
+    const documentId = bankMap[id];
+    if (!documentId) return; // 如果還沒有對應的 document ID，無法更新
+
+    try {
+      await fetch(`/api/bank/${documentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deposit: value }) // 映射: value -> deposit
+      });
+    } catch (err) {
+      console.error('Failed to update bank value', err);
+    }
+  }, [bankMap]);
+
   return (
     <div className="space-y-4 lg:space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">銀行統計</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        銀行統計
+        {isLoading && <span className="text-sm font-normal text-gray-500">(同步中...)</span>}
+      </h1>
 
       <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
         <StatCard title="合計" value={total} gradient="from-purple-500 to-purple-600" />
@@ -140,6 +231,7 @@ function BankStatistics() {
                   type="number"
                   value={bank.value}
                   onChange={(e) => handleChange(bank.id, e.target.value)}
+                  onBlur={(e) => handleBlur(bank.id, Number(e.target.value))}
                   className="w-24 text-right"
                 />
               </div>
