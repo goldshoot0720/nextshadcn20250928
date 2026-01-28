@@ -24,6 +24,27 @@ export default function SubscriptionManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [canAskNotification, setCanAskNotification] = useState(false);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
+
+  const truncateName = (name: string, id: string) => {
+    const isExpanded = expandedNames.has(id);
+    if (name.length <= 37 || isExpanded) {
+      return name;
+    }
+    return name.substring(0, 37);
+  };
+
+  const toggleNameExpansion = (id: string) => {
+    setExpandedNames(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -152,6 +173,29 @@ export default function SubscriptionManagement() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleExtend30Days = () => {
+    if (!editingId) return;
+    
+    // 計算新日期 (+30天)
+    const currentDate = new Date(form.nextdate);
+    currentDate.setDate(currentDate.getDate() + 30);
+    const newDate = currentDate.toISOString().split('T')[0];
+    
+    // 更新表單中的日期
+    setForm(prev => ({ ...prev, nextdate: newDate }));
+  };
+
+  const handleDeleteFromForm = async () => {
+    if (!editingId) return;
+    if (!confirm(`確定刪除 ${form.name}？`)) return;
+    try {
+      await deleteSubscription(editingId);
+      resetForm();
+    } catch {
+      alert("刪除失敗，請稍後再試");
+    }
+  };
+
   const resetForm = () => {
     setForm(INITIAL_FORM);
     setEditingId(null);
@@ -165,7 +209,10 @@ export default function SubscriptionManagement() {
         title="訂閱管理"
         subtitle={`共 ${stats.total} 個訂閱服務`}
         action={
-          <StatCard title="總月費" value={formatCurrency(stats.totalMonthlyFee)} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
+          <div className="flex gap-3">
+            <StatCard title="本月月費" value={formatCurrency(stats.totalMonthlyFee)} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
+            <StatCard title="下月月費" value={formatCurrency(stats.nextMonthFee)} gradient="from-purple-500 to-purple-600" className="min-w-[160px]" />
+          </div>
         }
       />
 
@@ -190,7 +237,13 @@ export default function SubscriptionManagement() {
             <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25">
               {editingId ? "更新訂閱" : "新增訂閱"}
             </Button>
+            {editingId && (
+              <Button type="button" variant="default" onClick={handleExtend30Days} className="h-12 px-6 rounded-xl bg-blue-500 hover:bg-blue-600">
+                +30天
+              </Button>
+            )}
             {editingId && <Button type="button" variant="outline" onClick={resetForm} className="h-12 px-6 rounded-xl">取消編輯</Button>}
+            {editingId && <Button type="button" variant="destructive" onClick={handleDeleteFromForm} className="h-12 px-6 rounded-xl">刪除</Button>}
           </FormActions>
         </form>
       </FormCard>
@@ -207,7 +260,6 @@ export default function SubscriptionManagement() {
                     <TableHead className="font-semibold">服務名稱</TableHead>
                     <TableHead className="font-semibold">下次付款日期</TableHead>
                     <TableHead className="font-semibold">月費</TableHead>
-                    <TableHead className="font-semibold">網站</TableHead>
                     <TableHead className="font-semibold">操作</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -220,7 +272,22 @@ export default function SubscriptionManagement() {
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />
-                            <span>{sub.name}</span>
+                            <div className="flex items-center gap-2">
+                              <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                                {truncateName(sub.name, sub.$id)}
+                              </a>
+                              {sub.name.length > 37 && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => toggleNameExpansion(sub.$id)}
+                                  className="h-6 px-2 text-xs rounded-lg"
+                                >
+                                  {expandedNames.has(sub.$id) ? "收起" : "詳細"}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -231,12 +298,8 @@ export default function SubscriptionManagement() {
                         </TableCell>
                         <TableCell><span className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(sub.price)}</span></TableCell>
                         <TableCell>
-                          <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 underline truncate block max-w-32 rounded-lg px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20">前往網站</a>
-                        </TableCell>
-                        <TableCell>
                           <div className="flex gap-2">
                             <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="rounded-xl">編輯</Button>
-                            <Button type="button" size="sm" variant="destructive" onClick={() => handleDelete(sub.$id)} className="rounded-xl">刪除</Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -255,9 +318,24 @@ export default function SubscriptionManagement() {
                     <DataCardItem key={sub.$id} highlight={highlight}>
                       <div className="space-y-3">
                         <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1">
                             <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                            <div className="flex flex-col gap-1 flex-1">
+                              <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold">
+                                {truncateName(sub.name, sub.$id)}
+                              </a>
+                              {sub.name.length > 37 && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => toggleNameExpansion(sub.$id)}
+                                  className="h-6 px-2 text-xs rounded-lg self-start"
+                                >
+                                  {expandedNames.has(sub.$id) ? "收起" : "詳細服務名稱"}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                           <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(sub.price)}</span>
                         </div>
@@ -272,7 +350,6 @@ export default function SubscriptionManagement() {
                         </div>
                         <div className="flex gap-2 pt-2">
                           <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="flex-1 rounded-xl">編輯</Button>
-                          <Button type="button" size="sm" variant="destructive" onClick={() => handleDelete(sub.$id)} className="flex-1 rounded-xl">刪除</Button>
                         </div>
                       </div>
                     </DataCardItem>

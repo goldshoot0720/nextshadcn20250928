@@ -112,15 +112,36 @@ export function useSubscriptions() {
   }, [loadSubscriptions]);
 
   // 計算統計資料
-  const stats = {
-    total: subscriptions.length,
-    totalMonthlyFee: subscriptions.reduce((sum, s) => sum + s.price, 0),
-    overdue: subscriptions.filter((s) => getDaysFromToday(s.nextdate) < 0).length,
-    expiringSoon: subscriptions.filter((s) => {
-      const days = getDaysFromToday(s.nextdate);
-      return days >= 0 && days <= 7;
-    }).length,
-  };
+  const stats = (() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    // 計算本月需要付款的訂閱
+    const currentMonthSubscriptions = subscriptions.filter(s => {
+      const nextDate = new Date(s.nextdate);
+      return nextDate.getFullYear() === currentYear && nextDate.getMonth() === currentMonth;
+    });
+    
+    // 計算下月需要付款的訂閱
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    const nextMonthSubscriptions = subscriptions.filter(s => {
+      const nextDate = new Date(s.nextdate);
+      return nextDate.getFullYear() === nextMonthYear && nextDate.getMonth() === nextMonth;
+    });
+    
+    return {
+      total: subscriptions.length,
+      totalMonthlyFee: currentMonthSubscriptions.reduce((sum, s) => sum + s.price, 0),
+      nextMonthFee: nextMonthSubscriptions.reduce((sum, s) => sum + s.price, 0),
+      overdue: subscriptions.filter((s) => getDaysFromToday(s.nextdate) < 0).length,
+      expiringSoon: subscriptions.filter((s) => {
+        const days = getDaysFromToday(s.nextdate);
+        return days >= 0 && days <= 7;
+      }).length,
+    };
+  })();
 
   return {
     subscriptions,
