@@ -13,7 +13,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { useArticles } from "@/hooks/useArticles";
 import { ArticleFormData, Article } from "@/types";
 import { formatDate } from "@/lib/formatters";
-import { FileText, Link as LinkIcon, File } from "lucide-react";
+import { FileText, Link as LinkIcon, File, Copy, Check } from "lucide-react";
 
 const INITIAL_FORM: ArticleFormData = {
   title: "",
@@ -29,6 +29,7 @@ export default function NotesManagement() {
   const [form, setForm] = useState<ArticleFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +93,17 @@ export default function NotesManagement() {
       }
       return newSet;
     });
+  };
+
+  const handleCopyContent = async (content: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("複製失敗:", err);
+      alert("複製失敗，請再試一次");
+    }
   };
 
   if (loading) return <FullPageLoading text="載入筆記資料中..." />;
@@ -188,7 +200,23 @@ export default function NotesManagement() {
                         <FileText className="text-purple-600 dark:text-purple-400" size={20} />
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">{article.title}</h3>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(article.newDate)}</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleCopyContent(article.content, article.$id)}
+                          className="h-8 px-2 rounded-lg"
+                          title="複製內容"
+                        >
+                          {copiedId === article.$id ? (
+                            <Check className="text-green-600 dark:text-green-400" size={16} />
+                          ) : (
+                            <Copy className="text-gray-600 dark:text-gray-400" size={16} />
+                          )}
+                        </Button>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(article.newDate)}</span>
+                      </div>
                     </div>
                     
                     <div className="text-sm text-gray-600 dark:text-gray-300">
