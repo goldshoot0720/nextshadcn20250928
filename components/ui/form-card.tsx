@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { SubSectionHeader } from "./section-header";
 
 interface FormCardProps {
-  title: string;
+  title: string | React.ReactNode;
   accentColor?: string;
   children: React.ReactNode;
   className?: string;
@@ -23,7 +23,11 @@ export function FormCard({
         className
       )}
     >
-      <SubSectionHeader title={title} accentColor={accentColor} />
+      {typeof title === 'string' ? (
+        <SubSectionHeader title={title} accentColor={accentColor} />
+      ) : (
+        <div className="mb-4">{title}</div>
+      )}
       {children}
     </div>
   );

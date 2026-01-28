@@ -13,7 +13,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { useArticles } from "@/hooks/useArticles";
 import { ArticleFormData, Article } from "@/types";
 import { formatDate } from "@/lib/formatters";
-import { FileText, Link as LinkIcon, File, Copy, Check } from "lucide-react";
+import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 
 const INITIAL_FORM: ArticleFormData = {
   title: "",
@@ -30,6 +30,7 @@ export default function NotesManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isFormCollapsed, setIsFormCollapsed] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,8 +119,27 @@ export default function NotesManagement() {
         }
       />
 
-      <FormCard title={editingId ? "編輯筆記" : "新增筆記"} accentColor="from-purple-500 to-purple-600">
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <FormCard 
+        title={
+          <div className="flex items-center justify-between w-full border-l-4 border-purple-500 pl-4 py-2">
+            <h2 className="text-lg font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
+              {editingId ? "編輯筆記" : "新增筆記"}
+            </h2>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsFormCollapsed(!isFormCollapsed)}
+              className="h-8 px-2 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            >
+              {isFormCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+            </Button>
+          </div>
+        }
+        accentColor="from-purple-500 to-purple-600"
+      >
+        {!isFormCollapsed && (
+          <form onSubmit={handleSubmit} className="space-y-4">
           <FormGrid>
             <Input
               placeholder="筆記標題"
@@ -181,6 +201,7 @@ export default function NotesManagement() {
             {editingId && <Button type="button" variant="destructive" onClick={handleDeleteFromForm} className="h-12 px-6 rounded-xl">刪除</Button>}
           </FormActions>
         </form>
+        )}
       </FormCard>
 
       <DataCard>
