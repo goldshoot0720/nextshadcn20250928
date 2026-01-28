@@ -291,7 +291,7 @@ export default function NotesManagement() {
                         {isExpanded ? (
                           <p className="whitespace-pre-wrap">{article.content}</p>
                         ) : (
-                          <p className="line-clamp-2">{article.content}</p>
+                          <p className="line-clamp-5 whitespace-pre-wrap">{article.content}</p>
                         )}
                       </div>
 
