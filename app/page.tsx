@@ -9,7 +9,7 @@ import VideoIntroduction from "@/components/modules/VideoIntroduction";
 import ImageGallery from "@/components/modules/ImageGallery";
 import AboutUs from "@/components/modules/AboutUs";
 import MusicLyrics from "@/components/modules/MusicLyrics";
-import { Package, CreditCard, Home, BarChart3, Info, Play, Music } from "lucide-react";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText } from "lucide-react";
 import { MenuItem } from "@/types";
 import { Input, DataCard, StatCard } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
@@ -21,7 +21,8 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "subscription", label: "訂閱管理", icon: <CreditCard size={18} /> },
   { id: "food", label: "食品管理", icon: <Package size={18} /> },
   { id: "videos", label: "影片介紹", icon: <Play size={18} /> },
-  { id: "music", label: "鋒兄音樂歌詞", icon: <Music size={18} /> },
+  { id: "notes", label: "鋒兄筆記", icon: <FileText size={18} /> },
+  { id: "music", label: "鋒兄音樂", icon: <Music size={18} /> },
   { id: "bank-stats", label: "銀行統計", icon: <BarChart3 size={18} /> },
   { id: "about", label: "關於我們", icon: <Info size={18} /> },
 ];
@@ -46,6 +47,8 @@ export default function DashboardPage() {
         return <FoodManagement />;
       case "videos":
         return <VideoIntroduction />;
+      case "notes":
+        return <NotesModule />;
       case "music":
         return <MusicLyrics />;
       case "bank-stats":
@@ -65,6 +68,18 @@ export default function DashboardPage() {
     >
       {currentContent}
     </DashboardLayout>
+  );
+}
+
+// 鋒兄筆記模組
+function NotesModule() {
+  return (
+    <div className="space-y-4 lg:space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">鋒兄筆記</h1>
+      <DataCard className="p-6">
+        <p className="text-gray-500 dark:text-gray-400">此功能正在開發中...</p>
+      </DataCard>
+    </div>
   );
 }
 
