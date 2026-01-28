@@ -69,6 +69,7 @@ export const API_ENDPOINTS = {
   SUBSCRIPTION: "/api/subscription",
   IMAGES: "/api/images",
   VIDEOS: "/api/videos",
+  ARTICLE: "/api/article",
 } as const;
 
 // 動畫設定

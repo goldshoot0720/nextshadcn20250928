@@ -111,6 +111,40 @@ export interface MenuItem {
   children?: MenuItem[];
 }
 
+// 文章相關類型
+export interface Article {
+  $id: string;
+  title: string;
+  content: string;
+  newDate: string;
+  url1?: string;
+  url2?: string;
+  url3?: string;
+  file1?: string;
+  file1type?: string;
+  file2?: string;
+  file2type?: string;
+  file3?: string;
+  file3type?: string;
+  $createdAt: string;
+  $updatedAt: string;
+}
+
+export interface ArticleFormData {
+  title: string;
+  content: string;
+  newDate: string;
+  url1?: string;
+  url2?: string;
+  url3?: string;
+  file1?: string;
+  file1type?: string;
+  file2?: string;
+  file2type?: string;
+  file3?: string;
+  file3type?: string;
+}
+
 // API 回應類型
 export interface ApiResponse<T> {
   success: boolean;
