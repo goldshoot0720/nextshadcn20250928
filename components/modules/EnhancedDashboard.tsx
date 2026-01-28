@@ -88,7 +88,7 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
         <StatCard title="食品項目" value={stats.totalFoods} icon={Package} gradient="from-blue-500 to-blue-600" />
         <StatCard title="訂閱服務" value={stats.totalSubscriptions} icon={CreditCard} gradient="from-green-500 to-green-600" />
         <StatCard title="需要關注" value={stats.foodsExpiring7Days + stats.subscriptionsExpiring3Days} icon={AlertTriangle} gradient="from-yellow-500 to-orange-500" />
-        <StatCard title="月費總計" value={formatCurrency(stats.totalMonthlyFee)} icon={DollarSign} gradient="from-purple-500 to-purple-600" />
+        <StatCard title="年費總計" value={formatCurrency(stats.totalAnnualFee)} icon={DollarSign} gradient="from-purple-500 to-purple-600" />
       </div>
 
       {/* 詳細統計區域 */}

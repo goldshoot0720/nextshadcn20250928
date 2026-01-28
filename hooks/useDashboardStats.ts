@@ -42,6 +42,7 @@ interface DashboardStats {
   subscriptionsExpiring3Days: number;
   subscriptionsExpiring7Days: number;
   totalMonthlyFee: number;
+  totalAnnualFee: number;
   expiredFoods: number;
   overdueSubscriptions: number;
   // 詳細項目列表
@@ -62,6 +63,7 @@ export function useDashboardStats() {
     subscriptionsExpiring3Days: 0,
     subscriptionsExpiring7Days: 0,
     totalMonthlyFee: 0,
+    totalAnnualFee: 0,
     expiredFoods: 0,
     overdueSubscriptions: 0,
     foodsExpiring7DaysList: [],
@@ -200,6 +202,9 @@ export function useDashboardStats() {
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
         const totalMonthlyFee = subscriptions.reduce((total, sub) => total + sub.price, 0);
+        
+        // 計算年費總計 (所有訂閱服務費用總和)
+        const totalAnnualFee = subscriptions.reduce((total, sub) => total + sub.price, 0);
 
         setStats({
           totalFoods: foods.length,
@@ -209,6 +214,7 @@ export function useDashboardStats() {
           subscriptionsExpiring3Days: subscriptionsExpiring3DaysList.length,
           subscriptionsExpiring7Days: subscriptionsExpiring7DaysList.length,
           totalMonthlyFee,
+          totalAnnualFee,
           expiredFoods: expiredFoodsList.length,
           overdueSubscriptions: overdueSubscriptionsList.length,
           foodsExpiring7DaysList,

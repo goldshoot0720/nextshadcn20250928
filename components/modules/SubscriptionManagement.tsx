@@ -209,7 +209,7 @@ export default function SubscriptionManagement() {
         title="訂閱管理"
         subtitle={`共 ${stats.total} 個訂閱服務`}
         action={
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <StatCard title="本月月費" value={formatCurrency(stats.totalMonthlyFee)} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
             <StatCard title="下月月費" value={formatCurrency(stats.nextMonthFee)} gradient="from-purple-500 to-purple-600" className="min-w-[160px]" />
           </div>
