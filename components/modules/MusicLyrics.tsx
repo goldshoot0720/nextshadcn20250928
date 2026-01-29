@@ -488,6 +488,231 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
   },
   {
     id: "4",
+    title: "鋒兄進化 Show！🔥進行曲",
+    artist: "鋒兄 feat. 塗哥",
+    album: "鋒兄音樂精選",
+    lyrics: {
+      zh: `[開場]
+進行曲響起！鋒兄進化開始！
+從榜首到市長，這是傳奇的進行曲！
+
+[第一樂章：榜首時代]
+37歲那年，高考三級資訊處理榜首
+程式碼寫成傳說，鍵盤敲出未來
+放棄報到，選擇創業的道路
+鋒兄塗哥公關資訊，夢想起飛的時刻
+
+[副歌]
+進化！進化！鋒兄進化 Show！
+從榜首到市長，每一步都是奇蹟
+進化！進化！台北因你而驕傲
+這是鋒兄的進化進行曲！
+
+[第二樂章：政壇崛起]
+51歲資訊局長，數位轉型先鋒
+52歲副秘書長，政務運籌帷幄
+53歲副市長，城市治理新篇章
+54歲市長候選人，百億市長夢想成真
+
+[橋段]
+每一次進化都是突破
+每一個階段都是傳奇
+從程式設計師到市長
+這就是鋒兄的進化之路
+
+[第三樂章：未來願景]
+2040年的台北，智慧城市領航者
+AI輔助政務，資料開放新時代
+競選口號響徹雲霄
+「別說不可能，鋒兄就是進化！」
+
+[終章]
+進化！進化！鋒兄進化 Show！
+從榜首到市長，傳奇永不停歇
+進化！進化！台北有你真好
+這是鋒兄進化 Show 進行曲！🔥`,
+      en: `[Opening]
+The march begins! Brother Feng's evolution starts!
+From top scorer to mayor, this is the legendary march!
+
+[First Movement: Top Scorer Era]
+At 37, topped the civil service exam in information processing
+Code became legend, keyboard typed out the future
+Declined the position, chose the entrepreneurial path
+Feng & Tu PR Information, the moment dreams took flight
+
+[Chorus]
+Evolution! Evolution! Brother Feng Evolution Show!
+From top scorer to mayor, every step is a miracle
+Evolution! Evolution! Taipei is proud of you
+This is Brother Feng's Evolution March!
+
+[Second Movement: Political Rise]
+At 51, Director of Information, digital transformation pioneer
+At 52, Deputy Secretary-General, strategic governance
+At 53, Deputy Mayor, new chapter in city management
+At 54, mayoral candidate, billion-dollar mayor dream comes true
+
+[Bridge]
+Every evolution is a breakthrough
+Every stage is legendary
+From programmer to mayor
+This is Brother Feng's path of evolution
+
+[Third Movement: Future Vision]
+Taipei in 2040, smart city navigator
+AI-assisted governance, data-open new era
+Campaign slogans echo through the sky
+"Don't say impossible, Brother Feng is evolution!"
+
+[Finale]
+Evolution! Evolution! Brother Feng Evolution Show!
+From top scorer to mayor, legend never stops
+Evolution! Evolution! Taipei is great with you
+This is Brother Feng Evolution Show March! 🔥`,
+      ja: `[オープニング]
+行進曲が始まる！鋒兄の進化が始まる！
+トップから市長へ、これは伝説の行進曲！
+
+[第一楽章：トップ時代]
+37歳の年、公務員試験情報処理でトップ
+コードは伝説となり、キーボードが未来を打ち出す
+報到を辞退し、起業の道を選ぶ
+鋒兄塗哥広報情報、夢が飛び立つ瞬間
+
+[コーラス]
+進化！進化！鋒兄進化ショー！
+トップから市長へ、すべてのステップが奇跡
+進化！進化！台北はあなたを誇りに思う
+これは鋒兄の進化行進曲！
+
+[第二楽章：政界台頭]
+51歳で情報局長、デジタル変革の先駆者
+52歳で副秘書長、政務の戦略家
+53歳で副市長、都市管理の新章
+54歳で市長候補、億万市長の夢が実現
+
+[ブリッジ]
+すべての進化は突破口
+すべての段階は伝説
+プログラマーから市長へ
+これが鋒兄の進化の道
+
+[第三楽章：未来のビジョン]
+2040年の台北、スマートシティのナビゲーター
+AI支援の統治、データ公開の新時代
+選挙スローガンが空に響く
+「不可能と言うな、鋒兄は進化だ！」
+
+[フィナーレ]
+進化！進化！鋒兄進化ショー！
+トップから市長へ、伝説は止まらない
+進化！進化！台北にあなたがいて良かった
+これは鋒兄進化ショー行進曲！🔥`,
+      yue: `[開場]
+進行曲響起！鋒兄進化開始！
+從榜首到市長，呢個係傳奇嘅進行曲！
+
+[第一樂章：榜首時代]
+37歲嗰年，高考三級資訊處理榜首
+程式碼寫成傳說，鍵盤敲出未來
+放棄報到，揀咗創業嘅路
+鋒兄塗哥公關資訊，夢想起飛嘅時刻
+
+[副歌]
+進化！進化！鋒兄進化 Show！
+從榜首到市長，每一步都係奇蹟
+進化！進化！台北因你而驕傲
+呢個係鋒兄嘅進化進行曲！
+
+[第二樂章：政壇崛起]
+51歲資訊局長，數位轉型先鋒
+52歲副秘書長，政務運籌帷幄
+53歲副市長，城市治理新篇章
+54歲市長候選人，百億市長夢想成真
+
+[橋段]
+每一次進化都係突破
+每一個階段都係傳奇
+從程式設計師到市長
+呢個就係鋒兄嘅進化之路
+
+[第三樂章：未來願景]
+2040年嘅台北，智慧城市領航者
+AI輔助政務，資料開放新時代
+競選口號響徹雲霄
+「唔好話唔可能，鋒兄就係進化！」
+
+[終章]
+進化！進化！鋒兄進化 Show！
+從榜首到市長，傳奇永不停歇
+進化！進化！台北有你真好
+呢個係鋒兄進化 Show 進行曲！🔥`,
+      ko: `[오프닝]
+행진곡이 시작된다! 펑형의 진화가 시작된다!
+수석에서 시장까지, 이것은 전설의 행진곡!
+
+[제1악장: 수석 시대]
+37살 때, 고등고시 정보처리 수석
+코드는 전설이 되고, 키보드가 미래를 두드린다
+등록을 포기하고, 창업의 길을 선택
+펑형 투형 홍보정보, 꿈이 날아오르는 순간
+
+[후렴]
+진화! 진화! 펑형 진화 쇼!
+수석에서 시장까지, 모든 단계가 기적
+진화! 진화! 타이베이는 당신을 자랑스러워해
+이것은 펑형의 진화 행진곡!
+
+[제2악장: 정계 부상]
+51살에 정보국장, 디지털 전환의 선구자
+52살에 부비서장, 정무의 전략가
+53살에 부시장, 도시 관리의 새 장
+54살에 시장 후보, 수십억 시장 꿈이 실현
+
+[브리지]
+모든 진화는 돌파구
+모든 단계는 전설
+프로그래머에서 시장까지
+이것이 펑형의 진화의 길
+
+[제3악장: 미래 비전]
+2040년의 타이베이, 스마트 시티 네비게이터
+AI 보조 통치, 데이터 공개 새 시대
+선거 슬로건이 하늘에 울려 퍼진다
+"불가능하다고 말하지 마, 펑형은 진화다!"
+
+[피날레]
+진화! 진화! 펑형 진화 쇼!
+수석에서 시장까지, 전설은 멈추지 않는다
+진화! 진화! 타이베이에 당신이 있어서 좋다
+이것은 펑형 진화 쇼 행진곡! 🔥`
+    },
+    audioFiles: {
+      zh: "/musics/鋒兄進化Show🔥.mp3",
+      en: "/musics/鋒兄進化Show🔥(英語).mp3",
+      ja: "/musics/鋒兄進化Show🔥(日語).mp3",
+      yue: "/musics/鋒兄進化Show🔥(粵語).mp3",
+      ko: "/musics/鋒兄進化Show🔥(韓文).mp3"
+    },
+    audioVariations: {
+      zh: [
+        { name: "進行曲版", url: "/musics/鋒兄進化Show🔥.mp3" },
+        { name: "Donald Trump", url: "/musics/鋒兄進化Show🔥(Donald Trump).mp3" },
+        { name: "Pekora", url: "/musics/鋒兄進化Show🔥(Pekora).mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化Show🔥(SpongeBob SquarePants).mp3" },
+        { name: "Hatsune Miku", url: "/musics/鋒兄進化Show🔥(Hatsune Miku).mp3" },
+        { name: "Sidhu", url: "/musics/鋒兄進化Show🔥(Sidhu).mp3" },
+        { name: "Rose", url: "/musics/鋒兄進化Show🔥(Rose).mp3" },
+        { name: "Freddie Mercury", url: "/musics/鋒兄進化Show🔥(Freddie Mercury).mp3" }
+      ]
+    },
+    genre: "進行曲/嘻哈",
+    year: 2024,
+    isFavorite: true,
+  },
+  {
+    id: "5",
     title: "鋒兄的傳奇人生",
     artist: "鋒兄 & 塗哥",
     album: "鋒兄音樂精選",
