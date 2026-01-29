@@ -133,6 +133,19 @@ export default function CommonAccountManagement() {
       }
     }
 
+    // 檢查站點名稱是否重複
+    const siteNames = Object.keys(siteForm)
+      .filter(key => key.startsWith('site') && key !== 'name')
+      .map(key => (siteForm as any)[key]?.trim())
+      .filter(name => name && name !== "");
+    
+    const uniqueSiteNames = new Set(siteNames);
+    if (siteNames.length !== uniqueSiteNames.size) {
+      setDuplicateError("常用網站名稱有重複，請檢查 01~15 欄位");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setDuplicateError(null);
 
     // 清理 payload，移除後端 metadata，並根據操作決定是否保留空值
@@ -262,6 +275,18 @@ export default function CommonAccountManagement() {
 
     const siteKey = `site${inlineEdit.idx}`;
     const noteKey = `note${inlineEdit.idx}`;
+
+    // 檢查站點名稱是否與該帳號其他站點重複
+    if (account.site && inlineEdit.siteName.trim() !== "") {
+      const otherSites = Object.entries(account.site)
+        .filter(([key, val]) => key.startsWith('site') && key !== siteKey && key !== 'name' && val)
+        .map(([_, val]) => (val as string).trim());
+      
+      if (otherSites.includes(inlineEdit.siteName.trim())) {
+        alert(`此帳號已有重複的站點名稱: ${inlineEdit.siteName.trim()}`);
+        return;
+      }
+    }
 
     try {
       // Update site
