@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
 import { MenuItem, CommonAccountSite, CommonAccountNote, CommonAccountSiteFormData, CommonAccountNoteFormData } from "@/types";
 import { Input, Textarea, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent, SectionHeader, FormCard, FormGrid, FormActions } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
@@ -50,6 +50,8 @@ export default function CommonAccountManagement() {
   const [inlineEdit, setInlineEdit] = useState<{ accountName: string; idx: string; siteName: string; note: string } | null>(null);
   // Site filter state
   const [siteFilter, setSiteFilter] = useState<string | null>(null);
+  // Name search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchSites();
@@ -83,10 +85,15 @@ export default function CommonAccountManagement() {
     });
   }, [combinedAccounts]);
 
-  // Filter accounts based on selected site filter
+  // Filter accounts based on selected site filter and search query
   const filteredAccounts = useMemo(() => {
-    if (!siteFilter) return combinedAccounts;
     return combinedAccounts.filter(account => {
+      // Filter by search query (name)
+      const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+
+      // Filter by site selection
+      if (!siteFilter) return true;
       if (!account.site) return false;
       return [...Array(15)].some((_, i) => {
         const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccountSite;
@@ -94,7 +101,7 @@ export default function CommonAccountManagement() {
         return siteName?.trim() === siteFilter.trim();
       });
     });
-  }, [combinedAccounts, siteFilter]);
+  }, [combinedAccounts, siteFilter, searchQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,53 +352,74 @@ export default function CommonAccountManagement() {
         </FormCard>
       )}
 
-      {/* Site Filter */}
-      {allSiteNames.length > 0 && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-gray-500 flex items-center gap-1">
-            <Filter size={14} />
-            篩選:
-          </span>
-          <Button
-            size="sm"
-            variant={siteFilter === null ? "default" : "outline"}
-            onClick={() => setSiteFilter(null)}
-            className={`h-8 px-3 rounded-lg text-sm ${siteFilter === null ? 'bg-blue-600 text-white' : ''}`}
-          >
-            全部 ({combinedAccounts.length})
-          </Button>
-          {allSiteNames.map(siteName => {
-            const count = combinedAccounts.filter(account => {
-              if (!account.site) return false;
-              return [...Array(15)].some((_, i) => {
-                const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccountSite;
-                const name = account.site?.[siteKey] as string;
-                return name?.trim() === siteName.trim();
-              });
-            }).length;
-            const siteUrl = SITE_URL_MAP[siteName];
-            return (
-              <Button
-                key={siteName}
-                size="sm"
-                variant={siteFilter === siteName ? "default" : "outline"}
-                onClick={() => setSiteFilter(siteFilter === siteName ? null : siteName)}
-                className={`h-8 px-3 rounded-lg text-sm flex items-center gap-1.5 ${siteFilter === siteName ? 'bg-blue-600 text-white' : ''}`}
-              >
-                {siteUrl && <FaviconImage siteUrl={siteUrl} siteName={siteName} size={14} />}
-                {siteName} ({count})
-              </Button>
-            );
-          })}
+      {/* Search and Site Filter */}
+      <div className="space-y-4">
+        {/* Search Input */}
+        <div className="relative group">
+          <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+          <Input
+            placeholder="搜尋帳號名稱 (例如: activist949...)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/20 transition-all text-lg"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
-      )}
+
+        {allSiteNames.length > 0 && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm text-gray-500 flex items-center gap-1">
+              <Filter size={14} />
+              篩選:
+            </span>
+            <Button
+              size="sm"
+              variant={siteFilter === null ? "default" : "outline"}
+              onClick={() => setSiteFilter(null)}
+              className={`h-8 px-3 rounded-lg text-sm ${siteFilter === null ? 'bg-blue-600 text-white' : ''}`}
+            >
+              全部 ({combinedAccounts.length})
+            </Button>
+            {allSiteNames.map(siteName => {
+              const count = combinedAccounts.filter(account => {
+                if (!account.site) return false;
+                return [...Array(15)].some((_, i) => {
+                  const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccountSite;
+                  const name = account.site?.[siteKey] as string;
+                  return name?.trim() === siteName.trim();
+                });
+              }).length;
+              const siteUrl = SITE_URL_MAP[siteName];
+              return (
+                <Button
+                  key={siteName}
+                  size="sm"
+                  variant={siteFilter === siteName ? "default" : "outline"}
+                  onClick={() => setSiteFilter(siteFilter === siteName ? null : siteName)}
+                  className={`h-8 px-3 rounded-lg text-sm flex items-center gap-1.5 ${siteFilter === siteName ? 'bg-blue-600 text-white' : ''}`}
+                >
+                  {siteUrl && <FaviconImage siteUrl={siteUrl} siteName={siteName} size={14} />}
+                  {siteName} ({count})
+                </Button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {filteredAccounts.length === 0 ? (
         <DataCard className="p-12 text-center">
           <Star size={48} className="mx-auto text-gray-300 mb-4" />
           <p className="text-gray-500">
-            {siteFilter 
-              ? `沒有帳號包含「${siteFilter}」` 
+            {siteFilter || searchQuery
+              ? `沒有符合「${searchQuery || siteFilter}」的帳號` 
               : "尚無常用帳號資料，請點擊右上方「新增」按鈕"
             }
           </p>
