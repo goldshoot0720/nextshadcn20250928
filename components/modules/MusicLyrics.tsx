@@ -656,13 +656,13 @@ AI 보조 행정 조작, 데이터 개방의 새로운 시대
     audioVariations: {
       zh: [
         { name: "原始版本", url: "/musics/鋒兄進化 Show！🔥進行曲.mp3" },
-        { name: "Donald Trump", url: "/musics/鋒兄進化Show🔥(Donald Trump).mp3" },
-        { name: "Pekora", url: "/musics/鋒兄進化Show🔥(Pekora).mp3" },
-        { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化Show🔥(SpongeBob SquarePants).mp3" },
-        { name: "Hatsune Miku", url: "/musics/鋒兄進化Show🔥(Hatsune Miku).mp3" },
-        { name: "Sidhu", url: "/musics/鋒兄進化Show🔥(Sidhu).mp3" },
-        { name: "Rose", url: "/musics/鋒兄進化Show🔥(Rose).mp3" },
-        { name: "Freddie Mercury", url: "/musics/鋒兄進化Show🔥(Freddie Mercury).mp3" }
+        { name: "Donald Trump", url: "/musics/鋒兄進化 Show！🔥進行曲(Donald Trump).mp3" },
+        { name: "Pekora", url: "/musics/鋒兄進化 Show！🔥進行曲(Pekora).mp3" },
+        { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化 Show！🔥進行曲(SpongeBob SquarePants).mp3" },
+        { name: "Hatsune Miku", url: "/musics/鋒兄進化 Show！🔥進行曲(Hatsune Miku).mp3" },
+        { name: "Sidhu", url: "/musics/鋒兄進化 Show！🔥進行曲(Sidhu).mp3" },
+        { name: "Rose", url: "/musics/鋒兄進化 Show！🔥進行曲(Rose).mp3" },
+        { name: "Freddie Mercury", url: "/musics/鋒兄進化 Show！🔥進行曲(Freddie Mercury).mp3" }
       ]
     },
     genre: "進行曲/嘻哈",
