@@ -362,7 +362,7 @@ export default function CommonAccountManagement() {
                       <div className="flex gap-2 items-center">
                         <span className="w-8 h-10 flex items-center justify-center text-xs text-gray-400 font-mono shrink-0">{idx}</span>
                         <Input
-                          placeholder={`網站名稱/URL ${idx}`}
+                          placeholder={`網站名稱/${idx}`}
                           value={(siteForm as any)[siteKey] || ""}
                           onChange={(e) => setSiteForm({ ...siteForm, [siteKey]: e.target.value } as any)}
                           className="rounded-xl flex-1"
@@ -381,7 +381,7 @@ export default function CommonAccountManagement() {
                       {isExpanded && (
                         <div className="pl-10 pr-2 pb-2">
                           <Textarea
-                            placeholder={`備註內容 ${idx} (例如: Musicful，將作為網站標題)`}
+                            placeholder={`備註內容/${idx}`}
                             value={(noteForm as any)[noteKey] || ""}
                             onChange={(e) => setNoteForm({ ...noteForm, [noteKey]: e.target.value } as any)}
                             className="rounded-xl border-purple-100 dark:border-purple-900/30 min-h-[80px] resize-y py-2 text-sm shadow-inner"
@@ -532,7 +532,7 @@ export default function CommonAccountManagement() {
                               <div className="space-y-3">
                                 <div className="flex gap-2 items-center">
                                   <Input
-                                    placeholder="網站名稱"
+                                    placeholder={`網站名稱/${idx}`}
                                     value={inlineEdit.siteName}
                                     onChange={(e) => setInlineEdit({ ...inlineEdit, siteName: e.target.value })}
                                     className="rounded-lg flex-1 h-9 text-sm"
@@ -540,7 +540,7 @@ export default function CommonAccountManagement() {
                                   />
                                 </div>
                                 <Textarea
-                                  placeholder={`備註內容${idx}`}
+                                  placeholder={`備註內容/${idx}`}
                                   value={inlineEdit.note}
                                   onChange={(e) => setInlineEdit({ ...inlineEdit, note: e.target.value })}
                                   className="rounded-lg text-sm min-h-[120px] resize-y"
