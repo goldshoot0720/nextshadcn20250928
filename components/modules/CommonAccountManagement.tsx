@@ -77,12 +77,8 @@ export default function CommonAccountManagement() {
         });
       }
     });
-    // Sort: Qoder first, then alphabetically
-    return Array.from(siteSet).sort((a, b) => {
-      if (a === 'Qoder') return -1;
-      if (b === 'Qoder') return 1;
-      return a.localeCompare(b);
-    });
+    // Sort alphabetically a~z A~Z
+    return Array.from(siteSet).sort((a, b) => a.localeCompare(b));
   }, [combinedAccounts]);
 
   // Filter accounts based on selected site filter and search query
