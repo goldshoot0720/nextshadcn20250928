@@ -19,6 +19,7 @@ interface CombinedAccount {
 const SITE_URL_MAP: Record<string, string> = {
   "Musicful": "https://tw.musicful.ai/",
   "MindVideo": "https://www.mindvideo.ai/",
+  "Qoder": "https://qoder.com/",
 };
 
 const INITIAL_SITE_FORM: CommonAccountSiteFormData = {
