@@ -270,90 +270,82 @@ function FoodMobileCard({ food, onEdit, onDelete, onAmountChange }: { food: Food
   const highlight = isExpired ? "expired" : isExpiringSoon ? "warning" : "normal";
 
   return (
-    <DataCardItem highlight={highlight} className="p-0 overflow-hidden border-none shadow-md bg-white dark:bg-gray-900">
-      <div className="flex flex-col h-full">
-        {/* Top Section: Image and Basic Info */}
-        <div className="flex items-start gap-3 p-3">
-          <div className="shrink-0">
-            <FoodImage food={food} className="w-20 h-20" />
-          </div>
-          <div className="flex-1 min-w-0 pt-1">
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base leading-tight break-words line-clamp-2 mb-1">
+    <div className={`p-4 border-b last:border-0 border-gray-100 dark:border-gray-800 ${isExpired ? "bg-red-50/50" : isExpiringSoon ? "bg-amber-50/50" : ""}`}>
+      <div className="flex gap-4 items-start">
+        <FoodImage food={food} className="w-20 h-20 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start gap-2">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg leading-snug break-words line-clamp-2">
               {food.name}
             </h3>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                <span>期限:</span>
-                <span className={isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : ""}>
-                  {formattedDate}
-                </span>
-              </div>
-              {status !== "normal" && (
-                <div className="inline-block scale-90 origin-left">
-                  <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>
-                </div>
-              )}
-            </div>
           </div>
-        </div>
-
-        {/* Bottom Section: Controls and Actions */}
-        <div className="mt-auto border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-3">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <AmountControl food={food} onAmountChange={onAmountChange} />
+          <div className="mt-1 space-y-1">
+            <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <span className="font-medium">期限:</span>
+              <span className={isExpired ? "text-red-600 font-bold" : isExpiringSoon ? "text-amber-600 font-bold" : ""}>
+                {formattedDate}
+              </span>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                type="button" 
-                size="sm" 
-                variant="outline" 
-                onClick={() => onEdit(food)} 
-                className="flex-1 h-9 rounded-xl text-blue-600 border-blue-100 dark:border-blue-900/30 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              >
-                編輯
-              </Button>
-              <Button 
-                type="button" 
-                size="sm" 
-                variant="destructive" 
-                onClick={() => onDelete(food.$id)} 
-                className="flex-1 h-9 rounded-xl"
-              >
-                刪除
-              </Button>
-            </div>
+            {status !== "normal" && (
+              <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>
+            )}
           </div>
         </div>
       </div>
-    </DataCardItem>
+
+      <div className="mt-4 flex flex-col gap-3">
+        <div className="w-full">
+          <AmountControl food={food} onAmountChange={onAmountChange} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => onEdit(food)}
+            className="h-11 rounded-xl text-blue-600 border-blue-200 hover:bg-blue-50 font-bold"
+          >
+            編輯
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={() => onDelete(food.$id)}
+            className="h-11 rounded-xl font-bold"
+          >
+            刪除
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 // 數量控制元件
 function AmountControl({ food, onAmountChange }: { food: Food; onAmountChange: (food: Food, delta: number) => void }) {
   return (
-    <div className="flex items-center justify-between w-full bg-white dark:bg-gray-950 rounded-xl p-1 border border-gray-200 dark:border-gray-800 shadow-sm">
-      <Button 
-        type="button" 
-        size="sm" 
-        variant="ghost" 
-        onClick={() => onAmountChange(food, -1)} 
-        disabled={food.amount <= 0} 
-        className="w-9 h-9 p-0 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50"
+    <div className="flex items-center justify-between w-full bg-gray-50 dark:bg-gray-900 rounded-xl p-1.5 border border-gray-200 dark:border-gray-700">
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={() => onAmountChange(food, -1)}
+        disabled={food.amount <= 0}
+        className="w-10 h-10 p-0 rounded-lg text-gray-500 hover:text-red-500 hover:bg-white dark:hover:bg-gray-800"
       >
         -
       </Button>
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-400 font-medium mr-1">數量</span>
-        <span className="w-8 text-center font-bold text-gray-900 dark:text-gray-100">{food.amount}</span>
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">數量</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{food.amount}</span>
       </div>
-      <Button 
-        type="button" 
-        size="sm" 
-        variant="ghost" 
-        onClick={() => onAmountChange(food, 1)} 
-        className="w-9 h-9 p-0 rounded-lg text-gray-500 hover:text-green-500 hover:bg-green-50"
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={() => onAmountChange(food, 1)}
+        className="w-10 h-10 p-0 rounded-lg text-gray-500 hover:text-green-500 hover:bg-white dark:hover:bg-gray-800"
       >
         +
       </Button>
