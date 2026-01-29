@@ -255,12 +255,12 @@ function MobileList({ foods, onEdit, onDelete, onAmountChange }: TableProps) {
   }
 
   return (
-    <div className="lg:hidden">
-      <DataCardList>
+    <div className="lg:hidden px-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {foods.map((food) => (
           <FoodMobileCard key={food.$id} food={food} onEdit={onEdit} onDelete={onDelete} onAmountChange={onAmountChange} />
         ))}
-      </DataCardList>
+      </div>
     </div>
   );
 }
@@ -270,29 +270,58 @@ function FoodMobileCard({ food, onEdit, onDelete, onAmountChange }: { food: Food
   const highlight = isExpired ? "expired" : isExpiringSoon ? "warning" : "normal";
 
   return (
-    <DataCardItem highlight={highlight}>
-      <div className="flex items-start gap-4">
-        <FoodImage food={food} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{food.name}</h3>
-              <div className="mt-1 space-y-1">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                  <span>期限:</span>
-                  <span>{formattedDate}</span>
-                </div>
-                {status !== "normal" && (
-                  <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>
-                )}
+    <DataCardItem highlight={highlight} className="p-0 overflow-hidden border-none shadow-md bg-white dark:bg-gray-900">
+      <div className="flex flex-col h-full">
+        {/* Top Section: Image and Basic Info */}
+        <div className="flex items-start gap-3 p-3">
+          <div className="shrink-0">
+            <FoodImage food={food} className="w-20 h-20" />
+          </div>
+          <div className="flex-1 min-w-0 pt-1">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base leading-tight break-words line-clamp-2 mb-1">
+              {food.name}
+            </h3>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                <span>期限:</span>
+                <span className={isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : ""}>
+                  {formattedDate}
+                </span>
               </div>
+              {status !== "normal" && (
+                <div className="inline-block scale-90 origin-left">
+                  <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>
+                </div>
+              )}
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <AmountControl food={food} onAmountChange={onAmountChange} />
+        </div>
+
+        {/* Bottom Section: Controls and Actions */}
+        <div className="mt-auto border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <AmountControl food={food} onAmountChange={onAmountChange} />
+            </div>
             <div className="flex gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={() => onEdit(food)} className="rounded-lg text-xs px-3">編輯</Button>
-              <Button type="button" size="sm" variant="destructive" onClick={() => onDelete(food.$id)} className="rounded-lg text-xs px-3">刪除</Button>
+              <Button 
+                type="button" 
+                size="sm" 
+                variant="outline" 
+                onClick={() => onEdit(food)} 
+                className="flex-1 h-9 rounded-xl text-blue-600 border-blue-100 dark:border-blue-900/30 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                編輯
+              </Button>
+              <Button 
+                type="button" 
+                size="sm" 
+                variant="destructive" 
+                onClick={() => onDelete(food.$id)} 
+                className="flex-1 h-9 rounded-xl"
+              >
+                刪除
+              </Button>
             </div>
           </div>
         </div>
@@ -304,25 +333,47 @@ function FoodMobileCard({ food, onEdit, onDelete, onAmountChange }: { food: Food
 // 數量控制元件
 function AmountControl({ food, onAmountChange }: { food: Food; onAmountChange: (food: Food, delta: number) => void }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-600 dark:text-gray-300 lg:hidden">數量:</span>
-      <Button type="button" size="sm" variant="outline" onClick={() => onAmountChange(food, -1)} disabled={food.amount <= 0} className="w-8 h-8 p-0 rounded-lg">-</Button>
-      <span className="w-8 text-center font-medium">{food.amount}</span>
-      <Button type="button" size="sm" variant="outline" onClick={() => onAmountChange(food, 1)} className="w-8 h-8 p-0 rounded-lg">+</Button>
+    <div className="flex items-center justify-between w-full bg-white dark:bg-gray-950 rounded-xl p-1 border border-gray-200 dark:border-gray-800 shadow-sm">
+      <Button 
+        type="button" 
+        size="sm" 
+        variant="ghost" 
+        onClick={() => onAmountChange(food, -1)} 
+        disabled={food.amount <= 0} 
+        className="w-9 h-9 p-0 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50"
+      >
+        -
+      </Button>
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-gray-400 font-medium mr-1">數量</span>
+        <span className="w-8 text-center font-bold text-gray-900 dark:text-gray-100">{food.amount}</span>
+      </div>
+      <Button 
+        type="button" 
+        size="sm" 
+        variant="ghost" 
+        onClick={() => onAmountChange(food, 1)} 
+        className="w-9 h-9 p-0 rounded-lg text-gray-500 hover:text-green-500 hover:bg-green-50"
+      >
+        +
+      </Button>
     </div>
   );
 }
 
 // 食品圖片元件
-function FoodImage({ food }: { food: Food }) {
+function FoodImage({ food, className }: { food: Food; className?: string }) {
+  const baseClass = "object-cover rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800";
+  const sizeClass = className || "w-16 h-16";
+  
   if (food.photo) {
     return (
-      <img src={food.photo} alt={food.name} className="w-16 h-16 object-cover rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm" />
+      <img src={food.photo} alt={food.name} className={`${baseClass} ${sizeClass}`} />
     );
   }
   return (
-    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
-      無圖片
+    <div className={`${baseClass} ${sizeClass} flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 gap-1`}>
+      <div className="text-[10px] font-medium opacity-50">NO IMAGE</div>
     </div>
   );
 }
