@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
+import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle } from "lucide-react";
 import { MenuItem, CommonAccountSite, CommonAccountNote, CommonAccountSiteFormData, CommonAccountNoteFormData } from "@/types";
 import { Input, Textarea, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent, SectionHeader, FormCard, FormGrid, FormActions } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
@@ -52,6 +52,8 @@ export default function CommonAccountManagement() {
   const [siteFilter, setSiteFilter] = useState<string | null>(null);
   // Name search state
   const [searchQuery, setSearchQuery] = useState("");
+  // Error state for duplicate name
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSites();
@@ -102,6 +104,28 @@ export default function CommonAccountManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!siteForm.name) return;
+
+    // 檢查名稱是否重複 (僅限新增模式)
+    if (!editingName) {
+      const isExisting = combinedAccounts.some(a => a.name.trim().toLowerCase() === siteForm.name.trim().toLowerCase());
+      if (isExisting) {
+        setDuplicateError(`帳號名稱「${siteForm.name}」已存在，請勿重複新增`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    } else {
+      // 編輯模式：如果名稱被修改且新名稱已存在（且不是原本編輯的這個）
+      if (siteForm.name.trim().toLowerCase() !== editingName.trim().toLowerCase()) {
+        const isExisting = combinedAccounts.some(a => a.name.trim().toLowerCase() === siteForm.name.trim().toLowerCase());
+        if (isExisting) {
+          setDuplicateError(`帳號名稱「${siteForm.name}」已存在，請使用其他名稱`);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+      }
+    }
+
+    setDuplicateError(null);
 
     // 清理 payload，移除後端 metadata，並根據操作決定是否保留空值
     const getPayload = (data: any, isUpdate: boolean) => {
@@ -199,6 +223,7 @@ export default function CommonAccountManagement() {
     setNoteForm(INITIAL_NOTE_FORM);
     setExpandedNotes({});
     setEditingName(null);
+    setDuplicateError(null);
     setIsFormOpen(false);
   };
 
@@ -271,21 +296,37 @@ export default function CommonAccountManagement() {
       />
 
       {isFormOpen && (
-        <FormCard title={editingName ? `編輯帳號: ${editingName}` : "新增帳號組合"} accentColor="from-blue-500 to-blue-600">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">帳號名稱</label>
-              <Input
-                placeholder="輸入帳號名稱 (例如: example@example.com)"
-                value={siteForm.name}
-                onChange={(e) => {
-                  setSiteForm({ ...siteForm, name: e.target.value });
-                  setNoteForm({ ...noteForm, name: e.target.value });
-                }}
-                required
-                className="h-12 rounded-xl text-lg font-medium"
-              />
+        <div className="space-y-4">
+          {duplicateError && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+              <AlertTriangle className="text-red-500 shrink-0" size={20} />
+              <p className="text-red-700 font-medium">{duplicateError}</p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setDuplicateError(null)}
+                className="ml-auto h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-lg"
+              >
+                <X size={16} />
+              </Button>
             </div>
+          )}
+          <FormCard title={editingName ? `編輯帳號: ${editingName}` : "新增帳號組合"} accentColor="from-blue-500 to-blue-600">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">帳號名稱</label>
+                <Input
+                  placeholder="輸入帳號名稱 (例如: example@example.com)"
+                  value={siteForm.name}
+                  onChange={(e) => {
+                    setSiteForm({ ...siteForm, name: e.target.value });
+                    setNoteForm({ ...noteForm, name: e.target.value });
+                    if (duplicateError) setDuplicateError(null);
+                  }}
+                  required
+                  className="h-12 rounded-xl text-lg font-medium"
+                />
+              </div>
 
             <FormActions>
               <Button type="submit" className="h-12 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 font-bold shadow-xl">
@@ -346,6 +387,7 @@ export default function CommonAccountManagement() {
             </div>
           </form>
         </FormCard>
+      </div>
       )}
 
       {/* Search and Site Filter */}
