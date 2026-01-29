@@ -10,10 +10,13 @@ import ImageGallery from "@/components/modules/ImageGallery";
 import AboutUs from "@/components/modules/AboutUs";
 import MusicLyrics from "@/components/modules/MusicLyrics";
 import NotesManagement from "@/components/modules/NotesManagement";
-import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText } from "lucide-react";
-import { MenuItem } from "@/types";
-import { Input, DataCard, StatCard } from "@/components/ui";
+import CommonAccountManagement from "@/components/modules/CommonAccountManagement";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus } from "lucide-react";
+import { MenuItem, CommonAccountSite, CommonAccountNote } from "@/types";
+import { Input, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
+import { useCrud } from "@/hooks/useApi";
+import { API_ENDPOINTS } from "@/lib/constants";
 
 // 選單項目配置
 const MENU_ITEMS: MenuItem[] = [
@@ -24,6 +27,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "videos", label: "影片介紹", icon: <Play size={18} /> },
   { id: "notes", label: "鋒兄筆記", icon: <FileText size={18} /> },
   { id: "music", label: "鋒兄音樂", icon: <Music size={18} /> },
+  { id: "common", label: "鋒兄常用", icon: <Star size={18} /> },
   { id: "bank-stats", label: "銀行統計", icon: <BarChart3 size={18} /> },
   { id: "about", label: "關於我們", icon: <Info size={18} /> },
 ];
@@ -52,6 +56,8 @@ export default function DashboardPage() {
         return <NotesManagement />;
       case "music":
         return <MusicLyrics />;
+      case "common":
+        return <CommonAccountManagement />;
       case "bank-stats":
         return <BankStatistics />;
       case "about":

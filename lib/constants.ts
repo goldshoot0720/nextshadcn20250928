@@ -7,6 +7,10 @@ export const MENU_ITEMS = [
   { id: "subscription", label: "訂閱管理", icon: "CreditCard" },
   { id: "food", label: "食品管理", icon: "Package" },
   { id: "videos", label: "影片介紹", icon: "Play" },
+  { id: "notes", label: "鋒兄筆記", icon: "FileText" },
+  { id: "music", label: "鋒兄音樂", icon: "Music" },
+  { id: "common", label: "鋒兄常用", icon: "Star" },
+  { id: "bank-stats", label: "銀行統計", icon: "BarChart3" },
   { id: "components", label: "UI 組件", icon: "Palette" },
   { id: "about", label: "關於我們", icon: "Info" },
 ] as const;
@@ -70,6 +74,8 @@ export const API_ENDPOINTS = {
   IMAGES: "/api/images",
   VIDEOS: "/api/videos",
   ARTICLE: "/api/article",
+  COMMON_ACCOUNT_SITE: "/api/common-account/site",
+  COMMON_ACCOUNT_NOTE: "/api/common-account/note",
 } as const;
 
 // 動畫設定

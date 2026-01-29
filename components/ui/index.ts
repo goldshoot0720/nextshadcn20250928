@@ -10,6 +10,7 @@ export { Separator } from "./separator";
 
 // 表格元件
 export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 
 // 自訂元件
 export { EmptyState } from "./empty-state";
