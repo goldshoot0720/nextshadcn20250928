@@ -905,7 +905,7 @@ export default function MusicLyrics() {
   const formatStructuredLyrics = (lyrics: string) => {
     const lines = lyrics.split('\n');
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {lines.map((line, index) => {
           const trimmedLine = line.trim();
           if (!trimmedLine) return <div key={index} className="h-2" />;
@@ -913,9 +913,9 @@ export default function MusicLyrics() {
           // 检测段落标签 [Intro], [Verse 1], [Chorus] 等
           if (trimmedLine.match(/^\[.*\]$/)) {
             return (
-              <div key={index} className="flex items-center gap-3 my-6">
+              <div key={index} className="flex items-center gap-2 sm:gap-3 my-4 sm:my-6">
                 <div className="h-px bg-gradient-to-r from-purple-400 to-blue-400 flex-1" />
-                <span className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-semibold rounded-full shadow-lg">
+                <span className="px-2 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs sm:text-sm font-semibold rounded-full shadow-lg">
                   {trimmedLine.replace(/[\[\]]/g, '')}
                 </span>
                 <div className="h-px bg-gradient-to-r from-blue-400 to-purple-400 flex-1" />
@@ -925,7 +925,7 @@ export default function MusicLyrics() {
           
           // 普通歌词行
           return (
-            <div key={index} className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg font-medium pl-4 py-1 hover:bg-white/50 dark:hover:bg-gray-700/30 rounded transition-colors">
+            <div key={index} className="text-gray-800 dark:text-gray-200 leading-relaxed text-base sm:text-lg font-medium pl-2 sm:pl-4 py-1 hover:bg-white/50 dark:hover:bg-gray-700/30 rounded transition-colors">
               {trimmedLine}
             </div>
           );
@@ -963,10 +963,10 @@ export default function MusicLyrics() {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {paragraphs.map((paragraph, index) => (
           <div key={index} className="group">
-            <div className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg font-medium p-4 bg-white/30 dark:bg-gray-700/20 rounded-lg border-l-4 border-purple-400 hover:border-purple-500 transition-all hover:shadow-md">
+            <div className="text-gray-800 dark:text-gray-200 leading-relaxed text-base sm:text-lg font-medium p-3 sm:p-4 bg-white/30 dark:bg-gray-700/20 rounded-lg border-l-4 border-purple-400 hover:border-purple-500 transition-all hover:shadow-md">
               {highlightKeywords(paragraph)}
             </div>
           </div>
@@ -979,13 +979,13 @@ export default function MusicLyrics() {
   const formatRegularLyrics = (lyrics: string) => {
     const lines = lyrics.split('\n');
     return (
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {lines.map((line, index) => {
           const trimmedLine = line.trim();
-          if (!trimmedLine) return <div key={index} className="h-3" />;
+          if (!trimmedLine) return <div key={index} className="h-2 sm:h-3" />;
           
           return (
-            <div key={index} className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg font-medium pl-4 py-2 hover:bg-white/50 dark:hover:bg-gray-700/30 rounded transition-colors">
+            <div key={index} className="text-gray-800 dark:text-gray-200 leading-relaxed text-base sm:text-lg font-medium pl-2 sm:pl-4 py-1 sm:py-2 hover:bg-white/50 dark:hover:bg-gray-700/30 rounded transition-colors">
               {highlightKeywords(trimmedLine)}
             </div>
           );
@@ -1602,17 +1602,17 @@ export default function MusicLyrics() {
                 {filteredSongs.map((song) => (
                   <div
                     key={song.id}
-                    className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                    className={`p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                       selectedSong?.id === song.id ? "bg-purple-50 dark:bg-purple-900/20" : ""
                     }`}
                     onClick={() => setSelectedSong(song)}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <h3 className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate">
                           {song.title}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                           {song.artist}
                         </p>
                         {song.album && (
@@ -1620,18 +1620,19 @@ export default function MusicLyrics() {
                             {song.album}
                           </p>
                         )}
-                        <div className="flex gap-1 mt-1">
-                          <Badge variant="outline" className="text-xs px-1 py-0">中</Badge>
-                          {song.lyrics.en && <Badge variant="outline" className="text-xs px-1 py-0">EN</Badge>}
-                          {song.lyrics.ja && <Badge variant="outline" className="text-xs px-1 py-0">日</Badge>}
-                          {song.lyrics.yue && <Badge variant="outline" className="text-xs px-1 py-0">粵</Badge>}
-                          {song.lyrics.ko && <Badge variant="outline" className="text-xs px-1 py-0">韓</Badge>}
+                        {/* 語言標籤 - 手機優化 */}
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs px-1.5 py-0.5">中</Badge>
+                          {song.lyrics.en && <Badge variant="outline" className="text-xs px-1.5 py-0.5">EN</Badge>}
+                          {song.lyrics.ja && <Badge variant="outline" className="text-xs px-1.5 py-0.5">日</Badge>}
+                          {song.lyrics.yue && <Badge variant="outline" className="text-xs px-1.5 py-0.5">粵</Badge>}
+                          {song.lyrics.ko && <Badge variant="outline" className="text-xs px-1.5 py-0.5">韓</Badge>}
                         </div>
                         
-                        {/* 歌词预览 */}
+                        {/* 歌词预览 - 手機優化 */}
                         {selectedSong?.id !== song.id && (
                           <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 line-clamp-2">
-                            {song.lyrics.zh.substring(0, 100)}...
+                            {song.lyrics.zh.substring(0, 80)}...
                           </div>
                         )}
                       </div>
@@ -1642,7 +1643,7 @@ export default function MusicLyrics() {
                           e.stopPropagation();
                           toggleFavorite(song.id);
                         }}
-                        className="ml-2"
+                        className="ml-1 flex-shrink-0"
                       >
                         <Heart
                           size={16}
@@ -1698,64 +1699,102 @@ export default function MusicLyrics() {
               </CardHeader>
               <CardContent>
                 <Tabs value={currentLanguage} onValueChange={(value) => handleLanguageChange(value as 'zh' | 'en' | 'ja' | 'yue' | 'ko')}>
-                  <div className="flex items-center justify-between mb-4">
-                    <TabsList className="grid w-full max-w-md grid-cols-5">
-                      <TabsTrigger value="zh">中文</TabsTrigger>
-                      <TabsTrigger value="en" disabled={!selectedSong.lyrics.en}>English</TabsTrigger>
-                      <TabsTrigger value="ja" disabled={!selectedSong.lyrics.ja}>日本語</TabsTrigger>
-                      <TabsTrigger value="yue" disabled={!selectedSong.lyrics.yue}>粵語</TabsTrigger>
-                      <TabsTrigger value="ko" disabled={!selectedSong.lyrics.ko}>韓語</TabsTrigger>
-                    </TabsList>
+                  {/* 語言切換 - 手機優化版 */}
+                  <div className="mb-4 space-y-3">
+                    {/* 語言選擇 - 響應式網格 */}
+                    <div className="w-full">
+                      <TabsList className="grid w-full grid-cols-5 gap-1 h-auto p-1">
+                        <TabsTrigger 
+                          value="zh" 
+                          className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                        >
+                          <span className="hidden sm:inline">中文</span>
+                          <span className="sm:hidden">中</span>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="en" 
+                          disabled={!selectedSong.lyrics.en}
+                          className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                        >
+                          <span className="hidden sm:inline">English</span>
+                          <span className="sm:hidden">EN</span>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="ja" 
+                          disabled={!selectedSong.lyrics.ja}
+                          className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                        >
+                          <span className="hidden sm:inline">日本語</span>
+                          <span className="sm:hidden">日</span>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="yue" 
+                          disabled={!selectedSong.lyrics.yue}
+                          className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                        >
+                          <span className="hidden sm:inline">粵語</span>
+                          <span className="sm:hidden">粵</span>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="ko" 
+                          disabled={!selectedSong.lyrics.ko}
+                          className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                        >
+                          <span className="hidden sm:inline">韓語</span>
+                          <span className="sm:hidden">韓</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
                     
-                    {/* 导出和复制功能 */}
-                    <div className="flex items-center gap-2">
+                    {/* 导出和复制功能 - 手機優化 */}
+                    <div className="flex items-center gap-2 justify-end flex-wrap">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={copyLyrics}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 text-xs sm:text-sm"
                       >
                         <Copy size={14} />
-                        複製
+                        <span className="hidden sm:inline">複製</span>
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => exportLyrics('txt')}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 text-xs sm:text-sm"
                       >
                         <Download size={14} />
-                        TXT
+                        <span>TXT</span>
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => exportLyrics('md')}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 text-xs sm:text-sm"
                       >
                         <Download size={14} />
-                        MD
+                        <span>MD</span>
                       </Button>
                     </div>
                   </div>
                   
-                  {/* 歌词内搜索 */}
+                  {/* 歌词内搜索 - 手機優化 */}
                   <div className="mb-4">
-                    <div className="relative max-w-md">
+                    <div className="relative w-full">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                       <Input
                         placeholder="在歌詞中搜尋..."
                         value={lyricsSearchTerm}
                         onChange={(e) => setLyricsSearchTerm(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 text-sm"
                       />
                     </div>
                   </div>
 
-                  {/* Variation Selector - Moved here */}
+                  {/* Variation Selector - 手機優化 */}
                   {selectedSong.audioVariations?.[currentLanguage] && (
                     <div className="mb-4">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                      <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                         選擇版本 / Version
                       </label>
                       <Select 
@@ -1776,16 +1815,16 @@ export default function MusicLyrics() {
                     </div>
                   )}
                   <TabsContent value="zh" className="mt-4">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                      <div className="lyrics-container">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
+                      <div className="lyrics-container text-sm sm:text-base">
                         {formatLyrics(selectedSong.lyrics.zh)}
                       </div>
                     </div>
                   </TabsContent>
                   {selectedSong.lyrics.en && (
                     <TabsContent value="en" className="mt-4">
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container text-sm sm:text-base">
                           {formatLyrics(selectedSong.lyrics.en)}
                         </div>
                       </div>
@@ -1793,8 +1832,8 @@ export default function MusicLyrics() {
                   )}
                   {selectedSong.lyrics.ja && (
                     <TabsContent value="ja" className="mt-4">
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container text-sm sm:text-base">
                           {formatLyrics(selectedSong.lyrics.ja)}
                         </div>
                       </div>
@@ -1802,8 +1841,8 @@ export default function MusicLyrics() {
                   )}
                   {selectedSong.lyrics.yue && (
                     <TabsContent value="yue" className="mt-4">
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container text-sm sm:text-base">
                           {formatLyrics(selectedSong.lyrics.yue)}
                         </div>
                       </div>
@@ -1811,8 +1850,8 @@ export default function MusicLyrics() {
                   )}
                   {selectedSong.lyrics.ko && (
                     <TabsContent value="ko" className="mt-4">
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="lyrics-container">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-3 sm:p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="lyrics-container text-sm sm:text-base">
                           {formatLyrics(selectedSong.lyrics.ko)}
                         </div>
                       </div>
@@ -1820,35 +1859,38 @@ export default function MusicLyrics() {
                   )}
                 </Tabs>
                 
-                {/* 音樂播放器控制界面 */}
+                {/* 音樂播放器控制界面 - 手機優化 */}
                 {selectedSong.audioFiles[currentLanguage] && (
-                  <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                  <div className="mt-6 p-3 sm:p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
                     
-                    <div className="flex items-center justify-between mb-4">
+                    {/* 播放信息 - 手機優化 */}
+                    <div className="mb-4 space-y-3">
                       <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                        <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100">
                           正在播放: {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : currentLanguage === 'ja' ? '日文版' : currentLanguage === 'yue' ? '粵語版' : '韓語版'}
                           {currentVariation !== 'default' && ` - ${currentVariation}`}
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                           {selectedSong.title} - {selectedSong.artist}
                         </p>
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                           🎵 真實音頻 - 來自 /musics 文件夾
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" onClick={skipBackward} disabled={!currentAudio}>
+                      
+                      {/* 播放控制按鈕 - 手機優化 */}
+                      <div className="flex items-center justify-center gap-2 flex-wrap">
+                        <Button size="sm" variant="outline" onClick={skipBackward} disabled={!currentAudio} className="text-xs">
                           <SkipBack size={14} />
                         </Button>
-                        <Button size="sm" onClick={togglePlay} className="bg-purple-600 hover:bg-purple-700">
+                        <Button size="sm" onClick={togglePlay} className="bg-purple-600 hover:bg-purple-700 text-xs sm:text-sm">
                           {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                          {isPlaying ? '暫停' : '播放'}
+                          <span className="ml-1">{isPlaying ? '暫停' : '播放'}</span>
                         </Button>
-                        <Button size="sm" variant="outline" onClick={skipForward} disabled={!currentAudio}>
+                        <Button size="sm" variant="outline" onClick={skipForward} disabled={!currentAudio} className="text-xs">
                           <SkipForward size={14} />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={stopPlay} disabled={!currentAudio}>
+                        <Button size="sm" variant="outline" onClick={stopPlay} disabled={!currentAudio} className="text-xs">
                           停止
                         </Button>
                       </div>
