@@ -105,6 +105,14 @@ export default function CommonAccountManagement() {
     e.preventDefault();
     if (!siteForm.name) return;
 
+    // 檢查名稱格式 (必須包含 @ 和 .)
+    const nameRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!nameRegex.test(siteForm.name.trim())) {
+      setDuplicateError("帳號名稱格式不正確，必須符合 example@domain.com 格式");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     // 檢查名稱是否重複 (僅限新增模式)
     if (!editingName) {
       const isExisting = combinedAccounts.some(a => a.name.trim().toLowerCase() === siteForm.name.trim().toLowerCase());
