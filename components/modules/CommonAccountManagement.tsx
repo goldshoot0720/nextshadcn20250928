@@ -474,18 +474,18 @@ export default function CommonAccountManagement() {
         <div className="grid grid-cols-1 gap-6">
           {filteredAccounts.map((account) => (
             <DataCard key={account.name} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 border-t-4 border-t-blue-500 overflow-hidden group">
-              <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex items-center justify-between gap-4">
+              <div className="p-4 pr-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <NoteIcon size={20} className="text-blue-500 shrink-0" />
                   <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 whitespace-nowrap">
                     {account.name}
                   </h3>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  <Button size="sm" variant="ghost" onClick={() => handleEdit(account)} className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg">
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" variant="ghost" onClick={() => handleEdit(account)} className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shadow-sm bg-white/50 dark:bg-gray-800/50">
                     <Edit2 size={16} />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDelete(account)} className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                  <Button size="sm" variant="ghost" onClick={() => handleDelete(account)} className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg shadow-sm bg-white/50 dark:bg-gray-800/50">
                     <Trash2 size={16} />
                   </Button>
                 </div>
