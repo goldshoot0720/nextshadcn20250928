@@ -139,9 +139,10 @@ export default function CommonAccountManagement() {
       .map(key => (siteForm as any)[key]?.trim())
       .filter(name => name && name !== "");
     
-    const uniqueSiteNames = new Set(siteNames);
-    if (siteNames.length !== uniqueSiteNames.size) {
-      setDuplicateError("常用網站名稱有重複，請檢查 01~15 欄位");
+    // 找出重複的名稱
+    const duplicates = siteNames.filter((name, index) => siteNames.indexOf(name) !== index);
+    if (duplicates.length > 0) {
+      setDuplicateError(`常用網站名稱重複: 「${duplicates[0]}」，請檢查 01~15 欄位`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -283,7 +284,7 @@ export default function CommonAccountManagement() {
         .map(([_, val]) => (val as string).trim());
       
       if (otherSites.includes(inlineEdit.siteName.trim())) {
-        alert(`此帳號已有重複的站點名稱: ${inlineEdit.siteName.trim()}`);
+        alert(`此帳號已有重複的站點名稱: 「${inlineEdit.siteName.trim()}」，請修改名稱後再儲存`);
         return;
       }
     }
