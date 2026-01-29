@@ -492,201 +492,159 @@ AI로 보조하는 행정, 데이터 공개 새 시대~
     artist: "鋒兄 feat. 塗哥",
     album: "鋒兄音樂精選",
     lyrics: {
-      zh: `[開場]
-進行曲響起！鋒兄進化開始！
-從榜首到市長，這是傳奇的進行曲！
+      zh: `台北有鋒兄真好！　嗨起來別逃跑！
+從榜首進化到市長, 這節奏太離譜（wow）
+塗哥唱歌別裝低調, 記者都在拍照！
+綾小路都說這段人生　根本 S 級動畫稿～
 
-[第一樂章：榜首時代]
-37歲那年，高考三級資訊處理榜首
-程式碼寫成傳說，鍵盤敲出未來
-放棄報到，選擇創業的道路
-鋒兄塗哥公關資訊，夢想起飛的時刻
+三十七歲那年我高考三級奪榜首（yeah）
+資訊處理一戰成名　程式都寫成傳說～
+隔著時代的螢幕光　夢想像演算法（run）
+五十二歲副市長代理市長上陣忙！（yo）
 
-[副歌]
-進化！進化！鋒兄進化 Show！
-從榜首到市長，每一步都是奇蹟
-進化！進化！台北因你而驕傲
-這是鋒兄的進化進行曲！
+塗哥敢唱「有鋒兄真好」備取瞬間正取秒秒到～
+不唱就取消資格笑　進化不靠運氣靠信號！
 
-[第二樂章：政壇崛起]
-51歲資訊局長，數位轉型先鋒
-52歲副秘書長，政務運籌帷幄
-53歲副市長，城市治理新篇章
-54歲市長候選人，百億市長夢想成真
+台北有鋒兄真好！　嗨起來別逃跑！
+從榜首進化到市長, 命運像 debug 一樣爆！
+塗哥嗓門開到爆表, 全場跟著大合唱！
+「代理」只是過場　市民心中早就想！
 
-[橋段]
-每一次進化都是突破
-每一個階段都是傳奇
-從程式設計師到市長
-這就是鋒兄的進化之路
+二零四零 那年的夜　霓虹閃爍到市政府
+競選標語像 ACG 的 opening
+「別說不可能, 鋒兄就是 evolution！」
 
-[第三樂章：未來願景]
-2040年的台北，智慧城市領航者
-AI輔助政務，資料開放新時代
-競選口號響徹雲霄
-「別說不可能，鋒兄就是進化！」
+AI 輔助政務操作　資料開放新世代～
+陰陽同框　政治與理想　交錯的舞台線上～
+一首歌唱到選票都跳起來　塗哥還要再唱！
 
-[終章]
-進化！進化！鋒兄進化 Show！
-從榜首到市長，傳奇永不停歇
-進化！進化！台北有你真好
-這是鋒兄進化 Show 進行曲！🔥`,
-      en: `[Opening]
-The march begins! Brother Feng's evolution starts!
-From top scorer to mayor, this is the legendary march!
+台北有鋒兄真好！　嗨起來直到早朝！
+榜首到市長的進化論　全城都在尖叫！
+綾小路清隆也點頭　這進化合乎理想！
+「ムリムリ進化論？」不——這是鋒兄進化 Show！🔥`,
+      en: `Having Feng in Taipei is great! Get hyped, don't run away!
+Evolving from top of the charts to mayor, this rhythm is outrageous (wow)
+Brother Tu, don't pretend to be low-key, the reporters are taking photos!
+Even Aya Kouji said this phase of life is like an S-tier anime script~
 
-[First Movement: Top Scorer Era]
-At 37, topped the civil service exam in information processing
-Code became legend, keyboard typed out the future
-Declined the position, chose the entrepreneurial path
-Feng & Tu PR Information, the moment dreams took flight
+When I was thirty-seven, I topped the college exam (yeah)
+Became famous in information processing, programming became legendary~
+Across the screen of times, dreams run like algorithms (run)
+Fifty-two years old, vice-mayor acting as a busy mayor! (yo)
 
-[Chorus]
-Evolution! Evolution! Brother Feng Evolution Show!
-From top scorer to mayor, every step is a miracle
-Evolution! Evolution! Taipei is proud of you
-This is Brother Feng's Evolution March!
+Brother Tu dares to sing "Having Feng in Taipei is great"
+Being a backup to securing the position, instantly!
+Not singing spells disqualification laughs, evolution relies on signals, not luck!
 
-[Second Movement: Political Rise]
-At 51, Director of Information, digital transformation pioneer
-At 52, Deputy Secretary-General, strategic governance
-At 53, Deputy Mayor, new chapter in city management
-At 54, mayoral candidate, billion-dollar mayor dream comes true
+Having Feng in Taipei is great! Get hyped, don't run away!
+Evolving from top of the charts to mayor, fate explodes like a debug!
+Brother Tu's voice breaks the scale, the whole audience sings along!
+"Acting" is just a transition, something the citizens have long desired!
 
-[Bridge]
-Every evolution is a breakthrough
-Every stage is legendary
-From programmer to mayor
-This is Brother Feng's path of evolution
+In the year 2040, on that night, neon shines on the city hall
+Campaign slogans like an ACG opening
+"Don't say impossible, Feng is evolution!"
 
-[Third Movement: Future Vision]
-Taipei in 2040, smart city navigator
-AI-assisted governance, data-open new era
-Campaign slogans echo through the sky
-"Don't say impossible, Brother Feng is evolution!"
+AI-assisted political operations, data openness, a new era~
+Yin and yang in the same frame, politics and ideals intertwining on a stage~
+A song that makes the ballots jump, Brother Tu wants to sing again!
 
-[Finale]
-Evolution! Evolution! Brother Feng Evolution Show!
-From top scorer to mayor, legend never stops
-Evolution! Evolution! Taipei is great with you
-This is Brother Feng Evolution Show March! 🔥`,
-      ja: `[オープニング]
-行進曲が始まる！鋒兄の進化が始まる！
-トップから市長へ、これは伝説の行進曲！
+Having Feng in Taipei is great! Get hyped until morning comes!
+The evolution theory from top to mayor, the entire city is screaming!
+Aya Kouji also nods, this evolution matches the ideal!
+"Impossible evolution theory?" No—this is Feng's Evolution Show! 🔥`,
+      ja: `台北に鋒兄がいるのは本当にいい！　ハイテンションで逃げるな！
+トップから市長への進化、このリズムは信じられない（wow）
+塗哥が歌うとき、控えめにしないで、記者が写真を撮っている！
+綾小路もこの人生をS級アニメの絵コンテと言っている～
 
-[第一楽章：トップ時代]
-37歳の年、公務員試験情報処理でトップ
-コードは伝説となり、キーボードが未来を打ち出す
-報到を辞退し、起業の道を選ぶ
-鋒兄塗哥広報情報、夢が飛び立つ瞬間
+37歳の時、大試験の三級でトップを奪った（yeah）
+情報処理で一気に名声を得て、プログラムは伝説になった～
+時代を隔てたスクリーンの光、夢はアルゴリズムのように（走る）
+52歳で副市長、代理市長として忙しく舞台に上がる！（yo）
 
-[コーラス]
-進化！進化！鋒兄進化ショー！
-トップから市長へ、すべてのステップが奇跡
-進化！進化！台北はあなたを誇りに思う
-これは鋒兄の進化行進曲！
+塗哥が「鋒兄がいるのは本当にいい」と歌う勇気がある
+予備からすぐに正規になり、各秒で到達！
+歌わないと資格を失う笑い、進化は運に頼らず信号に頼る！
 
-[第二楽章：政界台頭]
-51歳で情報局長、デジタル変革の先駆者
-52歳で副秘書長、政務の戦略家
-53歳で副市長、都市管理の新章
-54歳で市長候補、億万市長の夢が実現
+台北に鋒兄がいるのは本当にいい！　ハイテンションで逃げるな！
+トップから市長への進化、運命はデバッグのように爆発する！
+塗哥の声が爆音に達し、全場が大合唱に加わる！
+「代理」は単なる通過点、市民の心には既に想いがある！
 
-[ブリッジ]
-すべての進化は突破口
-すべての段階は伝説
-プログラマーから市長へ
-これが鋒兄の進化の道
+2040年のその夜、ネオンが市庁舎に輝く
+選挙スローガンがACGのオープニングのように
+「無理だと言わないで、鋒兄がエボリューションだよ！」
 
-[第三楽章：未来のビジョン]
-2040年の台北、スマートシティのナビゲーター
-AI支援の統治、データ公開の新時代
-選挙スローガンが空に響く
-「不可能と言うな、鋒兄は進化だ！」
+AIが政務の操作を支援、データ解放の新時代～
+陰と陽が交錯し、政治と理想が舞台上で交錯～
+一曲で選票が跳ね上がり、塗哥はまだ歌い続ける！
 
-[フィナーレ]
-進化！進化！鋒兄進化ショー！
-トップから市長へ、伝説は止まらない
-進化！進化！台北にあなたがいて良かった
-これは鋒兄進化ショー行進曲！🔥`,
-      yue: `[開場]
-進行曲響起！鋒兄進化開始！
-從榜首到市長，呢個係傳奇嘅進行曲！
+台北に鋒兄がいるのは本当にいい！　朝までハイテンション！
+トップから市長への進化論、全市が叫び声を上げている！
+綾小路清隆も頷き、この進化は理想に合っている！
+「無理無理進化論？」いや、これは鋒兄進化ショーだ！🔥`,
+      yue: `台北有鋒兄真好！　嘿起身唔好走！
+從榜首進化到市長, 這節奏太誇張（wow）
+塗哥唱歌唔好扮低調, 記者都喺度影相！
+綾小路都話呢段人生　根本 S 級動畫稿～
 
-[第一樂章：榜首時代]
-37歲嗰年，高考三級資訊處理榜首
-程式碼寫成傳說，鍵盤敲出未來
-放棄報到，揀咗創業嘅路
-鋒兄塗哥公關資訊，夢想起飛嘅時刻
+三十七歲嗰年我高考三級攞榜首（yeah）
+資訊處理一戰成名　程式都寫成傳說～
+隔住時代嘅螢幕光　夢想好似演算法（run）
+五十二歲副市長代市長上陣忙！（yo）
 
-[副歌]
-進化！進化！鋒兄進化 Show！
-從榜首到市長，每一步都係奇蹟
-進化！進化！台北因你而驕傲
-呢個係鋒兄嘅進化進行曲！
+塗哥敢唱「有鋒兄真好」備取瞬間正取秒秒到～
+唔唱就取消資格笑　進化唔靠運氣靠信號！
 
-[第二樂章：政壇崛起]
-51歲資訊局長，數位轉型先鋒
-52歲副秘書長，政務運籌帷幄
-53歲副市長，城市治理新篇章
-54歲市長候選人，百億市長夢想成真
+台北有鋒兄真好！　嘿起身唔好走！
+從榜首進化到市長, 命運好似 debug 咁爆！
+塗哥嗓門開到爆表, 全場跟住大合唱！
+「代理」只係過場　市民心中早就諗！
 
-[橋段]
-每一次進化都係突破
-每一個階段都係傳奇
-從程式設計師到市長
-呢個就係鋒兄嘅進化之路
+二零四零 嗰年的夜　霓虹閃爍到市政府
+競選標語好似 ACG 嘅 opening
+「唔好話唔可能, 鋒兄就係 evolution！」
 
-[第三樂章：未來願景]
-2040年嘅台北，智慧城市領航者
-AI輔助政務，資料開放新時代
-競選口號響徹雲霄
-「唔好話唔可能，鋒兄就係進化！」
+AI 輔助政務操作　資料開放新世代～
+陰陽同框　政治與理想　交錯的舞台線上～
+一首歌唱到選票都跳起來　塗哥仲要再唱！
 
-[終章]
-進化！進化！鋒兄進化 Show！
-從榜首到市長，傳奇永不停歇
-進化！進化！台北有你真好
-呢個係鋒兄進化 Show 進行曲！🔥`,
-      ko: `[오프닝]
-행진곡이 시작된다! 펑형의 진화가 시작된다!
-수석에서 시장까지, 이것은 전설의 행진곡!
+台北有鋒兄真好！　嘿起身直到早朝！
+榜首到市長的進化論　全城都喺尖叫！
+綾小路清隆都點頭　呢進化合乎理想！
+「ムリムリ進化論？」唔——呢係鋒兄進化 Show！🔥`,
+      ko: `타이베이에 펑형님이 있어서 좋다! 신나게 흔들어 봐요, 도망가지 말고!
+정상에서 시장으로 진화하다니, 이 리듬이 너무 말도 안 돼 (wow)
+박가 노래할 때 눈치 보지말고, 기자들은 다 사진 찍고!
+아야나코지도 인생의 이 순간은 애니메이션의 S급 시나리오 같다네요 ~
 
-[제1악장: 수석 시대]
-37살 때, 고등고시 정보처리 수석
-코드는 전설이 되고, 키보드가 미래를 두드린다
-등록을 포기하고, 창업의 길을 선택
-펑형 투형 홍보정보, 꿈이 날아오르는 순간
+서른일곱 살 때 난 3급 고시에 합격 (yeah)
+정보 처리로 단번에 명성을 얻어, 프로그램이 전설처럼 쓰여졌죠 ~
+시대를 넘는 화면의 불빛 사이로, 꿈은 알고리즘처럼 달린다 (run)
+오십이세 부시장이 시장 대리로 바쁘게 나섭니다! (yo)
 
-[후렴]
-진화! 진화! 펑형 진화 쇼!
-수석에서 시장까지, 모든 단계가 기적
-진화! 진화! 타이베이는 당신을 자랑스러워해
-이것은 펑형의 진화 행진곡!
+박가는 "펑형님이 있어서 좋다"라고 노래한다
+순위 대기자가 즉시 합격자로 올라온다
+노래하지 않으면 자격이 취소되어 웃음, 진화는 운이 아니라 신호에 의존해요!
 
-[제2악장: 정계 부상]
-51살에 정보국장, 디지털 전환의 선구자
-52살에 부비서장, 정무의 전략가
-53살에 부시장, 도시 관리의 새 장
-54살에 시장 후보, 수십억 시장 꿈이 실현
+타이베이에 펑형님이 있어서 좋다! 신나게 흔들어 봐요, 도망가지 말고!
+정상에서 시장으로 진화하다니, 운명은 디버그처럼 터져요!
+박가의 성량이 터지도록 올리고, 온 관중이 대합창을 해요!
+"대리"는 단지 통과일 뿐, 시민의 마음 속에는 이미 생각하고 있어요!
 
-[브리지]
-모든 진화는 돌파구
-모든 단계는 전설
-프로그래머에서 시장까지
-이것이 펑형의 진화의 길
+이천사십년 그 해의 밤, 네온이 시청까지 반짝이고
+선거 구호는 ACG의 오프닝 같다
+"불가능은 말하지 말고, 펑형님이 바로 진화다!"
 
-[제3악장: 미래 비전]
-2040년의 타이베이, 스마트 시티 네비게이터
-AI 보조 통치, 데이터 공개 새 시대
-선거 슬로건이 하늘에 울려 퍼진다
-"불가능하다고 말하지 마, 펑형은 진화다!"
+AI 보조 행정 조작, 데이터 개방의 새로운 시대
+음양이 같은 자리에 있고, 정치와 이상이 교차하는 무대의 선상
+한 곡을 불러 투표가 뛰어오를 때, 박가는 또 노래하고 싶어요!
 
-[피날레]
-진화! 진화! 펑형 진화 쇼!
-수석에서 시장까지, 전설은 멈추지 않는다
-진화! 진화! 타이베이에 당신이 있어서 좋다
-이것은 펑형 진화 쇼 행진곡! 🔥`
+타이베이에 펑형님이 있어서 좋다! 아침까지 신나게 흔들어 봐요!
+정상에서 시장으로의 진화론, 도시 전체가 소리 지르고 있어요!
+아야나코지 쿄타카도 고개를 끄덕인다 이 진화는 이상과 맞다고!
+"불가능한 진화론?" 아니–이것이 펑형님 진화 쇼입니다!🔥`
     },
     audioFiles: {
       zh: "/musics/鋒兄進化 Show！🔥進行曲.mp3",
