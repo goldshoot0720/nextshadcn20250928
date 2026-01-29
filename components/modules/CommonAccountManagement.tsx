@@ -420,8 +420,8 @@ export default function CommonAccountManagement() {
         </div>
 
         {allSiteNames.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-gray-500 flex items-center gap-1">
+          <div className="flex flex-wrap gap-2 items-center overflow-x-auto pb-1 scrollbar-hide sm:flex-wrap">
+            <span className="text-sm text-gray-500 flex items-center gap-1 shrink-0">
               <Filter size={14} />
               篩選:
             </span>
@@ -429,7 +429,7 @@ export default function CommonAccountManagement() {
               size="sm"
               variant={siteFilter === null ? "default" : "outline"}
               onClick={() => setSiteFilter(null)}
-              className={`h-8 px-3 rounded-lg text-sm ${siteFilter === null ? 'bg-blue-600 text-white' : ''}`}
+              className={`h-8 px-3 rounded-lg text-sm shrink-0 ${siteFilter === null ? 'bg-blue-600 text-white' : ''}`}
             >
               全部 ({combinedAccounts.length})
             </Button>
@@ -449,7 +449,7 @@ export default function CommonAccountManagement() {
                   size="sm"
                   variant={siteFilter === siteName ? "default" : "outline"}
                   onClick={() => setSiteFilter(siteFilter === siteName ? null : siteName)}
-                  className={`h-8 px-3 rounded-lg text-sm flex items-center gap-1.5 ${siteFilter === siteName ? 'bg-blue-600 text-white' : ''}`}
+                  className={`h-8 px-3 rounded-lg text-sm flex items-center gap-1.5 shrink-0 ${siteFilter === siteName ? 'bg-blue-600 text-white' : ''}`}
                 >
                   {siteUrl && <FaviconImage siteUrl={siteUrl} siteName={siteName} size={14} />}
                   {siteName} ({count})
@@ -475,9 +475,9 @@ export default function CommonAccountManagement() {
           {filteredAccounts.map((account) => (
             <DataCard key={account.name} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 border-t-4 border-t-blue-500 overflow-hidden group">
               <div className="p-4 pr-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <NoteIcon size={20} className="text-blue-500 shrink-0" />
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 truncate">
                     {account.name}
                   </h3>
                 </div>
@@ -568,41 +568,43 @@ export default function CommonAccountManagement() {
                               </div>
                             ) : (
                               // Display Mode
-                              <div className="flex items-center gap-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 {siteName && (
                                   siteUrl ? (
                                     <a
                                       href={siteUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                      className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors shrink-0"
                                       title={siteUrl}
                                     >
                                       <FaviconImage siteUrl={siteUrl} siteName={siteName} size={18} />
-                                      <span>{siteName}</span>
-                                      <Play size={12} className="opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0" />
+                                      <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
+                                      <Play size={12} className="opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 hidden sm:block" />
                                     </a>
                                   ) : (
-                                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
                                       <LinkIcon size={16} className="text-gray-400" />
-                                      {siteName}
+                                      <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
                                     </span>
                                   )
                                 )}
-                                {note && (
-                                  <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap flex-1">
-                                    {note}
-                                  </span>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => startInlineEdit(account.name, idx, siteName || '', note || '')}
-                                  className="h-7 w-7 p-0 opacity-0 group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shrink-0"
-                                  title="編輯此項目"
-                                >
-                                  <Edit2 size={14} />
-                                </Button>
+                                <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
+                                  {note && (
+                                    <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-words line-clamp-2 sm:line-clamp-none">
+                                      {note}
+                                    </span>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => startInlineEdit(account.name, idx, siteName || '', note || '')}
+                                    className="h-7 w-7 p-0 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shrink-0"
+                                    title="編輯此項目"
+                                  >
+                                    <Edit2 size={14} />
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
