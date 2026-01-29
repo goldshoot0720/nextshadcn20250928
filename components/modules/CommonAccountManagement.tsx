@@ -20,6 +20,10 @@ const SITE_URL_MAP: Record<string, string> = {
   "Musicful": "https://tw.musicful.ai/",
   "MindVideo": "https://www.mindvideo.ai/",
   "Qoder": "https://qoder.com/",
+  "GitHub": "https://github.com/",
+  "Gmail": "https://mail.google.com/",
+  "Outlook": "https://outlook.live.com/",
+  "TRAE": "https://www.trae.ai/",
 };
 
 const INITIAL_SITE_FORM: CommonAccountSiteFormData = {
