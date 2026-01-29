@@ -689,15 +689,15 @@ AI 보조 통치, 데이터 공개 새 시대
 이것은 펑형 진화 쇼 행진곡! 🔥`
     },
     audioFiles: {
-      zh: "/musics/鋒兄進化Show🔥.mp3",
-      en: "/musics/鋒兄進化Show🔥(英語).mp3",
-      ja: "/musics/鋒兄進化Show🔥(日語).mp3",
-      yue: "/musics/鋒兄進化Show🔥(粵語).mp3",
-      ko: "/musics/鋒兄進化Show🔥(韓文).mp3"
+      zh: "/musics/鋒兄進化 Show！🔥進行曲.mp3",
+      en: "/musics/鋒兄進化 Show！🔥進行曲(英語).mp3",
+      ja: "/musics/鋒兄進化 Show！🔥進行曲(日語).mp3",
+      yue: "/musics/鋒兄進化 Show！🔥進行曲(粵語).mp3",
+      ko: "/musics/鋒兄進化 Show！🔥進行曲(韓語).mp3"
     },
     audioVariations: {
       zh: [
-        { name: "進行曲版", url: "/musics/鋒兄進化Show🔥.mp3" },
+        { name: "進行曲版", url: "/musics/鋒兄進化 Show！🔥進行曲.mp3" },
         { name: "Donald Trump", url: "/musics/鋒兄進化Show🔥(Donald Trump).mp3" },
         { name: "Pekora", url: "/musics/鋒兄進化Show🔥(Pekora).mp3" },
         { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化Show🔥(SpongeBob SquarePants).mp3" },
