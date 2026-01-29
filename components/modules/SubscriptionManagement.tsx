@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,6 +23,7 @@ export default function SubscriptionManagement() {
   const { subscriptions, loading, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
   const [form, setForm] = useState<SubscriptionFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [canAskNotification, setCanAskNotification] = useState(false);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
@@ -169,6 +171,7 @@ export default function SubscriptionManagement() {
   const handleEdit = (sub: Subscription) => {
     setForm({ ...sub, nextdate: formatDate(sub.nextdate) });
     setEditingId(sub.$id);
+    setIsFormOpen(true);
     // 滾動到頁面頂部讓用戶看到編輯表單
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -199,6 +202,7 @@ export default function SubscriptionManagement() {
   const resetForm = () => {
     setForm(INITIAL_FORM);
     setEditingId(null);
+    setIsFormOpen(false);
   };
 
   if (loading) return <FullPageLoading text="載入訂閱資料中..." />;
@@ -225,28 +229,41 @@ export default function SubscriptionManagement() {
         </div>
       )}
 
-      <FormCard title={editingId ? "編輯訂閱" : "新增訂閱"} accentColor="from-green-500 to-green-600">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormGrid>
-            <Input placeholder="服務名稱" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl" />
-            <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} required className="h-12 rounded-xl" />
-            <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
-            <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
-          </FormGrid>
-          <FormActions>
-            <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25">
-              {editingId ? "更新訂閱" : "新增訂閱"}
-            </Button>
-            {editingId && (
-              <Button type="button" variant="default" onClick={handleExtend30Days} className="h-12 px-6 rounded-xl bg-blue-500 hover:bg-blue-600">
-                +30天
+      <div className="flex justify-end">
+        <Button
+          onClick={() => setIsFormOpen(!isFormOpen)}
+          variant="outline"
+          className="rounded-xl flex items-center gap-2 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 h-10 px-4"
+        >
+          {isFormOpen ? <ChevronUp size={18} /> : <Plus size={18} />}
+          {isFormOpen ? "收起表單" : "新增訂閱"}
+        </Button>
+      </div>
+
+      {isFormOpen && (
+        <FormCard title={editingId ? "編輯訂閱" : "新增訂閱"} accentColor="from-green-500 to-green-600">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormGrid>
+              <Input placeholder="服務名稱" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl" />
+              <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} required className="h-12 rounded-xl" />
+              <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
+              <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
+            </FormGrid>
+            <FormActions>
+              <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25">
+                {editingId ? "更新訂閱" : "新增訂閱"}
               </Button>
-            )}
-            {editingId && <Button type="button" variant="outline" onClick={resetForm} className="h-12 px-6 rounded-xl">取消編輯</Button>}
-            {editingId && <Button type="button" variant="destructive" onClick={handleDeleteFromForm} className="h-12 px-6 rounded-xl">刪除</Button>}
-          </FormActions>
-        </form>
-      </FormCard>
+              {editingId && (
+                <Button type="button" variant="default" onClick={handleExtend30Days} className="h-12 px-6 rounded-xl bg-blue-500 hover:bg-blue-600">
+                  +30天
+                </Button>
+              )}
+              {editingId && <Button type="button" variant="outline" onClick={resetForm} className="h-12 px-6 rounded-xl">取消編輯</Button>}
+              {editingId && <Button type="button" variant="destructive" onClick={handleDeleteFromForm} className="h-12 px-6 rounded-xl">刪除</Button>}
+            </FormActions>
+          </form>
+        </FormCard>
+      )}
 
       <DataCard>
         {subscriptions.length === 0 ? (

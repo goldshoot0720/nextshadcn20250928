@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +21,7 @@ export default function FoodManagement() {
   const { foods, loading, createFood, updateFood, deleteFood, updateAmount } = useFoods();
   const [form, setForm] = useState<FoodFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +49,7 @@ export default function FoodManagement() {
   const handleEdit = (food: Food) => {
     setForm({ ...food, todate: formatDate(food.todate) });
     setEditingId(food.$id);
+    setIsFormOpen(true);
     // 滾動到頁面頂部讓用戶看到編輯表單
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -54,6 +57,7 @@ export default function FoodManagement() {
   const resetForm = () => {
     setForm(INITIAL_FORM);
     setEditingId(null);
+    setIsFormOpen(false);
   };
 
   if (loading) return <FullPageLoading text="載入食品資料中..." />;
@@ -71,13 +75,26 @@ export default function FoodManagement() {
         }
       />
 
-      <FoodForm
-        form={form}
-        setForm={setForm}
-        editingId={editingId}
-        onSubmit={handleSubmit}
-        onCancel={resetForm}
-      />
+      <div className="flex justify-end">
+        <Button
+          onClick={() => setIsFormOpen(!isFormOpen)}
+          variant="outline"
+          className="rounded-xl flex items-center gap-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 h-10 px-4"
+        >
+          {isFormOpen ? <ChevronUp size={18} /> : <Plus size={18} />}
+          {isFormOpen ? "收起表單" : "新增食品"}
+        </Button>
+      </div>
+
+      {isFormOpen && (
+        <FoodForm
+          form={form}
+          setForm={setForm}
+          editingId={editingId}
+          onSubmit={handleSubmit}
+          onCancel={resetForm}
+        />
+      )}
 
       <DataCard>
         <DesktopTable
