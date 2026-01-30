@@ -655,7 +655,7 @@ AI 보조 행정 조작, 데이터 개방의 새로운 시대
     },
     audioVariations: {
       zh: [
-        { name: "原始版本", url: "/musics/鋒兄進化 Show！🔥進行曲.mp3" },
+        { name: "原始音樂", url: "/musics/鋒兄進化 Show！🔥進行曲.mp3" },
         { name: "Donald Trump", url: "/musics/鋒兄進化 Show！🔥進行曲 (Donald Trump).mp3" },
         { name: "Pekora", url: "/musics/鋒兄進化 Show！🔥進行曲 (Pekora).mp3" },
         { name: "SpongeBob SquarePants", url: "/musics/鋒兄進化 Show！🔥進行曲(SpongeBob SquarePants).mp3" },
