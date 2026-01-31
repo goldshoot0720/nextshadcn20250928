@@ -1,12 +1,41 @@
 "use client";
 
-import { useState } from "react";
-import { Settings, Moon, Sun, Bell, Shield, Database, Palette } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2 } from "lucide-react";
 import { Button, DataCard, SectionHeader } from "@/components/ui";
 import { useTheme } from "@/components/providers/theme-provider";
 
+interface CollectionStats {
+  name: string;
+  columnCount: number;
+  documentCount: number;
+  error?: boolean;
+}
+
+interface DatabaseStats {
+  totalColumns: number;
+  totalCollections: number;
+  collections: CollectionStats[];
+  databaseId: string;
+}
+
 export default function SettingsManagement() {
   const { theme, setTheme } = useTheme();
+  const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/database-stats")
+      .then(res => res.json())
+      .then(data => {
+        setDbStats(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to fetch database stats:", err);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -16,6 +45,68 @@ export default function SettingsManagement() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 資料庫欄位統計 - 第一欄位 */}
+        <DataCard className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+              <Table2 size={20} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h3 className="font-bold text-lg">資料庫欄位統計</h3>
+          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 size={24} className="animate-spin text-gray-400" />
+            </div>
+          ) : dbStats ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+                <span className="text-gray-600 dark:text-gray-300">總欄位數</span>
+                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns}</span>
+              </div>
+              <div className="space-y-2 text-sm">
+                {dbStats.collections.map(col => (
+                  <div key={col.name} className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    <span className="font-mono text-gray-600 dark:text-gray-400">{col.name}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-400">{col.columnCount} 欄位</span>
+                      <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{col.documentCount} 筆</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-400">無法取得資料</div>
+          )}
+        </DataCard>
+
+        {/* 資料庫資訊 */}
+        <DataCard className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+              <Database size={20} className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="font-bold text-lg">資料庫</h3>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Appwrite 雲端資料庫連線資訊
+          </p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">端點</span>
+              <span className="font-mono text-xs">fra.cloud.appwrite.io</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Collections</span>
+              <span className="font-medium">{dbStats?.totalCollections || 5}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">狀態</span>
+              <span className="text-green-600 font-medium">已連線</span>
+            </div>
+          </div>
+        </DataCard>
+
         {/* 主題設定 */}
         <DataCard className="p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -52,45 +143,6 @@ export default function SettingsManagement() {
               <Settings size={16} />
               系統
             </Button>
-          </div>
-        </DataCard>
-
-        {/* 資料庫資訊 */}
-        <DataCard className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-              <Database size={20} className="text-blue-600 dark:text-blue-400" />
-            </div>
-            <h3 className="font-bold text-lg">資料庫</h3>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Appwrite 雲端資料庫連線資訊
-          </p>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">端點</span>
-              <span className="font-mono text-xs">fra.cloud.appwrite.io</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">狀態</span>
-              <span className="text-green-600 font-medium">已連線</span>
-            </div>
-          </div>
-        </DataCard>
-
-        {/* 通知設定 */}
-        <DataCard className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
-              <Bell size={20} className="text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <h3 className="font-bold text-lg">通知</h3>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            管理通知偏好設定
-          </p>
-          <div className="text-sm text-gray-400">
-            即將推出...
           </div>
         </DataCard>
 
