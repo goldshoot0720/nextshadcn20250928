@@ -30,7 +30,7 @@ const TABLE_DEFINITIONS = {
   bank: ["name", "deposit", "site", "address", "withdrawals", "transfer", "activity", "card", "account"],
   commonaccount: ["name", ...Array.from({length: 37}, (_, i) => `site${(i + 1).toString().padStart(2, '0')}`), ...Array.from({length: 37}, (_, i) => `note${(i + 1).toString().padStart(2, '0')}`)],
   food: ["name", "amount", "price", "shop", "todate", "photo", "photohash"],
-  subscription: ["name", "site", "price", "nextdate", "note", "account"],
+  subscription: ["name", "site", "price", "nextdate", "note", "account", "currency"],
   image: ["name", "file", "note", "ref", "category", "hash", "cover"],
   video: ["name", "file", "note", "ref", "category", "hash", "cover"],
   music: ["name", "file", "lyrics", "note", "ref", "category", "hash", "language", "cover"]
