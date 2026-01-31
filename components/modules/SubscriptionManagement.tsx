@@ -5,7 +5,7 @@ import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionHeader } from "@/components/ui/section-header";
 import { FormCard, FormGrid, FormActions } from "@/components/ui/form-card";
@@ -264,12 +264,17 @@ export default function SubscriptionManagement() {
               <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} className="h-12 rounded-xl" />
               <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
               <Select value={form.currency || "TWD"} onValueChange={(value) => setForm({ ...form, currency: value })}>
-                <option value="TWD">新台幣 (TWD)</option>
-                <option value="USD">美元 (USD)</option>
-                <option value="EUR">歐元 (EUR)</option>
-                <option value="JPY">日圓 (JPY)</option>
-                <option value="CNY">人民幣 (CNY)</option>
-                <option value="HKD">港幣 (HKD)</option>
+                <SelectTrigger className="h-12 rounded-xl">
+                  <SelectValue placeholder="選擇幣別" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TWD">新台幣 (TWD)</SelectItem>
+                  <SelectItem value="USD">美元 (USD)</SelectItem>
+                  <SelectItem value="EUR">歐元 (EUR)</SelectItem>
+                  <SelectItem value="JPY">日圓 (JPY)</SelectItem>
+                  <SelectItem value="CNY">人民幣 (CNY)</SelectItem>
+                  <SelectItem value="HKD">港幣 (HKD)</SelectItem>
+                </SelectContent>
               </Select>
               <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
               <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
