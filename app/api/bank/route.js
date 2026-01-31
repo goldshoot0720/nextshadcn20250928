@@ -11,11 +11,11 @@ async function getCollectionId(databases, databaseId, name) {
 }
 
 function createAppwrite(searchParams) {
-  // 從 URL 參數讀取配置（優先），否則使用 .env
+  // 從 URL 參數讀取配置（優先），否則使用 .env（支援新舊兩種變數名）
   const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = searchParams?.get('_database') || process.env.APPWRITE_DATABASE_ID;
-  const apiKey = searchParams?.get('_key') || process.env.APPWRITE_API_KEY;
+  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || process.env.APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY || process.env.APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");

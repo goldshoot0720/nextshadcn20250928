@@ -5,11 +5,11 @@ const sdk = require('node-appwrite');
 export const dynamic = 'force-dynamic';
 
 function createAppwrite(config) {
-  // Use config from request headers (user input) or fallback to env
+  // Use config from request headers (user input) or fallback to env (支援新舊兩種變數名)
   const endpoint = config?.endpoint || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = config?.projectId || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const apiKey = config?.apiKey || process.env.APPWRITE_API_KEY;
-  const bucketId = config?.bucketId || process.env.APPWRITE_BUCKET_ID;
+  const apiKey = config?.apiKey || process.env.NEXT_PUBLIC_APPWRITE_API_KEY || process.env.APPWRITE_API_KEY;
+  const bucketId = config?.bucketId || process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || process.env.APPWRITE_BUCKET_ID;
 
   if (!endpoint || !projectId || !apiKey || !bucketId) {
     throw new Error("Appwrite configuration is missing");

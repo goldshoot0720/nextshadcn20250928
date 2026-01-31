@@ -15,8 +15,8 @@ const COLLECTION_ID = 'commonaccount';
 async function createCommonAccountCollection() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const apiKey = process.env.APPWRITE_API_KEY;
+  const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || process.env.APPWRITE_DATABASE_ID;
+  const apiKey = process.env.NEXT_PUBLIC_APPWRITE_API_KEY || process.env.APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId) {
     console.error('Missing Appwrite configuration in .env');

@@ -12,9 +12,9 @@ export function getAppwriteConfig() {
     return {
       endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '',
       projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '',
-      databaseId: process.env.APPWRITE_DATABASE_ID || '',
-      bucketId: process.env.APPWRITE_BUCKET_ID || '',
-      apiKey: process.env.APPWRITE_API_KEY || '',
+      databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
+      bucketId: process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || '',
+      apiKey: process.env.NEXT_PUBLIC_APPWRITE_API_KEY || '',
     };
   }
 
@@ -38,13 +38,13 @@ export function getAppwriteConfig() {
     };
   }
   
-  // 如果沒有儲存過，使用 .env 的預設配置
+  // 如果沒有儲存過，使用 .env 的預設配置（現在所有變數都有 NEXT_PUBLIC_ 前綴，瀏覽器可訪問）
   return {
     endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '',
     projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '',
-    databaseId: process.env.APPWRITE_DATABASE_ID || '',
-    bucketId: process.env.APPWRITE_BUCKET_ID || '',
-    apiKey: process.env.APPWRITE_API_KEY || '',
+    databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
+    bucketId: process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || '',
+    apiKey: process.env.NEXT_PUBLIC_APPWRITE_API_KEY || '',
   };
 }
 

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 function createAppwrite() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.APPWRITE_DATABASE_ID;
+  const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || process.env.APPWRITE_DATABASE_ID;
   const collectionId = process.env.APPWRITE_COMMON_ACCOUNT_NOTE_COLLECTION_ID || "commonaccountnote";
 
   if (!endpoint || !projectId || !databaseId || !collectionId) {
