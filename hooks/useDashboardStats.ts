@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { convertToTWD } from "@/lib/formatters";
+import { fetchApi } from "@/hooks/useApi";
 
 interface Food {
   $id: string;
@@ -159,43 +160,48 @@ export function useDashboardStats() {
         }
         
         // 獲取食品數據（使用快取）
-        const foodsRes = await fetch("/api/food" + cacheParam);
         let foods: Food[] = [];
-        if (foodsRes.ok) {
-          const foodsData = await foodsRes.json();
+        try {
+          const foodsData = await fetchApi<Food[]>("/api/food" + cacheParam);
           foods = Array.isArray(foodsData) ? foodsData : [];
+        } catch (err) {
+          console.error('Failed to load foods:', err);
         }
 
         // 獲取訂閱數據（使用快取）
-        const subsRes = await fetch("/api/subscription" + cacheParam);
         let subscriptions: Subscription[] = [];
-        if (subsRes.ok) {
-          const subsData = await subsRes.json();
+        try {
+          const subsData = await fetchApi<Subscription[]>("/api/subscription" + cacheParam);
           subscriptions = Array.isArray(subsData) ? subsData : [];
+        } catch (err) {
+          console.error('Failed to load subscriptions:', err);
         }
 
         // 獲取筆記數據（使用快取）
-        const articlesRes = await fetch("/api/article" + cacheParam);
         let articles: any[] = [];
-        if (articlesRes.ok) {
-          const articlesData = await articlesRes.json();
+        try {
+          const articlesData = await fetchApi<any[]>("/api/article" + cacheParam);
           articles = Array.isArray(articlesData) ? articlesData : [];
+        } catch (err) {
+          console.error('Failed to load articles:', err);
         }
 
         // 獲取常用帳號數據（使用快取）
-        const commonAccountsRes = await fetch("/api/common-account" + cacheParam);
         let commonAccounts: any[] = [];
-        if (commonAccountsRes.ok) {
-          const commonAccountsData = await commonAccountsRes.json();
+        try {
+          const commonAccountsData = await fetchApi<any[]>("/api/common-account" + cacheParam);
           commonAccounts = Array.isArray(commonAccountsData) ? commonAccountsData : [];
+        } catch (err) {
+          console.error('Failed to load common accounts:', err);
         }
 
         // 獲取銀行數據（使用快取）
-        const banksRes = await fetch("/api/bank" + cacheParam);
         let banks: any[] = [];
-        if (banksRes.ok) {
-          const banksData = await banksRes.json();
+        try {
+          const banksData = await fetchApi<any[]>("/api/bank" + cacheParam);
           banks = Array.isArray(banksData) ? banksData : [];
+        } catch (err) {
+          console.error('Failed to load banks:', err);
         }
 
         const today = new Date();
