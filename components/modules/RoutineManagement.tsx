@@ -201,6 +201,15 @@ export default function RoutineManagement() {
     });
   };
 
+  const calculateDaysDiff = (date1: string | null, date2: string | null): string => {
+    if (!date1 || !date2) return "-";
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    const diffTime = Math.abs(d1.getTime() - d2.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays}天`;
+  };
+
   return (
     <div className="space-y-6">
       <PageTitle
@@ -372,6 +381,7 @@ export default function RoutineManagement() {
                         <TableHead>備註</TableHead>
                         <TableHead>最近例行之一</TableHead>
                         <TableHead>最近例行之二</TableHead>
+                        <TableHead>相距天數</TableHead>
                         <TableHead>最近例行之三</TableHead>
                         <TableHead className="text-right">操作</TableHead>
                       </TableRow>
@@ -398,6 +408,7 @@ export default function RoutineManagement() {
                           </TableCell>
                           <TableCell>{formatDateTime(routine.lastdate1)}</TableCell>
                           <TableCell>{formatDateTime(routine.lastdate2)}</TableCell>
+                          <TableCell>{calculateDaysDiff(routine.lastdate1, routine.lastdate2)}</TableCell>
                           <TableCell>{formatDateTime(routine.lastdate3)}</TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button
@@ -454,6 +465,10 @@ export default function RoutineManagement() {
                         <div className="flex justify-between">
                           <span className="text-gray-500">最近例行之二:</span>
                           <span>{formatDateTime(routine.lastdate2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">相距天數:</span>
+                          <span>{calculateDaysDiff(routine.lastdate1, routine.lastdate2)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">最近例行之三:</span>
