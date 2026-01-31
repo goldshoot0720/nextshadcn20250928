@@ -198,6 +198,18 @@ export default function SubscriptionManagement() {
     setForm(prev => ({ ...prev, nextdate: newDate }));
   };
 
+  const handleReduce30Days = () => {
+    if (!editingId) return;
+    
+    // 計算新日期 (-30天)
+    const currentDate = new Date(form.nextdate);
+    currentDate.setDate(currentDate.getDate() - 30);
+    const newDate = currentDate.toISOString().split('T')[0];
+    
+    // 更新表單中的日期
+    setForm(prev => ({ ...prev, nextdate: newDate }));
+  };
+
   const handleDeleteFromForm = async () => {
     if (!editingId) return;
     if (!confirm(`確定刪除 ${form.name}？`)) return;
@@ -293,6 +305,11 @@ export default function SubscriptionManagement() {
               {editingId && (
                 <Button type="button" variant="default" onClick={handleExtend30Days} className="h-12 px-6 rounded-xl bg-blue-500 hover:bg-blue-600">
                   +30天
+                </Button>
+              )}
+              {editingId && (
+                <Button type="button" variant="default" onClick={handleReduce30Days} className="h-12 px-6 rounded-xl bg-orange-500 hover:bg-orange-600">
+                  -30天
                 </Button>
               )}
               {editingId && <Button type="button" variant="outline" onClick={resetForm} className="h-12 px-6 rounded-xl">取消編輯</Button>}
