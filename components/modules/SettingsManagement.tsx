@@ -51,7 +51,10 @@ export default function SettingsManagement() {
             <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
               <Table2 size={20} className="text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h3 className="font-bold text-lg">資料庫欄位統計</h3>
+            <div>
+              <h3 className="font-bold text-lg">資料庫欄位統計</h3>
+              <p className="text-xs text-gray-400">單一 Table text 上限 15000</p>
+            </div>
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-8">
