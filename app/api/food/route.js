@@ -9,7 +9,7 @@ const client = new Client()
 
 const databases = new Databases(client);
 const databaseId = process.env.APPWRITE_DATABASE_ID || "";
-const collectionId = process.env.APPWRITE_FOOD_COLLECTION_ID || "";
+const collectionId = "food";
 
 // GET /api/food
 export async function GET() {

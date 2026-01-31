@@ -7,7 +7,7 @@ function createAppwrite() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const collectionId = process.env.APPWRITE_COMMON_ACCOUNT_COLLECTION_ID || "commonaccount";
+  const collectionId = "commonaccount";
 
   if (!endpoint || !projectId || !databaseId || !collectionId) {
     throw new Error("Appwrite configuration is missing");
