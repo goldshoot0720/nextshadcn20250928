@@ -47,12 +47,14 @@ export async function PUT(req, context) {
     const { name, site, price, nextdate, note, account } = body;
     const bodyData = {
       name,
-      site,
       price: price ? parseInt(price, 10) : 0,
       nextdate,
-      note,
-      account
     };
+
+    // 只有在提供值時才添加可選欄位
+    if (site !== undefined) bodyData.site = site || "";  // 允許空字串
+    if (note !== undefined) bodyData.note = note || "";  // 允許空字串
+    if (account !== undefined) bodyData.account = account || "";  // 允許空字串
 
     const res = await databases.updateDocument(
       databaseId,
