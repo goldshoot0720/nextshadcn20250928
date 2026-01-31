@@ -387,21 +387,21 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MediaStatCard 
           icon={Image} 
-          title="鋒允圖片" 
+          title="鋒兄圖片" 
           count={stats.totalImages} 
           size={formatBytes(stats.imagesSize)} 
           color="blue"
         />
         <MediaStatCard 
           icon={FileVideo} 
-          title="鋒允影片" 
+          title="鋒兄影片" 
           count={stats.totalVideos} 
           size={formatBytes(stats.videosSize)} 
           color="indigo"
         />
         <MediaStatCard 
           icon={Music} 
-          title="鋒允音樂" 
+          title="鋒兄音樂" 
           count={stats.totalMusic} 
           size={formatBytes(stats.musicSize)} 
           color="purple"
