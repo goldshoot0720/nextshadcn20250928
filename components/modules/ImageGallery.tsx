@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload } from "lucide-react";
+import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload, Eye } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
@@ -122,6 +122,7 @@ function ImageGrid({ images, loading, onSelectImage, onEdit, onRefresh }: { imag
 // 單張圖片卡片
 function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; onSelect: () => void; onEdit: () => void; onRefresh: () => void }) {
   const [deleting, setDeleting] = useState(false);
+  const [showCover, setShowCover] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -144,12 +145,34 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
   return (
     <div className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
       {/* 圖片預覽區 */}
-      <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" onClick={onSelect}>
-        {image.file ? (
-          <img src={image.file} alt={image.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+      <div 
+        className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" 
+        onClick={() => {
+          if (showCover) {
+            onSelect();
+          } else {
+            setShowCover(true);
+          }
+        }}
+      >
+        {showCover && image.file ? (
+          <img 
+            src={image.file} 
+            alt={image.name} 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            loading="lazy" 
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="text-gray-400 w-16 h-16" />
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 text-center group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
+            <div className="bg-white/80 dark:bg-gray-800/80 p-3 rounded-full shadow-sm">
+              <Eye className="text-blue-500 w-6 h-6" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">點擊顯示圖片</span>
+          </div>
+        )}
+        {image.cover && (
+          <div className="absolute top-2 right-2 bg-yellow-100/90 backdrop-blur-sm text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm z-10">
+            COVER
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -247,8 +270,7 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
     ref: image?.ref || '',
     category: image?.category || '',
     hash: image?.hash || '',
-    isCover: image?.isCover || false,
-    cover: image?.cover || '',
+    cover: image?.cover || false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -258,11 +280,9 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
   const [duplicateWarning, setDuplicateWarning] = useState<string>(''); // 重複警告
-  const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
-  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string>('');
-  const [coverPreviewLoading, setCoverPreviewLoading] = useState(false);
-  const [coverUploadProgress, setCoverUploadProgress] = useState(0);
-  const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+
+  // 獲取所有已存在的分類
+  const existingCategories = Array.from(new Set(existingImages.map(img => img.category).filter(Boolean)));
 
   // 計算檔案 SHA-256 hash
   const calculateFileHash = async (file: File): Promise<string> => {
@@ -365,77 +385,6 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
     }
   };
 
-  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
-    const maxSize = 50 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert('檔案大小不能超過 50MB');
-      return;
-    }
-
-    // 檢查檔案類型
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
-      return;
-    }
-
-    // 顯示預覽載入狀態
-    setCoverPreviewLoading(true);
-    setCoverUploadStatus('idle');
-    setCoverUploadProgress(0);
-    
-    // 儲存檔案並產生預覽 URL
-    setSelectedCoverFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setCoverPreviewUrl(objectUrl);
-    
-    // 模擬預覽載入完成
-    setTimeout(() => setCoverPreviewLoading(false), 300);
-  };
-
-  const uploadCoverFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
-    setCoverUploadStatus('uploading');
-    setCoverUploadProgress(0);
-
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-
-    // 模擬上傳進度
-    const progressInterval = setInterval(() => {
-      setCoverUploadProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + 10;
-      });
-    }, 200);
-
-    try {
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formDataUpload,
-      });
-
-      clearInterval(progressInterval);
-      setCoverUploadProgress(100);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '封面圖上傳失敗');
-      }
-
-      const data = await response.json();
-      setCoverUploadStatus('success');
-      return { url: data.url, fileId: data.fileId || '' };
-    } catch (error) {
-      clearInterval(progressInterval);
-      setCoverUploadStatus('error');
-      throw error;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -462,12 +411,6 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
       } else if (!image && !formData.hash) {
         // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
         finalFormData.hash = `no_file_${Date.now()}`;
-      }
-
-      // 如果有選擇封面圖檔案，上傳到 Appwrite
-      if (selectedCoverFile) {
-        const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
-        finalFormData.cover = url;
       }
 
       const url = image ? `${API_ENDPOINTS.IMAGE}/${image.$id}` : API_ENDPOINTS.IMAGE;
@@ -601,7 +544,13 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 placeholder="圖片分類"
+                list="image-categories"
               />
+              <datalist id="image-categories">
+                {existingCategories.map(cat => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
 
             <div>
@@ -613,65 +562,6 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
                 onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
                 placeholder="參考資訊"
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              封面圖 URL 或上傳檔案
-            </label>
-            <div className="space-y-3">
-              <Input
-                value={formData.cover}
-                onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
-                placeholder="https://example.com/cover.jpg"
-                disabled={submitting}
-                maxLength={150}
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
-                <label className="flex-1">
-                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB)'}
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    onChange={handleCoverFileSelect}
-                    disabled={submitting || coverPreviewLoading}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              {coverPreviewUrl && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">封面圖預覽：</p>
-                  <img src={coverPreviewUrl} alt="Cover Preview" className="max-h-32 rounded-lg border border-gray-200 dark:border-gray-700" />
-                </div>
-              )}
-              {coverUploadStatus === 'uploading' && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    <span>上傳封面圖至 Appwrite...</span>
-                    <span>{coverUploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${coverUploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-              {coverUploadStatus === 'success' && (
-                <p className="text-sm text-green-600 dark:text-green-400">✓ 封面圖上傳成功</p>
-              )}
-              {coverUploadStatus === 'error' && (
-                <p className="text-sm text-red-600 dark:text-red-400">✗ 封面圖上傳失敗</p>
-              )}
             </div>
           </div>
 
@@ -691,12 +581,12 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={formData.isCover}
-                onChange={(e) => setFormData({ ...formData, isCover: e.target.checked })}
+                checked={formData.cover}
+                onChange={(e) => setFormData({ ...formData, cover: e.target.checked })}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                設為封面圖
+                設為封面圖 (Cover)
               </span>
             </label>
           </div>

@@ -86,7 +86,8 @@ const TABLE_SCHEMAS = {
       { key: 'note', type: 'string', size: 100, required: false },
       { key: 'ref', type: 'string', size: 100, required: false },
       { key: 'category', type: 'string', size: 100, required: false },
-      { key: 'hash', type: 'string', size: 300, required: false }
+      { key: 'hash', type: 'string', size: 300, required: false },
+      { key: 'cover', type: 'boolean', required: false, default: false }
     ]
   },
   video: {
@@ -97,7 +98,8 @@ const TABLE_SCHEMAS = {
       { key: 'note', type: 'string', size: 100, required: false },
       { key: 'ref', type: 'string', size: 100, required: false },
       { key: 'category', type: 'string', size: 100, required: false },
-      { key: 'hash', type: 'string', size: 300, required: false }
+      { key: 'hash', type: 'string', size: 300, required: false },
+      { key: 'cover', type: 'boolean', required: false, default: false }
     ]
   },
   music: {
@@ -111,7 +113,7 @@ const TABLE_SCHEMAS = {
       { key: 'category', type: 'string', size: 100, required: false },
       { key: 'hash', type: 'string', size: 300, required: false },
       { key: 'language', type: 'string', size: 100, required: false },
-      { key: 'cover', type: 'string', size: 100, required: false }
+      { key: 'cover', type: 'string', size: 150, required: false }
     ]
   }
 };
@@ -207,6 +209,9 @@ export async function GET(request) {
                 break;
             case 'datetime':
                 await databases.createDatetimeAttribute(databaseId, collectionId, attr.key, attr.required);
+                break;
+            case 'boolean':
+                await databases.createBooleanAttribute(databaseId, collectionId, attr.key, attr.required, attr.default);
                 break;
             }
             send({ 
@@ -321,6 +326,9 @@ export async function POST(request) {
             break;
           case 'datetime':
             await databases.createDatetimeAttribute(databaseId, collectionId, attr.key, attr.required);
+            break;
+          case 'boolean':
+            await databases.createBooleanAttribute(databaseId, collectionId, attr.key, attr.required, attr.default);
             break;
         }
         await new Promise(resolve => setTimeout(resolve, 200));

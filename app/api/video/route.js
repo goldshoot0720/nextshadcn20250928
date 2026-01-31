@@ -73,7 +73,8 @@ export async function POST(request) {
         note: body.note || '',
         ref: body.ref || '',
         category: body.category || '',
-        hash: body.hash || ''
+        hash: body.hash || '',
+        cover: !!body.cover
       }
     );
     

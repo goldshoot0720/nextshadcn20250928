@@ -246,28 +246,20 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
     <DataCard className="overflow-hidden hover:shadow-md transition-all duration-200 group">
       {/* 縮圖 */}
       <div className="relative aspect-video bg-gradient-to-br from-blue-500 to-purple-600 cursor-pointer" onClick={onPlay}>
-        {video.cover ? (
-          // 如果有封面圖，顯示封面圖
-          <>
-            <img 
-              src={video.cover} 
-              alt={video.name} 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* 半透明遮罩層，hover 時顯示 */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300" />
-          </>
-        ) : (
-          // 沒有封面圖，顯示漸層背景
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300" />
-        )}
+        {/* 顯示漸層背景 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300" />
         
         {/* 播放按鈕 */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Play className="text-white group-hover:scale-110 transition-transform duration-300 w-12 h-12 drop-shadow-lg" />
         </div>
         
-        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5">
+        <div className="absolute top-2 right-2 flex gap-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+          {video.cover && (
+            <div className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center">
+              COVER
+            </div>
+          )}
           <CacheStatusIcon status={cacheStatus} />
         </div>
 
@@ -355,7 +347,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     ref: video?.ref || '',
     category: video?.category || '',
     hash: video?.hash || '',
-    cover: video?.cover || '',
+    cover: video?.cover || false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -365,11 +357,9 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
   const [duplicateWarning, setDuplicateWarning] = useState<string>(''); // 重複警告
-  const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
-  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string>('');
-  const [coverPreviewLoading, setCoverPreviewLoading] = useState(false);
-  const [coverUploadProgress, setCoverUploadProgress] = useState(0);
-  const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+
+  // 獲取所有已存在的分類
+  const existingCategories = Array.from(new Set(existingVideos.map(v => v.category).filter(Boolean)));
 
   // 計算檔案 SHA-256 hash
   const calculateFileHash = async (file: File): Promise<string> => {
@@ -472,77 +462,6 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     }
   };
 
-  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
-    const maxSize = 50 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert('檔案大小不能超過 50MB');
-      return;
-    }
-
-    // 檢查檔案類型
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
-      return;
-    }
-
-    // 顯示預覽載入狀態
-    setCoverPreviewLoading(true);
-    setCoverUploadStatus('idle');
-    setCoverUploadProgress(0);
-    
-    // 儲存檔案並產生預覽 URL
-    setSelectedCoverFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setCoverPreviewUrl(objectUrl);
-    
-    // 模擬預覽載入完成
-    setTimeout(() => setCoverPreviewLoading(false), 300);
-  };
-
-  const uploadCoverFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
-    setCoverUploadStatus('uploading');
-    setCoverUploadProgress(0);
-
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-
-    // 模擬上傳進度
-    const progressInterval = setInterval(() => {
-      setCoverUploadProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + 10;
-      });
-    }, 200);
-
-    try {
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formDataUpload,
-      });
-
-      clearInterval(progressInterval);
-      setCoverUploadProgress(100);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '封面圖上傳失敗');
-      }
-
-      const data = await response.json();
-      setCoverUploadStatus('success');
-      return { url: data.url, fileId: data.fileId || '' };
-    } catch (error) {
-      clearInterval(progressInterval);
-      setCoverUploadStatus('error');
-      throw error;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -569,12 +488,6 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
       } else if (!video && !formData.hash) {
         // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
         finalFormData.hash = `no_file_${Date.now()}`;
-      }
-
-      // 如果有選擇封面圖檔案，上傳到 Appwrite
-      if (selectedCoverFile) {
-        const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
-        finalFormData.cover = url;
       }
 
       const url = video ? `${API_ENDPOINTS.VIDEO}/${video.$id}` : API_ENDPOINTS.VIDEO;
@@ -708,7 +621,13 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 placeholder="影片分類"
+                list="video-categories"
               />
+              <datalist id="video-categories">
+                {existingCategories.map(cat => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
 
             <div>
@@ -736,62 +655,17 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              封面圖 URL 或上傳檔案
-            </label>
-            <div className="space-y-3">
-              <Input
-                value={formData.cover}
-                onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
-                placeholder="https://example.com/cover.jpg"
-                disabled={submitting}
-                maxLength={150}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.cover}
+                onChange={(e) => setFormData({ ...formData, cover: e.target.checked })}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
-                <label className="flex-1">
-                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB)'}
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    onChange={handleCoverFileSelect}
-                    disabled={submitting || coverPreviewLoading}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              {coverPreviewUrl && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">封面圖預覽：</p>
-                  <img src={coverPreviewUrl} alt="Cover Preview" className="max-h-32 rounded-lg border border-gray-200 dark:border-gray-700" />
-                </div>
-              )}
-              {coverUploadStatus === 'uploading' && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    <span>上傳封面圖至 Appwrite...</span>
-                    <span>{coverUploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${coverUploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-              {coverUploadStatus === 'success' && (
-                <p className="text-sm text-green-600 dark:text-green-400">✓ 封面圖上傳成功</p>
-              )}
-              {coverUploadStatus === 'error' && (
-                <p className="text-sm text-red-600 dark:text-red-400">✗ 封面圖上傳失敗</p>
-              )}
-            </div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                設為封面圖 (Cover)
+              </span>
+            </label>
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -867,7 +741,12 @@ function VideoCard({ video, cacheStatus, onPlay, onDownload, onDeleteCache }: Vi
           </div>
         )}
         
-        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5">
+        <div className="absolute top-2 right-2 flex gap-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+          {video.cover && (
+            <div className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center">
+              COVER
+            </div>
+          )}
           <CacheStatusIcon status={cacheStatus} />
         </div>
       </div>

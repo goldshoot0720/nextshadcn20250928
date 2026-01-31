@@ -241,6 +241,9 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
+  // 獲取所有已存在的分類
+  const existingCategories = Array.from(new Set(existingMusic.map(m => m.category).filter(Boolean)));
+
   // 計算檔案 SHA-256 hash
   const calculateFileHash = async (file: File): Promise<string> => {
     try {
@@ -589,7 +592,13 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 placeholder="音樂分類"
+                list="music-categories"
               />
+              <datalist id="music-categories">
+                {existingCategories.map(cat => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
           </div>
 

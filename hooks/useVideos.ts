@@ -11,7 +11,7 @@ export interface VideoData {
   ref: string;
   category: string;
   hash: string;
-  cover: string;
+  cover: boolean;
   $createdAt: string;
   $updatedAt: string;
 }

@@ -11,8 +11,7 @@ export interface ImageData {
   ref: string;
   category: string;
   hash: string;
-  isCover: boolean;
-  cover: string;
+  cover: boolean;
   $createdAt: string;
   $updatedAt: string;
 }
