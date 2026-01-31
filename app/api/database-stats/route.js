@@ -44,51 +44,58 @@ export async function GET() {
     // List all collections in the database
     const allCollections = await databases.listCollections(databaseId);
     
-    // Create a map of collection name -> collection ID
+    // Create a map of collection name -> collection object
     const collectionMap = {};
     allCollections.collections.forEach(col => {
-      collectionMap[col.name] = col.$id;
+      collectionMap[col.name] = col;
     });
     
     // Define expected tables
     const tableNames = ["article", "bank", "commonaccount", "food", "image", "music", "subscription", "video"];
     
-    // Calculate total columns
-    const totalColumns = tableNames.reduce((sum, name) => sum + TABLE_DEFINITIONS[name].length, 0);
-    
-    // Get each collection's document count
+    // Get each collection's column count and document count dynamically
     const collectionsWithCounts = await Promise.all(
       tableNames.map(async (name) => {
-        const collectionId = collectionMap[name];
-        const columns = TABLE_DEFINITIONS[name];
+        const collection = collectionMap[name];
         
-        if (!collectionId) {
-          // Collection doesn't exist
+        if (!collection) {
+          // Collection doesn't exist - use fallback from TABLE_DEFINITIONS
+          const fallbackColumns = TABLE_DEFINITIONS[name];
           return {
             name,
-            columnCount: columns.length,
+            columnCount: fallbackColumns ? fallbackColumns.length : 0,
             documentCount: 0,
             error: true
           };
         }
         
         try {
-          const docs = await databases.listDocuments(databaseId, collectionId);
+          // 動態計算：從 collection.attributes 取得實際欄位數
+          const columnCount = collection.attributes ? collection.attributes.length : 0;
+          
+          // Get document count
+          const docs = await databases.listDocuments(databaseId, collection.$id);
+          
           return {
             name,
-            columnCount: columns.length,
+            columnCount,
             documentCount: docs.total
           };
         } catch (err) {
+          // 如果查詢失敗，使用 collection.attributes.length 作為 fallback
+          const columnCount = collection.attributes ? collection.attributes.length : 0;
           return {
             name,
-            columnCount: columns.length,
+            columnCount,
             documentCount: 0,
             error: true
           };
         }
       })
     );
+
+    // 動態計算總欄位數
+    const totalColumns = collectionsWithCounts.reduce((sum, col) => sum + col.columnCount, 0);
 
     return NextResponse.json({
       totalColumns,
