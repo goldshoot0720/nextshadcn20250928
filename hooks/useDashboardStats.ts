@@ -142,12 +142,13 @@ export function useDashboardStats() {
         // 並行檢查所有表
         const checkPromises = tablesToCheck.map(async (table) => {
           try {
-            const res = await fetch(table.api + cacheParam);
-            if (res.status === 404) {
-              return `${table.label} 不存在，請至「鋒兄設定」中初始化。`;
-            }
+            await fetchApi<any[]>(table.api + cacheParam);
             return null;
           } catch (err) {
+            const message = err instanceof Error ? err.message : '';
+            if (message.includes('不存在')) {
+              return message;
+            }
             return null;
           }
         });
