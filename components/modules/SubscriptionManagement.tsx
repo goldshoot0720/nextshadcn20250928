@@ -288,7 +288,7 @@ export default function SubscriptionManagement() {
                   <SelectItem value="HKD">港幣 (HKD)</SelectItem>
                 </SelectContent>
               </Select>
-              <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
+              <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} className="h-12 rounded-xl" />
               <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
             </FormGrid>
             <Textarea 
@@ -371,10 +371,14 @@ export default function SubscriptionManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span>{formattedDate}</span>
-                            {status !== "normal" && <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>}
-                          </div>
+                          {formattedDate ? (
+                            <div className="flex flex-col gap-1">
+                              <span>{formattedDate}</span>
+                              {status !== "normal" && <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400 dark:text-gray-500">無日期</span>
+                          )}
                         </TableCell>
                         <TableCell><span className="font-semibold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span></TableCell>
                         <TableCell>
@@ -427,13 +431,17 @@ export default function SubscriptionManagement() {
                           <span className="font-bold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span>
                         </div>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">下次付款:</span><span>{formattedDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">網站:</span>
-                            <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 underline text-sm bg-blue-50 px-2 py-1 rounded-lg">前往網站</a>
-                          </div>
+                          {formattedDate && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                              <span className="font-medium">下次付款:</span><span>{formattedDate}</span>
+                            </div>
+                          )}
+                          {sub.site && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">網站:</span>
+                              <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 underline text-sm bg-blue-50 px-2 py-1 rounded-lg">前往網站</a>
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2 pt-2">
                           <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="flex-1 rounded-xl">編輯</Button>

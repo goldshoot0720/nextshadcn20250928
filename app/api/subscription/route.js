@@ -65,9 +65,9 @@ export async function POST(req) {
     
     const body = await req.json();
 
-    // 驗證必填欄位（site 為可選）
+    // 驗證必填欄位（site 和 nextdate 為可選）
     const { name, site, price, nextdate, note, account, currency } = body;
-    if (!name || price == null || !nextdate) {
+    if (!name || price == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -75,10 +75,10 @@ export async function POST(req) {
     const payload = {
       name,
       price: parseInt(price, 10),
-      nextdate,
     };
 
     // 只有在提供值時才添加可選欄位
+    if (nextdate) payload.nextdate = nextdate;
     if (site) payload.site = site;
     if (note) payload.note = note;
     if (account) payload.account = account;

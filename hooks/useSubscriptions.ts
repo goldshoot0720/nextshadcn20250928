@@ -120,16 +120,18 @@ export function useSubscriptions() {
     
     const subsToProcess = Array.isArray(subscriptions) ? subscriptions : [];
     
-    // 計算本月需要付款的訂閱
+    // 計算本月需要付款的訂閱（只計算有 nextdate 的）
     const currentMonthSubscriptions = subsToProcess.filter(s => {
+      if (!s.nextdate) return false;
       const nextDate = new Date(s.nextdate);
       return nextDate.getFullYear() === currentYear && nextDate.getMonth() === currentMonth;
     });
     
-    // 計算下月需要付款的訂閱
+    // 計算下月需要付款的訂閱（只計算有 nextdate 的）
     const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
     const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
     const nextMonthSubscriptions = subsToProcess.filter(s => {
+      if (!s.nextdate) return false;
       const nextDate = new Date(s.nextdate);
       return nextDate.getFullYear() === nextMonthYear && nextDate.getMonth() === nextMonth;
     });
@@ -138,8 +140,9 @@ export function useSubscriptions() {
       total: subsToProcess.length,
       totalMonthlyFee: currentMonthSubscriptions.reduce((sum, s) => sum + convertToTWD(s.price, s.currency), 0),
       nextMonthFee: nextMonthSubscriptions.reduce((sum, s) => sum + convertToTWD(s.price, s.currency), 0),
-      overdue: subsToProcess.filter((s) => getDaysFromToday(s.nextdate) < 0).length,
+      overdue: subsToProcess.filter((s) => s.nextdate && getDaysFromToday(s.nextdate) < 0).length,
       expiringSoon: subsToProcess.filter((s) => {
+        if (!s.nextdate) return false;
         const days = getDaysFromToday(s.nextdate);
         return days >= 0 && days <= 7;
       }).length,
@@ -160,6 +163,17 @@ export function useSubscriptions() {
 
 // 訂閱項目的輔助函數
 export function getSubscriptionExpiryInfo(subscription: Subscription) {
+  // 如果沒有下次付款日期，返回預設值
+  if (!subscription.nextdate) {
+    return {
+      daysRemaining: Infinity,
+      status: "normal" as const,
+      formattedDate: "",
+      isOverdue: false,
+      isUpcoming: false,
+    };
+  }
+  
   const daysRemaining = getDaysFromToday(subscription.nextdate);
   const status = getExpiryStatus(daysRemaining);
   const formattedDate = formatDate(subscription.nextdate);
