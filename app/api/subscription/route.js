@@ -49,6 +49,10 @@ export async function GET() {
   } catch (err) {
     console.error("GET /subscription error:", err);
     const message = err instanceof Error ? err.message : "Fetch failed";
+    // 如果是 collection not found，返回 404
+    if (message.includes('not found')) {
+      return NextResponse.json({ error: message }, { status: 404 });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

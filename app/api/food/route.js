@@ -39,6 +39,10 @@ export async function GET() {
     return NextResponse.json(response.documents);
   } catch (err) {
     console.error("GET /api/food error:", err);
+    // 如果是 collection not found，返回 404
+    if (err.message && err.message.includes('not found')) {
+      return NextResponse.json({ error: err.message }, { status: 404 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
