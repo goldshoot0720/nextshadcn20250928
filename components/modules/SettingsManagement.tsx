@@ -67,15 +67,34 @@ export default function SettingsManagement() {
                 <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns}</span>
               </div>
               <div className="space-y-2 text-sm">
-                {dbStats.collections.map(col => (
-                  <div key={col.name} className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                    <span className="font-mono text-gray-600 dark:text-gray-400">{col.name}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-gray-400">{col.columnCount} 欄位</span>
-                      <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{col.documentCount} 筆</span>
+                {dbStats.collections.map(col => {
+                  // 綠燈: 有資料, 黃燈: 無資料, 紅燈: Table不存在
+                  const statusColor = col.error 
+                    ? "bg-red-500" 
+                    : col.documentCount > 0 
+                      ? "bg-green-500" 
+                      : "bg-yellow-500";
+                  const statusTitle = col.error 
+                    ? "Table 不存在" 
+                    : col.documentCount > 0 
+                      ? "Table 存在且有資料" 
+                      : "Table 存在但無資料";
+                  return (
+                    <div key={col.name} className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <span 
+                          className={`w-2.5 h-2.5 rounded-full ${statusColor}`} 
+                          title={statusTitle}
+                        />
+                        <span className="font-mono text-gray-600 dark:text-gray-400">{col.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-400">{col.columnCount} 欄位</span>
+                        <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{col.documentCount} 筆</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
