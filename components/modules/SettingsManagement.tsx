@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2 } from "lucide-react";
+import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus } from "lucide-react";
 import { Button, DataCard, SectionHeader } from "@/components/ui";
 import { useTheme } from "@/components/providers/theme-provider";
 
@@ -23,8 +23,9 @@ export default function SettingsManagement() {
   const { theme, setTheme } = useTheme();
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchStats = () => {
     fetch("/api/database-stats")
       .then(res => res.json())
       .then(data => {
@@ -35,7 +36,37 @@ export default function SettingsManagement() {
         console.error("Failed to fetch database stats:", err);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchStats();
   }, []);
+
+  const handleCreateTable = async (tableName: string) => {
+    if (tableName !== "commonaccount") {
+      alert(`請在 Appwrite Console 手動建立 ${tableName} Table`);
+      return;
+    }
+    setCreating(tableName);
+    try {
+      const res = await fetch("/api/create-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableName })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`${tableName} Table 建立成功!`);
+        fetchStats();
+      } else {
+        alert(`建立失敗: ${data.error}`);
+      }
+    } catch (err) {
+      alert(`建立失敗: ${err}`);
+    } finally {
+      setCreating(null);
+    }
+  };
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -88,9 +119,24 @@ export default function SettingsManagement() {
                         />
                         <span className="font-mono text-gray-600 dark:text-gray-400">{col.name}</span>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
                         <span className="text-gray-400">{col.columnCount} 欄位</span>
                         <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{col.documentCount} 筆</span>
+                        {col.error && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                            onClick={() => handleCreateTable(col.name)}
+                            disabled={creating === col.name}
+                          >
+                            {creating === col.name ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <><Plus size={12} /> 建立</>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
