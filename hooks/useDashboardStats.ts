@@ -44,6 +44,7 @@ interface DashboardStats {
   totalCommonAccounts: number;
   totalBanks: number;
   totalBankDeposit: number;
+  totalRoutines: number;
   foodsExpiring7Days: number;
   foodsExpiring30Days: number;
   subscriptionsExpiring3Days: number;
@@ -73,6 +74,7 @@ export function useDashboardStats() {
     totalCommonAccounts: 0,
     totalBanks: 0,
     totalBankDeposit: 0,
+    totalRoutines: 0,
     foodsExpiring7Days: 0,
     foodsExpiring30Days: 0,
     subscriptionsExpiring3Days: 0,
@@ -131,6 +133,7 @@ export function useDashboardStats() {
           { name: 'food', api: '/api/food', label: 'Table food' },
           { name: 'image', api: '/api/image', label: 'Table image' },
           { name: 'music', api: '/api/music', label: 'Table music' },
+          { name: 'routine', api: '/api/routine', label: 'Table routine' },
           { name: 'subscription', api: '/api/subscription', label: 'Table subscription' },
           { name: 'video', api: '/api/video', label: 'Table video' },
         ];
@@ -203,6 +206,15 @@ export function useDashboardStats() {
           banks = Array.isArray(banksData) ? banksData : [];
         } catch (err) {
           console.error('Failed to load banks:', err);
+        }
+
+        // 獲取例行數據（使用快取）
+        let routines: any[] = [];
+        try {
+          const routinesData = await fetchApi<any[]>("/api/routine" + cacheParam);
+          routines = Array.isArray(routinesData) ? routinesData : [];
+        } catch (err) {
+          console.error('Failed to load routines:', err);
         }
 
         const today = new Date();
@@ -340,6 +352,7 @@ export function useDashboardStats() {
           totalCommonAccounts: commonAccounts.length,
           totalBanks: banks.length,
           totalBankDeposit,
+          totalRoutines: routines.length,
           foodsExpiring7Days: foodsExpiring7DaysList.length,
           foodsExpiring30Days: foodsExpiring30DaysList.length,
           subscriptionsExpiring3Days: subscriptionsExpiring3DaysList.length,
