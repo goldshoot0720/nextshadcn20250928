@@ -18,7 +18,7 @@ import { formatDate, formatDaysRemaining } from "@/lib/formatters";
 const INITIAL_FORM: FoodFormData = { name: "", amount: 0, todate: "", photo: "" };
 
 export default function FoodManagement() {
-  const { foods, loading, createFood, updateFood, deleteFood, updateAmount } = useFoods();
+  const { foods, loading, error, createFood, updateFood, deleteFood, updateAmount } = useFoods();
   const [form, setForm] = useState<FoodFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -74,6 +74,12 @@ export default function FoodManagement() {
           </div>
         }
       />
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       <div className="flex justify-end">
         <Button
