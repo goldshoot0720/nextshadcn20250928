@@ -22,8 +22,8 @@ const SITE_URL_MAP: Record<string, string> = {
 
 const INITIAL_FORM: CommonAccountFormData = {
   name: "",
-  ...Object.fromEntries([...Array(15)].map((_, i) => [`site${(i + 1).toString().padStart(2, '0')}`, ""])),
-  ...Object.fromEntries([...Array(15)].map((_, i) => [`note${(i + 1).toString().padStart(2, '0')}`, ""]))
+  ...Object.fromEntries([...Array(37)].map((_, i) => [`site${(i + 1).toString().padStart(2, '0')}`, ""])),
+  ...Object.fromEntries([...Array(37)].map((_, i) => [`note${(i + 1).toString().padStart(2, '0')}`, ""]))
 } as CommonAccountFormData;
 
 export default function CommonAccountManagement() {
@@ -51,7 +51,7 @@ export default function CommonAccountManagement() {
   const allSiteNames = useMemo(() => {
     const siteSet = new Set<string>();
     accounts.forEach(account => {
-      [...Array(15)].forEach((_, i) => {
+      [...Array(37)].forEach((_, i) => {
         const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccount;
         const siteName = account[siteKey] as string;
         if (siteName) siteSet.add(siteName.trim());
@@ -70,7 +70,7 @@ export default function CommonAccountManagement() {
 
       // Filter by site selection
       if (!siteFilter) return true;
-      return [...Array(15)].some((_, i) => {
+      return [...Array(37)].some((_, i) => {
         const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccount;
         const siteName = account[siteKey] as string;
         return siteName?.trim() === siteFilter.trim();
@@ -310,10 +310,10 @@ export default function CommonAccountManagement() {
 
             <div className="space-y-4">
               <h3 className="text-md font-bold flex items-center gap-2 text-blue-600">
-                <LinkIcon size={18} /> 常用網站與備註 (最多 15 個)
+                <LinkIcon size={18} /> 常用網站與備註 (最多 37 個)
               </h3>
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin">
-                {[...Array(15)].map((_, i) => {
+                {[...Array(37)].map((_, i) => {
                   const idx = (i + 1).toString().padStart(2, '0');
                   const siteKey = `site${idx}` as keyof CommonAccountFormData;
                   const noteKey = `note${idx}` as keyof CommonAccountFormData;
@@ -397,7 +397,7 @@ export default function CommonAccountManagement() {
             </Button>
             {allSiteNames.map(siteName => {
               const count = accounts.filter(account => {
-                return [...Array(15)].some((_, i) => {
+                return [...Array(37)].some((_, i) => {
                   const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccount;
                   const name = account[siteKey] as string;
                   return name?.trim() === siteName.trim();
@@ -455,7 +455,7 @@ export default function CommonAccountManagement() {
               <div className="p-4 flex-1 space-y-4">
                 {(() => {
                   // Collect all non-empty site/note pairs
-                  const items = [...Array(15)].map((_, i) => {
+                  const items = [...Array(37)].map((_, i) => {
                     const idx = (i + 1).toString().padStart(2, '0');
                     const siteKey = `site${idx}` as keyof CommonAccount;
                     const noteKey = `note${idx}` as keyof CommonAccount;

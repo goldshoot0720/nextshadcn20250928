@@ -30,7 +30,7 @@ export async function GET() {
     const collections = [
       { name: "article", columns: ["title", "content", "newDate", "url1", "url2", "url3", "file1", "file1type", "file2", "file2type", "file3", "file3type"] },
       { name: "bank", columns: ["name", "deposit", "site", "address", "withdrawals", "transfer", "activity", "card", "account"] },
-      { name: "commonaccount", columns: ["name", "site01", "site02", "site03", "site04", "site05", "site06", "site07", "site08", "site09", "site10", "site11", "site12", "site13", "site14", "site15", "note01", "note02", "note03", "note04", "note05", "note06", "note07", "note08", "note09", "note10", "note11", "note12", "note13", "note14", "note15"] },
+      { name: "commonaccount", columns: ["name", ...Array.from({length: 37}, (_, i) => `site${(i + 1).toString().padStart(2, '0')}`), ...Array.from({length: 37}, (_, i) => `note${(i + 1).toString().padStart(2, '0')}`)] },
       { name: "food", columns: ["name", "amount", "todate", "photo"] },
       { name: "subscription", columns: ["name", "site", "price", "nextdate"] },
     ];
