@@ -37,6 +37,9 @@ interface SubscriptionDetail {
 interface DashboardStats {
   totalFoods: number;
   totalSubscriptions: number;
+  totalArticles: number;
+  totalCommonAccounts: number;
+  totalBanks: number;
   foodsExpiring7Days: number;
   foodsExpiring30Days: number;
   subscriptionsExpiring3Days: number;
@@ -58,6 +61,9 @@ export function useDashboardStats() {
   const [stats, setStats] = useState<DashboardStats>({
     totalFoods: 0,
     totalSubscriptions: 0,
+    totalArticles: 0,
+    totalCommonAccounts: 0,
+    totalBanks: 0,
     foodsExpiring7Days: 0,
     foodsExpiring30Days: 0,
     subscriptionsExpiring3Days: 0,
@@ -128,6 +134,30 @@ export function useDashboardStats() {
         if (subsRes.ok) {
           const subsData = await subsRes.json();
           subscriptions = Array.isArray(subsData) ? subsData : [];
+        }
+
+        // 獲取筆記數據
+        const articlesRes = await fetch("/api/article", { cache: "no-store" });
+        let articles: any[] = [];
+        if (articlesRes.ok) {
+          const articlesData = await articlesRes.json();
+          articles = Array.isArray(articlesData) ? articlesData : [];
+        }
+
+        // 獲取常用帳號數據
+        const commonAccountsRes = await fetch("/api/common-account", { cache: "no-store" });
+        let commonAccounts: any[] = [];
+        if (commonAccountsRes.ok) {
+          const commonAccountsData = await commonAccountsRes.json();
+          commonAccounts = Array.isArray(commonAccountsData) ? commonAccountsData : [];
+        }
+
+        // 獲取銀行數據
+        const banksRes = await fetch("/api/bank", { cache: "no-store" });
+        let banks: any[] = [];
+        if (banksRes.ok) {
+          const banksData = await banksRes.json();
+          banks = Array.isArray(banksData) ? banksData : [];
         }
 
         const today = new Date();
@@ -255,6 +285,9 @@ export function useDashboardStats() {
         setStats({
           totalFoods: foodsToProcess.length,
           totalSubscriptions: subsToProcess.length,
+          totalArticles: articles.length,
+          totalCommonAccounts: commonAccounts.length,
+          totalBanks: banks.length,
           foodsExpiring7Days: foodsExpiring7DaysList.length,
           foodsExpiring30Days: foodsExpiring30DaysList.length,
           subscriptionsExpiring3Days: subscriptionsExpiring3DaysList.length,

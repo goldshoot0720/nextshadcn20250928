@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useMediaStats } from "@/hooks/useMediaStats";
-import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive } from "lucide-react";
+import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive, FileText, Star, Building2 } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
@@ -143,6 +143,13 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         <StatCard title="訂閱服務" value={stats.totalSubscriptions} icon={CreditCard} gradient="from-green-500 to-green-600" />
         <StatCard title="需要關注" value={stats.foodsExpiring7Days + stats.subscriptionsExpiring3Days} icon={AlertTriangle} gradient="from-yellow-500 to-orange-500" />
         <StatCard title="年費總計" value={formatCurrency(stats.totalAnnualFee)} icon={DollarSign} gradient="from-purple-500 to-purple-600" />
+      </div>
+
+      {/* 其他統計 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <StatCard title="筆記總數" value={stats.totalArticles} icon={FileText} gradient="from-indigo-500 to-indigo-600" />
+        <StatCard title="常用帳號總數" value={stats.totalCommonAccounts} icon={Star} gradient="from-pink-500 to-pink-600" />
+        <StatCard title="銀行總數" value={stats.totalBanks} icon={Building2} gradient="from-cyan-500 to-cyan-600" />
       </div>
 
       {/* 多媒體儲存統計 */}
