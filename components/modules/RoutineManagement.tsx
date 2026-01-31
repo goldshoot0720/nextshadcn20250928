@@ -179,7 +179,8 @@ export default function RoutineManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("確定要刪除此例行事項嗎？")) {
+    const routine = routines.find(r => r.$id === id);
+    if (routine && confirm(`確定要刪除此例行事項嗎？\n\n注意：若包含圖片，將同時從Appwrite儲存空間永久刪除。`)) {
       await remove(id);
     }
   };
