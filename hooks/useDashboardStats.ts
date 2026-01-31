@@ -84,14 +84,14 @@ export function useDashboardStats() {
         
         // 檢查所有表是否存在
         const tablesToCheck = [
-          { name: 'subscription', api: '/api/subscription', label: 'Table subscription' },
-          { name: 'food', api: '/api/food', label: 'Table food' },
           { name: 'article', api: '/api/article', label: 'Table article' },
-          { name: 'commonaccount', api: '/api/common-account', label: 'Table commonaccount' },
-          { name: 'image', api: '/api/image', label: 'Table image' },
-          { name: 'video', api: '/api/video', label: 'Table video' },
-          { name: 'music', api: '/api/music', label: 'Table music' },
           { name: 'bank', api: '/api/bank', label: 'Table bank' },
+          { name: 'commonaccount', api: '/api/common-account', label: 'Table commonaccount' },
+          { name: 'food', api: '/api/food', label: 'Table food' },
+          { name: 'image', api: '/api/image', label: 'Table image' },
+          { name: 'music', api: '/api/music', label: 'Table music' },
+          { name: 'subscription', api: '/api/subscription', label: 'Table subscription' },
+          { name: 'video', api: '/api/video', label: 'Table video' },
         ];
 
         // 並行檢查所有表
