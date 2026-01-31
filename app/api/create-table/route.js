@@ -77,6 +77,40 @@ const TABLE_SCHEMAS = {
       { key: 'note', type: 'string', size: 100, required: false },
       { key: 'account', type: 'string', size: 100, required: false }
     ]
+  },
+  image: {
+    name: "image",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'file', type: 'string', size: 150, required: false },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'hash', type: 'string', size: 300, required: false }
+    ]
+  },
+  video: {
+    name: "video",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'file', type: 'string', size: 150, required: false },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'ref', type: 'string', size: 100, required: false },
+      { key: 'category', type: 'string', size: 100, required: false },
+      { key: 'hash', type: 'string', size: 300, required: false }
+    ]
+  },
+  music: {
+    name: "music",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'file', type: 'string', size: 150, required: false },
+      { key: 'lyrics', type: 'string', size: 1000, required: false },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'ref', type: 'string', size: 100, required: false },
+      { key: 'category', type: 'string', size: 100, required: false },
+      { key: 'hash', type: 'string', size: 300, required: false },
+      { key: 'language', type: 'string', size: 100, required: false },
+      { key: 'cover', type: 'string', size: 100, required: false }
+    ]
   }
 };
 

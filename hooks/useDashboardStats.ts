@@ -80,11 +80,13 @@ export function useDashboardStats() {
       try {
         // 獲取食品數據
         const foodsRes = await fetch("/api/food", { cache: "no-store" });
-        const foods: Food[] = await foodsRes.json();
+        const foodsData = await foodsRes.json();
+        const foods: Food[] = Array.isArray(foodsData) ? foodsData : [];
 
         // 獲取訂閱數據
         const subsRes = await fetch("/api/subscription", { cache: "no-store" });
-        const subscriptions: Subscription[] = await subsRes.json();
+        const subsData = await subsRes.json();
+        const subscriptions: Subscription[] = Array.isArray(subsData) ? subsData : [];
 
         const today = new Date();
         const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -92,7 +94,8 @@ export function useDashboardStats() {
         const threeDaysFromNow = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
 
         // 計算食品統計和詳細列表
-        const foodsExpiring7DaysList: FoodDetail[] = foods
+        const foodsToProcess = Array.isArray(foods) ? foods : [];
+        const foodsExpiring7DaysList: FoodDetail[] = foodsToProcess
           .filter(food => {
             const expireDate = new Date(food.todate);
             return expireDate <= sevenDaysFromNow && expireDate >= today;
@@ -109,7 +112,7 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const foodsExpiring30DaysList: FoodDetail[] = foods
+        const foodsExpiring30DaysList: FoodDetail[] = foodsToProcess
           .filter(food => {
             const expireDate = new Date(food.todate);
             return expireDate <= thirtyDaysFromNow && expireDate >= today;
@@ -126,7 +129,7 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const expiredFoodsList: FoodDetail[] = foods
+        const expiredFoodsList: FoodDetail[] = foodsToProcess
           .filter(food => {
             const expireDate = new Date(food.todate);
             return expireDate < today;
@@ -144,7 +147,8 @@ export function useDashboardStats() {
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
         // 計算訂閱統計和詳細列表
-        const subscriptionsExpiring3DaysList: SubscriptionDetail[] = subscriptions
+        const subsToProcess = Array.isArray(subscriptions) ? subscriptions : [];
+        const subscriptionsExpiring3DaysList: SubscriptionDetail[] = subsToProcess
           .filter(sub => {
             const nextDate = new Date(sub.nextdate);
             return nextDate <= threeDaysFromNow && nextDate >= today;
@@ -163,7 +167,7 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const subscriptionsExpiring7DaysList: SubscriptionDetail[] = subscriptions
+        const subscriptionsExpiring7DaysList: SubscriptionDetail[] = subsToProcess
           .filter(sub => {
             const nextDate = new Date(sub.nextdate);
             return nextDate <= sevenDaysFromNow && nextDate >= today;
@@ -182,7 +186,7 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const overdueSubscriptionsList: SubscriptionDetail[] = subscriptions
+        const overdueSubscriptionsList: SubscriptionDetail[] = subsToProcess
           .filter(sub => {
             const nextDate = new Date(sub.nextdate);
             return nextDate < today;
@@ -201,14 +205,14 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const totalMonthlyFee = subscriptions.reduce((total, sub) => total + sub.price, 0);
+        const totalMonthlyFee = subsToProcess.reduce((total, sub) => total + sub.price, 0);
         
         // 計算年費總計 (所有訂閱服務費用總和)
-        const totalAnnualFee = subscriptions.reduce((total, sub) => total + sub.price, 0);
+        const totalAnnualFee = subsToProcess.reduce((total, sub) => total + sub.price, 0);
 
         setStats({
-          totalFoods: foods.length,
-          totalSubscriptions: subscriptions.length,
+          totalFoods: foodsToProcess.length,
+          totalSubscriptions: subsToProcess.length,
           foodsExpiring7Days: foodsExpiring7DaysList.length,
           foodsExpiring30Days: foodsExpiring30DaysList.length,
           subscriptionsExpiring3Days: subscriptionsExpiring3DaysList.length,

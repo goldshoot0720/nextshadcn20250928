@@ -39,8 +39,8 @@ export function useImages() {
 
   // 計算統計資料
   const stats = {
-    total: images.length,
-    totalSize: images.reduce((sum, img) => sum + img.size, 0),
+    total: Array.isArray(images) ? images.length : 0,
+    totalSize: Array.isArray(images) ? images.reduce((sum, img) => sum + img.size, 0) : 0,
   };
 
   return {

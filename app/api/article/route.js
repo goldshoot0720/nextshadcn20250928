@@ -1,30 +1,46 @@
 import { NextResponse } from "next/server";
-import { Client, Databases } from "appwrite";
+
+const sdk = require('node-appwrite');
+
+export const dynamic = 'force-dynamic';
+
+async function getCollectionId(databases, databaseId, name) {
+  const allCollections = await databases.listCollections(databaseId);
+  const col = allCollections.collections.find(c => c.name === name);
+  if (!col) throw new Error(`Collection ${name} not found`);
+  return col.$id;
+}
 
 function createAppwrite() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const collectionId = "article";
+  const apiKey = process.env.APPWRITE_API_KEY;
 
-  if (!endpoint || !projectId || !databaseId || !collectionId) {
+  if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
   }
 
-  const client = new Client()
+  const client = new sdk.Client()
     .setEndpoint(endpoint)
-    .setProject(projectId);
+    .setProject(projectId)
+    .setKey(apiKey);
 
-  const databases = new Databases(client);
+  const databases = new sdk.Databases(client);
 
-  return { databases, databaseId, collectionId };
+  return { databases, databaseId };
 }
 
 // 獲取所有文章
 export async function GET() {
   try {
-    const { databases, databaseId, collectionId } = createAppwrite();
-    const res = await databases.listDocuments(databaseId, collectionId);
+    const { databases, databaseId } = createAppwrite();
+    const collectionId = await getCollectionId(databases, databaseId, "article");
+    
+    const res = await databases.listDocuments(databaseId, collectionId, [
+      sdk.Query.limit(100),
+      sdk.Query.orderDesc('$createdAt')
+    ]);
     return NextResponse.json(res.documents);
   } catch (err) {
     console.error("GET /article error:", err);
@@ -36,13 +52,15 @@ export async function GET() {
 // 新增文章
 export async function POST(req) {
   try {
+    const { databases, databaseId } = createAppwrite();
+    const collectionId = await getCollectionId(databases, databaseId, "article");
+    
     const body = await req.json();
-    const { databases, databaseId, collectionId } = createAppwrite();
 
     const res = await databases.createDocument(
       databaseId,
       collectionId,
-      "unique()",
+      sdk.ID.unique(),
       body
     );
     return NextResponse.json(res);

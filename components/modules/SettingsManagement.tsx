@@ -39,7 +39,7 @@ export default function SettingsManagement() {
   const [progress, setProgress] = useState<CreateProgress | null>(null);
 
   const fetchStats = () => {
-    fetch("/api/database-stats")
+    fetch("/api/database-stats", { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
         setDbStats(data);

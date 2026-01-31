@@ -18,7 +18,8 @@ export function useFoods() {
       const res = await fetch(API_ENDPOINTS.FOOD, { cache: "no-store" });
       if (!res.ok) throw new Error("載入失敗");
       
-      let data: Food[] = await res.json();
+      const resData = await res.json();
+      let data: Food[] = Array.isArray(resData) ? resData : [];
       // 按到期日排序
       data = data.sort(
         (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
@@ -117,12 +118,12 @@ export function useFoods() {
 
   // 計算統計資料
   const stats = {
-    total: foods.length,
-    expired: foods.filter((f) => getDaysFromToday(f.todate) < 0).length,
-    expiringSoon: foods.filter((f) => {
+    total: Array.isArray(foods) ? foods.length : 0,
+    expired: Array.isArray(foods) ? foods.filter((f) => getDaysFromToday(f.todate) < 0).length : 0,
+    expiringSoon: Array.isArray(foods) ? foods.filter((f) => {
       const days = getDaysFromToday(f.todate);
       return days >= 0 && days <= 7;
-    }).length,
+    }).length : 0,
   };
 
   return {

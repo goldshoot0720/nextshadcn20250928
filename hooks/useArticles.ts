@@ -19,7 +19,8 @@ export function useArticles() {
         throw new Error("載入文章資料失敗");
       }
 
-      let data: Article[] = await res.json();
+      const resData = await res.json();
+      let data: Article[] = Array.isArray(resData) ? resData : [];
       // 按日期排序（最新的在前）
       data = data.sort(
         (a, b) => new Date(b.newDate).getTime() - new Date(a.newDate).getTime()
@@ -158,7 +159,7 @@ export function useArticles() {
   }, [loadArticles]);
 
   const stats = {
-    total: articles.length,
+    total: Array.isArray(articles) ? articles.length : 0,
   };
 
   return {

@@ -1,17 +1,37 @@
 import { NextResponse } from "next/server";
-import { Client, Databases } from "appwrite";
 
-const client = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
+const sdk = require('node-appwrite');
 
-const databases = new Databases(client);
-const databaseId = process.env.APPWRITE_DATABASE_ID || "";
-const collectionId = "food";
+export const dynamic = 'force-dynamic';
+
+async function getCollectionId(databases, databaseId, name) {
+  const allCollections = await databases.listCollections(databaseId);
+  const col = allCollections.collections.find(c => c.name === name);
+  if (!col) throw new Error(`Collection ${name} not found`);
+  return col.$id;
+}
+
+function createAppwrite() {
+  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = process.env.APPWRITE_DATABASE_ID;
+  const apiKey = process.env.APPWRITE_API_KEY;
+
+  const client = new sdk.Client()
+    .setEndpoint(endpoint)
+    .setProject(projectId)
+    .setKey(apiKey);
+
+  const databases = new sdk.Databases(client);
+  return { databases, databaseId };
+}
 
 // PUT /api/food/[id]
 export async function PUT(req, context) {
   try {
+    const { databases, databaseId } = createAppwrite();
+    const collectionId = await getCollectionId(databases, databaseId, "food");
+    
     const { params } = context;
     const { id } = await params;
     if (!id) {
@@ -19,7 +39,7 @@ export async function PUT(req, context) {
     }
 
     const body = await req.json();
-    const { name, amount, todate, photo } = body;
+    const { name, amount, todate, photo, price, shop, photohash } = body;
 
     const response = await databases.updateDocument(
       databaseId,
@@ -30,6 +50,9 @@ export async function PUT(req, context) {
         amount: amount ? parseInt(amount, 10) : 0,
         todate,
         photo,
+        price: price ? parseInt(price, 10) : 0,
+        shop,
+        photohash
       }
     );
 
@@ -43,6 +66,9 @@ export async function PUT(req, context) {
 // DELETE /api/food/[id]
 export async function DELETE(req, context) {
   try {
+    const { databases, databaseId } = createAppwrite();
+    const collectionId = await getCollectionId(databases, databaseId, "food");
+    
     const { params } = context;
     const { id } = await params;
     if (!id) {

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign } from "lucide-react";
+import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
@@ -16,12 +16,14 @@ import { FoodDetail, SubscriptionDetail } from "@/types";
 interface EnhancedDashboardProps {
   onNavigate: (moduleId: string) => void;
   title?: string;
+  onlyTitle?: boolean;
 }
 
-export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表" }: EnhancedDashboardProps) {
+export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", onlyTitle = false }: EnhancedDashboardProps) {
   const { stats, loading } = useDashboardStats();
 
   useEffect(() => {
+    if (onlyTitle) return; // Skip notification on home page if only title is shown
     if (typeof window === "undefined") return;
     if (typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
@@ -74,7 +76,48 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表" }
       window.localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch {
     }
-  }, [stats.subscriptionsExpiring3DaysList]);
+  }, [stats.subscriptionsExpiring3DaysList, onlyTitle]);
+
+  if (onlyTitle) {
+    return (
+      <div className="space-y-6 lg:space-y-8">
+        <PageTitle title={title} />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <DataCard className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border-blue-100 dark:border-blue-800">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                <Zap size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">精美介紹</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄資訊管理系統核心架構</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <IntroItem icon={Cloud} label="網頁部署" value="Vercel 雲端空間" color="text-blue-600" />
+              <IntroItem icon={Layout} label="前端框架" value="Next.js (基於 React)" color="text-indigo-600" />
+              <IntroItem icon={Server} label="後端服務" value="Appwrite (BaaS 解決方案)" color="text-pink-600" />
+              <IntroItem icon={FileVideo} label="多媒體儲存" value="Vercel Blob (圖片/音樂/影片)" color="text-orange-600" />
+            </div>
+          </DataCard>
+
+          <DataCard className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 border-purple-100 dark:border-purple-800 flex flex-col justify-center">
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
+                <span className="text-white font-bold text-3xl">鋒</span>
+              </div>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">本網站建置</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed max-w-sm mx-auto">
+                透過現代化的技術棧，為您提供極致流暢且安全的資訊管理體驗。
+              </p>
+            </div>
+          </DataCard>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <FullPageLoading text="載入統計數據中..." />;
 
@@ -103,6 +146,21 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表" }
 
       {/* 提醒和建議 */}
       {needsAttention && <AlertSection stats={stats} />}
+    </div>
+  );
+}
+
+// 介紹項目組件
+function IntroItem({ icon: Icon, label, value, color }: { icon: any, label: string, value: string, color: string }) {
+  return (
+    <div className="flex items-center gap-4 p-3 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-white dark:border-gray-700 shadow-sm">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-white dark:bg-gray-800 shadow-inner ${color}`}>
+        <Icon size={20} />
+      </div>
+      <div>
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{value}</p>
+      </div>
     </div>
   );
 }

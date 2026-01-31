@@ -27,7 +27,8 @@ export function useSubscriptions() {
         }
       }
 
-      let data: Subscription[] = await res.json();
+      const resData = await res.json();
+      let data: Subscription[] = Array.isArray(resData) ? resData : [];
       // 按下次付款日排序
       data = data.sort(
         (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
@@ -117,8 +118,10 @@ export function useSubscriptions() {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     
+    const subsToProcess = Array.isArray(subscriptions) ? subscriptions : [];
+    
     // 計算本月需要付款的訂閱
-    const currentMonthSubscriptions = subscriptions.filter(s => {
+    const currentMonthSubscriptions = subsToProcess.filter(s => {
       const nextDate = new Date(s.nextdate);
       return nextDate.getFullYear() === currentYear && nextDate.getMonth() === currentMonth;
     });
@@ -126,17 +129,17 @@ export function useSubscriptions() {
     // 計算下月需要付款的訂閱
     const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
     const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-    const nextMonthSubscriptions = subscriptions.filter(s => {
+    const nextMonthSubscriptions = subsToProcess.filter(s => {
       const nextDate = new Date(s.nextdate);
       return nextDate.getFullYear() === nextMonthYear && nextDate.getMonth() === nextMonth;
     });
     
     return {
-      total: subscriptions.length,
+      total: subsToProcess.length,
       totalMonthlyFee: currentMonthSubscriptions.reduce((sum, s) => sum + s.price, 0),
       nextMonthFee: nextMonthSubscriptions.reduce((sum, s) => sum + s.price, 0),
-      overdue: subscriptions.filter((s) => getDaysFromToday(s.nextdate) < 0).length,
-      expiringSoon: subscriptions.filter((s) => {
+      overdue: subsToProcess.filter((s) => getDaysFromToday(s.nextdate) < 0).length,
+      expiringSoon: subsToProcess.filter((s) => {
         const days = getDaysFromToday(s.nextdate);
         return days >= 0 && days <= 7;
       }).length,

@@ -1,40 +1,57 @@
 import { NextResponse } from "next/server";
-import { Client, Databases } from "appwrite";
+
+const sdk = require('node-appwrite');
+
+export const dynamic = 'force-dynamic';
+
+async function getCollectionId(databases, databaseId, name) {
+  const allCollections = await databases.listCollections(databaseId);
+  const col = allCollections.collections.find(c => c.name === name);
+  if (!col) throw new Error(`Collection ${name} not found`);
+  return col.$id;
+}
 
 function createAppwrite() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const collectionId = "subscription";
+  const apiKey = process.env.APPWRITE_API_KEY;
 
-  if (!endpoint || !projectId || !databaseId || !collectionId) {
+  if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
   }
 
-  const client = new Client()
+  const client = new sdk.Client()
     .setEndpoint(endpoint)
-    .setProject(projectId);
+    .setProject(projectId)
+    .setKey(apiKey);
 
-  const databases = new Databases(client);
+  const databases = new sdk.Databases(client);
 
-  return { databases, databaseId, collectionId };
+  return { databases, databaseId };
 }
 
 // 更新訂閱
 export async function PUT(req, context) {
   try {
+    const { databases, databaseId } = createAppwrite();
+    const collectionId = await getCollectionId(databases, databaseId, "subscription");
+    
     const { params } = context;
-    const { id } = await params; // ✅ await params
+    const { id } = await params;
     const body = await req.json();
 
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
-    const { databases, databaseId, collectionId } = createAppwrite();
-
     // 確保 price 是整數
+    const { name, site, price, nextdate, note, account } = body;
     const bodyData = {
-      ...body,
-      price: body.price ? parseInt(body.price, 10) : 0,
+      name,
+      site,
+      price: price ? parseInt(price, 10) : 0,
+      nextdate,
+      note,
+      account
     };
 
     const res = await databases.updateDocument(
@@ -54,12 +71,13 @@ export async function PUT(req, context) {
 // 刪除訂閱
 export async function DELETE(req, context) {
   try {
+    const { databases, databaseId } = createAppwrite();
+    const collectionId = await getCollectionId(databases, databaseId, "subscription");
+    
     const { params } = context;
     const { id } = await params;
 
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
-
-    const { databases, databaseId, collectionId } = createAppwrite();
 
     await databases.deleteDocument(databaseId, collectionId, id);
     return NextResponse.json({ success: true });
