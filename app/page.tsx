@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const currentContent = useMemo(() => {
     switch (currentModule) {
       case "home":
-        return <ImageGallery />;
+        return <EnhancedDashboard onNavigate={handleModuleChange} />;
       case "images":
         return <ImageGallery />;
       case "dashboard":
