@@ -73,6 +73,20 @@ export function useVideos() {
     loadVideos();
   }, [loadVideos]);
 
+  // 監聽 refresh key 變化（當其他頁面清除快取時重新載入）
+  useEffect(() => {
+    const checkRefreshKey = () => {
+      const storedRefreshKey = getRefreshKey();
+      if (storedRefreshKey && parseInt(storedRefreshKey) > cacheTimestamp) {
+        console.log('[useVideos] 偵測到快取已清除，重新載入資料');
+        loadVideos(true);
+      }
+    };
+
+    const interval = setInterval(checkRefreshKey, 500);
+    return () => clearInterval(interval);
+  }, [loadVideos]);
+
   // 計算統計資料
   const stats = {
     total: Array.isArray(videos) ? videos.length : 0,

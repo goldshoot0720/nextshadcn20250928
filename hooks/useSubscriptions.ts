@@ -173,6 +173,20 @@ export function useSubscriptions() {
     loadSubscriptions();
   }, [loadSubscriptions]);
 
+  // 監聽 refresh key 變化（當其他頁面清除快取時重新載入）
+  useEffect(() => {
+    const checkRefreshKey = () => {
+      const storedRefreshKey = getRefreshKey();
+      if (storedRefreshKey && parseInt(storedRefreshKey) > cacheTimestamp) {
+        console.log('[useSubscriptions] 偵測到快取已清除，重新載入資料');
+        loadSubscriptions(true);
+      }
+    };
+
+    const interval = setInterval(checkRefreshKey, 500);
+    return () => clearInterval(interval);
+  }, [loadSubscriptions]);
+
   // 計算統計資料
   const stats = (() => {
     const now = new Date();

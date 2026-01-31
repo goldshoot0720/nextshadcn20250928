@@ -73,6 +73,20 @@ export function useImages() {
     loadImages();
   }, [loadImages]);
 
+  // 監聽 refresh key 變化（當其他頁面清除快取時重新載入）
+  useEffect(() => {
+    const checkRefreshKey = () => {
+      const storedRefreshKey = getRefreshKey();
+      if (storedRefreshKey && parseInt(storedRefreshKey) > cacheTimestamp) {
+        console.log('[useImages] 偵測到快取已清除，重新載入資料');
+        loadImages(true);
+      }
+    };
+
+    const interval = setInterval(checkRefreshKey, 500);
+    return () => clearInterval(interval);
+  }, [loadImages]);
+
   // 計算統計資料
   const stats = {
     total: Array.isArray(images) ? images.length : 0,

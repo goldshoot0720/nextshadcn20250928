@@ -75,6 +75,20 @@ export function useMusic() {
     loadMusic();
   }, [loadMusic]);
 
+  // 監聽 refresh key 變化（當其他頁面清除快取時重新載入）
+  useEffect(() => {
+    const checkRefreshKey = () => {
+      const storedRefreshKey = getRefreshKey();
+      if (storedRefreshKey && parseInt(storedRefreshKey) > cacheTimestamp) {
+        console.log('[useMusic] 偵測到快取已清除，重新載入資料');
+        loadMusic(true);
+      }
+    };
+
+    const interval = setInterval(checkRefreshKey, 500);
+    return () => clearInterval(interval);
+  }, [loadMusic]);
+
   // 計算統計資料
   const stats = {
     total: Array.isArray(music) ? music.length : 0,

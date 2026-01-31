@@ -5,46 +5,20 @@ import { Bank, BankFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { fetchApi } from "@/hooks/useApi";
 
-// 全域快取
-let cachedBanks: Bank[] | null = null;
-let cacheTimestamp: number = 0;
-
 export function useBanks() {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getRefreshKey = () => {
-    if (typeof window === 'undefined') return '';
-    return localStorage.getItem('banks_refresh_key') || '';
-  };
-
-  const setRefreshKey = () => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('banks_refresh_key', Date.now().toString());
-  };
-
-  // 載入銀行資料（使用快取）
-  const loadBanks = useCallback(async (forceRefresh = false) => {
-    const storedRefreshKey = getRefreshKey();
-    
-    if (!forceRefresh && cachedBanks && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
-      setBanks(cachedBanks);
-      setLoading(false);
-      return cachedBanks;
-    }
-
+  // 載入銀行資料（不使用快取）
+  const loadBanks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
-      const resData = await fetchApi<Bank[]>('/api/bank' + cacheParam);
+      const resData = await fetchApi<Bank[]>(`/api/bank?t=${Date.now()}`);
       let data: Bank[] = Array.isArray(resData) ? resData : [];
       // 按名稱排序
       data = data.sort((a, b) => a.name.localeCompare(b.name));
-      
-      cachedBanks = data;
-      cacheTimestamp = Date.now();
       
       setBanks(data);
       return data;
@@ -69,18 +43,14 @@ export function useBanks() {
       if (!res.ok) throw new Error("新增失敗");
       
       const newBank: Bank = await res.json();
-      setBanks((prev) => {
-        const updated = [...prev, newBank];
-        return updated.sort((a, b) => a.name.localeCompare(b.name));
-      });
-      cachedBanks = null;
-      setRefreshKey();
+      // 重新載入以確保資料同步
+      await loadBanks();
       return newBank;
     } catch (err) {
       console.error("新增銀行失敗:", err);
       throw err;
     }
-  }, []);
+  }, [loadBanks]);
 
   // 更新銀行
   const updateBank = useCallback(async (id: string, formData: BankFormData): Promise<Bank | null> => {
@@ -93,18 +63,14 @@ export function useBanks() {
       if (!res.ok) throw new Error("更新失敗");
       
       const updatedBank: Bank = await res.json();
-      setBanks((prev) => {
-        const updated = prev.map((b) => (b.$id === id ? updatedBank : b));
-        return updated.sort((a, b) => a.name.localeCompare(b.name));
-      });
-      cachedBanks = null;
-      setRefreshKey();
+      // 重新載入以確保資料同步
+      await loadBanks();
       return updatedBank;
     } catch (err) {
       console.error("更新銀行失敗:", err);
       throw err;
     }
-  }, []);
+  }, [loadBanks]);
 
   // 刪除銀行
   const deleteBank = useCallback(async (id: string): Promise<boolean> => {
@@ -112,15 +78,14 @@ export function useBanks() {
       const res = await fetch(`/api/bank/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("刪除失敗");
       
-      setBanks((prev) => prev.filter((b) => b.$id !== id));
-      cachedBanks = null;
-      setRefreshKey();
+      // 重新載入以確保資料同步
+      await loadBanks();
       return true;
     } catch (err) {
       console.error("刪除銀行失敗:", err);
       throw err;
     }
-  }, []);
+  }, [loadBanks]);
 
   // 初始載入
   useEffect(() => {

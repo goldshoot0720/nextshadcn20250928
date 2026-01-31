@@ -158,6 +158,20 @@ export function useFoods() {
     loadFoods();
   }, [loadFoods]);
 
+  // 監聽 refresh key 變化（當其他頁面清除快取時重新載入）
+  useEffect(() => {
+    const checkRefreshKey = () => {
+      const storedRefreshKey = getRefreshKey();
+      if (storedRefreshKey && parseInt(storedRefreshKey) > cacheTimestamp) {
+        console.log('[useFoods] 偵測到快取已清除，重新載入資料');
+        loadFoods(true);
+      }
+    };
+
+    const interval = setInterval(checkRefreshKey, 500);
+    return () => clearInterval(interval);
+  }, [loadFoods]);
+
   // 計算統計資料
   const stats = {
     total: Array.isArray(foods) ? foods.length : 0,

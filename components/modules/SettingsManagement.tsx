@@ -224,7 +224,11 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
               collectionId: data.collectionId
             } : null);
             eventSource.close();
-            fetchStats();
+            clearAllCaches(); // 清除所有模組快取
+            // 延遲一點時間確保快取清除完成後再重新載入統計
+            setTimeout(() => {
+              fetchStats(); // 重新載入資料庫統計
+            }, 300);
             break;
           case 'error':
             setProgress(prev => prev ? {
