@@ -328,6 +328,7 @@ export default function CommonAccountManagement() {
                           value={(form as any)[siteKey] || ""}
                           onChange={(e) => setForm({ ...form, [siteKey]: e.target.value } as any)}
                           className="rounded-xl flex-1"
+                          maxLength={100}
                         />
                         <Button
                           type="button"
@@ -343,10 +344,11 @@ export default function CommonAccountManagement() {
                       {isExpanded && (
                         <div className="pl-10 pr-2 pb-2">
                           <Textarea
-                            placeholder={`備註內容/${idx}`}
+                            placeholder={`備註內容 (上限100個字)`}
                             value={(form as any)[noteKey] || ""}
                             onChange={(e) => setForm({ ...form, [noteKey]: e.target.value } as any)}
                             className="rounded-xl border-purple-100 dark:border-purple-900/30 min-h-[80px] resize-y py-2 text-sm shadow-inner"
+                            maxLength={100}
                           />
                         </div>
                       )}
@@ -498,14 +500,16 @@ export default function CommonAccountManagement() {
                                     onChange={(e) => setInlineEdit({ ...inlineEdit, siteName: e.target.value })}
                                     className="rounded-lg flex-1 h-9 text-sm"
                                     autoFocus
+                                    maxLength={100}
                                   />
                                 </div>
                                 <Textarea
-                                  placeholder={`備註內容/${idx}`}
+                                  placeholder={`備註內容 (上限100個字)`}
                                   value={inlineEdit.note}
                                   onChange={(e) => setInlineEdit({ ...inlineEdit, note: e.target.value })}
                                   className="rounded-lg text-sm min-h-[120px] resize-y"
                                   rows={5}
+                                  maxLength={100}
                                 />
                                 <div className="flex gap-2 justify-end">
                                   <Button
