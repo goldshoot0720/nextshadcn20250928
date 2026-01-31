@@ -77,6 +77,9 @@ export default function SettingsManagement() {
     localStorage.setItem('APPWRITE_BUCKET_ID', appwriteConfig.bucketId);
     localStorage.setItem('APPWRITE_API_KEY', appwriteConfig.apiKey);
     
+    // 設定標記：已經儲存過自定義配置，不再使用 .env
+    localStorage.setItem('appwrite_custom_config_saved', 'true');
+    
     // 清除所有快取
     clearAllCaches();
     
@@ -84,6 +87,32 @@ export default function SettingsManagement() {
     
     // 顯示提示並自動重新整理頁面
     alert('✅ Appwrite 帳號設定已儲存！\n所有快取已清除。\n\n頁面將自動重新載入以套用新設定。');
+    
+    // 延遲 500ms 後自動重新整理頁面
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
+  const handleResetToDefault = () => {
+    if (typeof window === 'undefined') return;
+    
+    if (!confirm('確定要重置為預設值嗎？\n\n這將清除所有自定義 Appwrite 配置，恢復使用 .env 檔案的設定。')) {
+      return;
+    }
+    
+    // 清除所有 localStorage 中的 Appwrite 配置
+    localStorage.removeItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
+    localStorage.removeItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
+    localStorage.removeItem('APPWRITE_DATABASE_ID');
+    localStorage.removeItem('APPWRITE_BUCKET_ID');
+    localStorage.removeItem('APPWRITE_API_KEY');
+    localStorage.removeItem('appwrite_custom_config_saved');
+    
+    // 清除所有快取
+    clearAllCaches();
+    
+    alert('✅ 已重置為預設值！\n現在將使用 .env 檔案的 Appwrite 配置。\n\n頁面將自動重新載入。');
     
     // 延遲 500ms 後自動重新整理頁面
     setTimeout(() => {
@@ -303,6 +332,13 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
               ) : (
                 <>🔄 儲存 Appwrite 設定</>
               )}
+            </Button>
+            <Button 
+              onClick={handleResetToDefault}
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              🔄 重置為預設值（.env）
             </Button>
             <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">

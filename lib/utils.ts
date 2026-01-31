@@ -18,20 +18,33 @@ export function getAppwriteConfig() {
     };
   }
 
-  // Client-side: check localStorage first, fallback to environment
-  // 注意：process.env 在 Next.js 中會在構建時被替換成字面值
-  const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
-  const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
-  const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID');
-  const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID');
-  const apiKey = localStorage.getItem('APPWRITE_API_KEY');
+  // Client-side: 檢查是否已經儲存過自定義配置
+  const hasCustomConfig = localStorage.getItem('appwrite_custom_config_saved');
   
+  if (hasCustomConfig === 'true') {
+    // 如果已經儲存過，只使用 localStorage 的配置，不 fallback 到 .env
+    const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT') || '';
+    const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID') || '';
+    const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID') || '';
+    const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID') || '';
+    const apiKey = localStorage.getItem('APPWRITE_API_KEY') || '';
+    
+    return {
+      endpoint,
+      projectId,
+      databaseId,
+      bucketId,
+      apiKey,
+    };
+  }
+  
+  // 如果沒有儲存過，使用 .env 的預設配置
   return {
-    endpoint: endpoint || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '',
-    projectId: projectId || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '',
-    databaseId: databaseId || process.env.APPWRITE_DATABASE_ID || '',
-    bucketId: bucketId || process.env.APPWRITE_BUCKET_ID || '',
-    apiKey: apiKey || process.env.APPWRITE_API_KEY || '',
+    endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '',
+    projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '',
+    databaseId: process.env.APPWRITE_DATABASE_ID || '',
+    bucketId: process.env.APPWRITE_BUCKET_ID || '',
+    apiKey: process.env.APPWRITE_API_KEY || '',
   };
 }
 
