@@ -157,6 +157,13 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         <StatCard title="銀行存款" value={formatCurrency(stats.totalBankDeposit)} icon={Building2} gradient="from-emerald-500 to-emerald-600" />
       </div>
 
+      {/* 多媒體統計 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <StatCard title="圖片總數" value={mediaStats.totalImages} icon={Image} gradient="from-blue-500 to-blue-600" />
+        <StatCard title="影片總數" value={mediaStats.totalVideos} icon={FileVideo} gradient="from-red-500 to-red-600" />
+        <StatCard title="音樂總數" value={mediaStats.totalMusic} icon={Music} gradient="from-violet-500 to-violet-600" />
+      </div>
+
       {/* 多媒體儲存統計 */}
       <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
 
