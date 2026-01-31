@@ -70,7 +70,9 @@ const TABLE_SCHEMAS = {
       { key: 'name', type: 'string', size: 100, required: true },
       { key: 'site', type: 'url', required: false },
       { key: 'price', type: 'integer', required: false },
-      { key: 'nextdate', type: 'string', size: 100, required: false }
+      { key: 'nextdate', type: 'datetime', required: false },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'account', type: 'string', size: 100, required: false }
     ]
   }
 };
