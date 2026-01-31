@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionHeader } from "@/components/ui/section-header";
 import { FormCard, FormGrid, FormActions } from "@/components/ui/form-card";
@@ -262,8 +263,14 @@ export default function SubscriptionManagement() {
               <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
               <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
               <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
-              <Input placeholder="備註" value={form.note || ""} onChange={(e) => setForm({ ...form, note: e.target.value })} className="h-12 rounded-xl" />
             </FormGrid>
+            <Textarea 
+              placeholder="備註" 
+              value={form.note || ""} 
+              onChange={(e) => setForm({ ...form, note: e.target.value })} 
+              className="rounded-xl min-h-[100px] resize-y"
+              rows={3}
+            />
             <FormActions>
               <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25">
                 {editingId ? "更新訂閱" : "新增訂閱"}
