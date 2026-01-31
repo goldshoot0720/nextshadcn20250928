@@ -21,7 +21,7 @@ export default function ImageGallery() {
       <CopyrightBanner />
       
       <SectionHeader
-        title="圖片展示"
+        title="鋒兄圖片"
         subtitle={loading ? "載入中..." : `共 ${images.length} 張圖片`}
         action={
           <Button onClick={loadImages} disabled={loading} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">

@@ -65,7 +65,7 @@ export default function FoodManagement() {
   return (
     <div className="space-y-4 lg:space-y-6" id="food-management-container">
       <SectionHeader
-        title="食品管理"
+        title="鋒兄食品"
         subtitle={`共 ${foods.length} 項食品`}
         action={
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700">

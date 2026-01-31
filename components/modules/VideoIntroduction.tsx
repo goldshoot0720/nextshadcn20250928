@@ -88,7 +88,7 @@ export default function VideoIntroduction() {
   return (
     <div className="space-y-4 lg:space-y-6">
       <SectionHeader
-        title="影片介紹"
+        title="鋒兄影片"
         subtitle="觀看精彩影片內容，支援本地快取減少流量使用"
       />
 

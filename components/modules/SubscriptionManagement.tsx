@@ -210,7 +210,7 @@ export default function SubscriptionManagement() {
   return (
     <div className="space-y-4 lg:space-y-6">
       <SectionHeader
-        title="訂閱管理"
+        title="鋒兄訂閱"
         subtitle={`共 ${stats.total} 個訂閱服務`}
         action={
           <div className="flex gap-4">

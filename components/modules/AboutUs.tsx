@@ -7,7 +7,7 @@ import { PageTitle } from "@/components/ui/section-header";
 export default function AboutUs() {
   return (
     <div className="space-y-4 lg:space-y-6">
-      <PageTitle title="關於我們" description="了解鋒兄資訊管理系統的使命與願景" />
+      <PageTitle title="關於鋒兄" description="了解鋒兄資訊管理系統的使命與願景" />
       
       <DataCard className="p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-12">

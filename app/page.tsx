@@ -46,11 +46,11 @@ export default function DashboardPage() {
   const currentContent = useMemo(() => {
     switch (currentModule) {
       case "home":
-        return <EnhancedDashboard onNavigate={handleModuleChange} />;
+        return <EnhancedDashboard onNavigate={handleModuleChange} title="鋒兄首頁" />;
       case "images":
         return <ImageGallery />;
       case "dashboard":
-        return <EnhancedDashboard onNavigate={handleModuleChange} />;
+        return <EnhancedDashboard onNavigate={handleModuleChange} title="鋒兄儀表" />;
       case "subscription":
         return <SubscriptionManagement />;
       case "food":
@@ -225,7 +225,7 @@ function BankStatistics() {
   return (
     <div className="space-y-4 lg:space-y-6">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-        銀行統計
+        銀行管理
         {isLoading && <span className="text-sm font-normal text-gray-500">(同步中...)</span>}
       </h1>
 

@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Music, Search, Plus, Heart, Play, Pause, Volume2, SkipBack, SkipForward, Download, Copy } from "lucide-react";
+import { SectionHeader } from "@/components/ui/section-header";
 
 interface Song {
   id: string;
@@ -1499,6 +1500,10 @@ export default function MusicLyrics() {
 
   return (
     <div className="space-y-6">
+      <SectionHeader
+        title="鋒兄音樂"
+        subtitle="播放您喜愛的歌曲與查看歌詞"
+      />
       {/* 添加歌词样式 */}
       <style jsx>{`
         .lyrics-container {
