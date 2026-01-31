@@ -88,10 +88,14 @@ export async function POST(request) {
 
     const payload = {
       name,
-      note: note || "",
-      link: link || "",
-      photo: photo || "",
     };
+
+    // Add optional text fields (empty string is ok)
+    if (note !== undefined) payload.note = note || "";
+    
+    // Add optional URL fields (only if not empty)
+    if (link && link.trim()) payload.link = link;
+    if (photo && photo.trim()) payload.photo = photo;
 
     // Only add datetime fields if they have values
     if (lastdate1) payload.lastdate1 = lastdate1;
