@@ -246,8 +246,25 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
     <DataCard className="overflow-hidden hover:shadow-md transition-all duration-200 group">
       {/* 縮圖 */}
       <div className="relative aspect-video bg-gradient-to-br from-blue-500 to-purple-600 cursor-pointer" onClick={onPlay}>
-        <div className="absolute inset-0 flex items-center justify-center group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300">
-          <Play className="text-white group-hover:scale-110 transition-transform duration-300 w-12 h-12" />
+        {video.cover ? (
+          // 如果有封面圖，顯示封面圖
+          <>
+            <img 
+              src={video.cover} 
+              alt={video.name} 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* 半透明遮罩層，hover 時顯示 */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300" />
+          </>
+        ) : (
+          // 沒有封面圖，顯示漸層背景
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300" />
+        )}
+        
+        {/* 播放按鈕 */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Play className="text-white group-hover:scale-110 transition-transform duration-300 w-12 h-12 drop-shadow-lg" />
         </div>
         
         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5">
