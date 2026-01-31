@@ -260,7 +260,7 @@ export default function RoutineManagement() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">最近執行日期 1</label>
+                    <label className="block text-sm font-medium mb-2">最近例行日期之一(最近)</label>
                     <Input
                       type="datetime-local"
                       value={form.lastdate1}
@@ -269,7 +269,7 @@ export default function RoutineManagement() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">最近執行日期 2</label>
+                    <label className="block text-sm font-medium mb-2">最近例行日期之二(次近)</label>
                     <Input
                       type="datetime-local"
                       value={form.lastdate2}
@@ -278,7 +278,7 @@ export default function RoutineManagement() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">最近執行日期 3</label>
+                    <label className="block text-sm font-medium mb-2">最近例行日期之三(最遠)</label>
                     <Input
                       type="datetime-local"
                       value={form.lastdate3}
@@ -372,9 +372,9 @@ export default function RoutineManagement() {
                         <TableHead>圖片</TableHead>
                         <TableHead>名稱</TableHead>
                         <TableHead>備註</TableHead>
-                        <TableHead>最近執行 1</TableHead>
-                        <TableHead>最近執行 2</TableHead>
-                        <TableHead>最近執行 3</TableHead>
+                        <TableHead>最近例行之一</TableHead>
+                        <TableHead>最近例行之二</TableHead>
+                        <TableHead>最近例行之三</TableHead>
                         <TableHead className="text-right">操作</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -450,15 +450,15 @@ export default function RoutineManagement() {
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">最近執行 1:</span>
+                          <span className="text-gray-500">最近例行之一:</span>
                           <span>{formatDateTime(routine.lastdate1)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">最近執行 2:</span>
+                          <span className="text-gray-500">最近例行之二:</span>
                           <span>{formatDateTime(routine.lastdate2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">最近執行 3:</span>
+                          <span className="text-gray-500">最近例行之三:</span>
                           <span>{formatDateTime(routine.lastdate3)}</span>
                         </div>
                       </div>
