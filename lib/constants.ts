@@ -13,7 +13,7 @@ export const MENU_ITEMS = [
   { id: "bank-stats", label: "銀行統計", icon: "BarChart3" },
   { id: "components", label: "UI 組件", icon: "Palette" },
   { id: "about", label: "關於我們", icon: "Info" },
-  { id: "settings", label: "設定", icon: "Settings" },
+  { id: "settings", label: "鋒兄設定", icon: "Settings" },
 ] as const;
 
 export type ModuleId = typeof MENU_ITEMS[number]["id"];

@@ -146,8 +146,8 @@ export default function SettingsManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <SectionHeader 
-        title="設定" 
+      <SectionHeader
+        title="鋒兄設定"
         subtitle="應用程式設定與偏好"
       />
 

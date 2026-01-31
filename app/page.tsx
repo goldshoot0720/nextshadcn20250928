@@ -30,9 +30,9 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "notes", label: "鋒兄筆記", icon: <FileText size={18} /> },
   { id: "music", label: "鋒兄音樂", icon: <Music size={18} /> },
   { id: "common", label: "鋒兄常用", icon: <Star size={18} /> },
-  { id: "bank-stats", label: "銀行管理", icon: <BarChart3 size={18} /> },
-  { id: "about", label: "關於鋒兄", icon: <Info size={18} /> },
-  { id: "settings", label: "設定", icon: <Settings size={18} /> },
+  { id: "bank-stats", label: "鋒兄銀行", icon: <BarChart3 size={18} /> },
+  { id: "about", label: "鋒兄關於", icon: <Info size={18} /> },
+  { id: "settings", label: "鋒兄設定", icon: <Settings size={18} /> },
 ];
 
 export default function DashboardPage() {
@@ -225,7 +225,7 @@ function BankStatistics() {
   return (
     <div className="space-y-4 lg:space-y-6">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-        銀行管理
+        鋒兄銀行
         {isLoading && <span className="text-sm font-normal text-gray-500">(同步中...)</span>}
       </h1>
 

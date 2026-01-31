@@ -10,6 +10,7 @@ interface VideoItem {
   url?: string;
   duration?: string;
   thumbnail?: string;
+  cover?: string;
 }
 
 interface CacheStatus {

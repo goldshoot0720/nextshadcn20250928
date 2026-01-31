@@ -74,7 +74,7 @@ export async function POST(request) {
         ref: body.ref || '',
         category: body.category || '',
         hash: body.hash || '',
-        cover: !!body.cover
+        cover: body.cover || ''
       }
     );
     

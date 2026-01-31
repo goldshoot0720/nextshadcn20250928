@@ -76,7 +76,7 @@ export async function PUT(request, { params }) {
         ref: body.ref || '',
         category: body.category || '',
         hash: body.hash || '',
-        cover: !!body.cover
+        cover: body.cover || ''
       }
     );
     

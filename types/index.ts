@@ -66,7 +66,7 @@ export interface VideoItem {
   url?: string;
   duration?: string;
   thumbnail?: string;
-  cover?: boolean;
+  cover?: string;
 }
 
 export interface VideoCacheStatus {
