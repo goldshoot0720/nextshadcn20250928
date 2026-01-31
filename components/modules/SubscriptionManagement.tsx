@@ -341,26 +341,31 @@ export default function SubscriptionManagement() {
                     return (
                       <TableRow key={sub.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${rowClass}`}>
                         <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-start gap-2">
                             {sub.site && <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />}
-                            <div className="flex items-center gap-2">
-                              {sub.site ? (
-                                <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
-                                  {truncateName(sub.name, sub.$id)}
-                                </a>
-                              ) : (
-                                <span className="text-gray-900 dark:text-gray-100">{truncateName(sub.name, sub.$id)}</span>
-                              )}
-                              {sub.name.length > 37 && (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => toggleNameExpansion(sub.$id)}
-                                  className="h-6 px-2 text-xs rounded-lg"
-                                >
-                                  {expandedNames.has(sub.$id) ? "收起" : "詳細"}
-                                </Button>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                {sub.site ? (
+                                  <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                                    {truncateName(sub.name, sub.$id)}
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-900 dark:text-gray-100">{truncateName(sub.name, sub.$id)}</span>
+                                )}
+                                {sub.name.length > 37 && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => toggleNameExpansion(sub.$id)}
+                                    className="h-6 px-2 text-xs rounded-lg"
+                                  >
+                                    {expandedNames.has(sub.$id) ? "收起" : "詳細"}
+                                  </Button>
+                                )}
+                              </div>
+                              {sub.account && (
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{sub.account}</span>
                               )}
                             </div>
                           </div>
@@ -402,6 +407,9 @@ export default function SubscriptionManagement() {
                                 </a>
                               ) : (
                                 <span className="text-gray-900 dark:text-gray-100 font-semibold">{truncateName(sub.name, sub.$id)}</span>
+                              )}
+                              {sub.account && (
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{sub.account}</span>
                               )}
                               {sub.name.length > 37 && (
                                 <Button
