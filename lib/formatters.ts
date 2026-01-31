@@ -64,7 +64,10 @@ const EXCHANGE_RATES: Record<string, number> = {
 /**
  * 將外幣轉換為台幣
  */
-export function convertToTWD(amount: number, currency: string = "TWD"): number {
+export function convertToTWD(amount: number | undefined, currency: string = "TWD"): number {
+  if (amount === undefined || amount === null) {
+    return 0;
+  }
   const rate = EXCHANGE_RATES[currency] || 1;
   return Math.round(amount * rate);
 }
@@ -72,7 +75,10 @@ export function convertToTWD(amount: number, currency: string = "TWD"): number {
 /**
  * 格式化金額（帶幣別轉換）
  */
-export function formatCurrencyWithExchange(amount: number, currency: string = "TWD"): string {
+export function formatCurrencyWithExchange(amount: number | undefined, currency: string = "TWD"): string {
+  if (amount === undefined || amount === null) {
+    return `NT$ 0`;
+  }
   const twdAmount = convertToTWD(amount, currency);
   if (currency === "TWD") {
     return `NT$ ${amount.toLocaleString()}`;
@@ -98,7 +104,10 @@ export function getCurrencySymbol(currency: string): string {
 /**
  * 格式化金額
  */
-export function formatCurrency(amount: number, currency = "NT$"): string {
+export function formatCurrency(amount: number | undefined, currency = "NT$"): string {
+  if (amount === undefined || amount === null) {
+    return `${currency} 0`;
+  }
   return `${currency} ${amount.toLocaleString()}`;
 }
 
