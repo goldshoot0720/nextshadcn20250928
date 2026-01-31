@@ -27,7 +27,7 @@ const INITIAL_FORM: CommonAccountFormData = {
 } as CommonAccountFormData;
 
 export default function CommonAccountManagement() {
-  const { items: accounts, loading, fetchAll, create, update, remove } = useCrud<CommonAccount>(API_ENDPOINTS.COMMON_ACCOUNT);
+  const { items: accounts, loading, fetchAll, create, update, remove, error } = useCrud<CommonAccount>(API_ENDPOINTS.COMMON_ACCOUNT);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -265,6 +265,12 @@ export default function CommonAccountManagement() {
           </Button>
         }
       />
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error.message}
+        </div>
+      )}
 
       {isFormOpen && (
         <div className="space-y-4">

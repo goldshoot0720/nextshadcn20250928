@@ -20,7 +20,7 @@ import { formatDate, formatDaysRemaining, formatCurrency } from "@/lib/formatter
 const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "" };
 
 export default function SubscriptionManagement() {
-  const { subscriptions, loading, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
+  const { subscriptions, loading, error, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
   const [form, setForm] = useState<SubscriptionFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -219,6 +219,12 @@ export default function SubscriptionManagement() {
           </div>
         }
       />
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       {canAskNotification && !notificationEnabled && (
         <div className="flex items-center justify-between rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">

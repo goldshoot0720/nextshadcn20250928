@@ -17,6 +17,9 @@ export function useSubscriptions() {
     try {
       const res = await fetch(API_ENDPOINTS.SUBSCRIPTION, { cache: "no-store" });
       if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error("Table subscription 不存在，請至「鋒兄設定」中初始化。");
+        }
         try {
           const data = await res.json();
           const serverMessage =

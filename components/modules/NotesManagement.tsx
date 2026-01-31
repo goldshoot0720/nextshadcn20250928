@@ -25,7 +25,7 @@ const INITIAL_FORM: ArticleFormData = {
 };
 
 export default function NotesManagement() {
-  const { articles, loading, stats, createArticle, updateArticle, deleteArticle } = useArticles();
+  const { articles, loading, error, stats, createArticle, updateArticle, deleteArticle } = useArticles();
   const [form, setForm] = useState<ArticleFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ArticleFormData>(INITIAL_FORM);
@@ -119,6 +119,12 @@ export default function NotesManagement() {
           <StatCard title="筆記總數" value={stats.total} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
         }
       />
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       <FormCard 
         title={

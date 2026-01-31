@@ -68,6 +68,11 @@ export async function fetchApi<T>(
   });
 
   if (!response.ok) {
+    if (response.status === 404) {
+      // Extract table name from URL
+      const tableName = url.split('/api/')[1]?.split('/')[0] || 'table';
+      throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
+    }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 

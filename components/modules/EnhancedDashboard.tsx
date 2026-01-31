@@ -21,8 +21,8 @@ interface EnhancedDashboardProps {
 }
 
 export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", onlyTitle = false }: EnhancedDashboardProps) {
-  const { stats, loading } = useDashboardStats();
-  const { stats: mediaStats, loading: mediaLoading } = useMediaStats();
+  const { stats, loading, error: dashboardError } = useDashboardStats();
+  const { stats: mediaStats, loading: mediaLoading, error: mediaError } = useMediaStats();
 
   useEffect(() => {
     if (onlyTitle) return; // Skip notification on home page if only title is shown
@@ -121,6 +121,8 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
     );
   }
 
+  const error = dashboardError || mediaError;
+
   if (loading || mediaLoading) return <FullPageLoading text="載入統計數據中..." />;
 
   const needsAttention = stats.foodsExpiring7Days > 0 || stats.subscriptionsExpiring3Days > 0 || stats.expiredFoods > 0 || stats.overdueSubscriptions > 0;
@@ -128,6 +130,12 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
   return (
     <div className="space-y-4 lg:space-y-6">
       <PageTitle title={title} description="鋒兄資訊管理系統 - 數據匯總與分析" />
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* 主要統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

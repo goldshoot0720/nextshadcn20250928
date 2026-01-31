@@ -5,6 +5,7 @@ export { useSubscriptions, getSubscriptionExpiryInfo } from "./useSubscriptions"
 export { useImages, type ImageData } from "./useImages";
 export { useVideos, type VideoData } from "./useVideos";
 export { useMusic, type MusicData } from "./useMusic";
+export { useBanks } from "./useBanks";
 export { useDashboardStats } from "./useDashboardStats";
 export { useVideoCache } from "./useVideoCache";
 export { useApi, useCrud, fetchApi } from "./useApi";

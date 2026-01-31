@@ -27,7 +27,12 @@ export function useVideos() {
     setError(null);
     try {
       const response = await fetch(API_ENDPOINTS.VIDEO);
-      if (!response.ok) throw new Error("載入失敗");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Table video 不存在，請至「鋒兄設定」中初始化。");
+        }
+        throw new Error("載入失敗");
+      }
       
       const data = await response.json();
       // Ensure data is an array

@@ -74,17 +74,31 @@ export function useDashboardStats() {
     overdueSubscriptionsList: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStats() {
+      setError(null);
       try {
         // 獲取食品數據
         const foodsRes = await fetch("/api/food", { cache: "no-store" });
+        if (!foodsRes.ok) {
+          if (foodsRes.status === 404) {
+            throw new Error("Table food 不存在，請至「鋒兄設定」中初始化。");
+          }
+          throw new Error("獲取食品數據失敗");
+        }
         const foodsData = await foodsRes.json();
         const foods: Food[] = Array.isArray(foodsData) ? foodsData : [];
 
         // 獲取訂閱數據
         const subsRes = await fetch("/api/subscription", { cache: "no-store" });
+        if (!subsRes.ok) {
+          if (subsRes.status === 404) {
+            throw new Error("Table subscription 不存在，請至「鋒兄設定」中初始化。");
+          }
+          throw new Error("獲取訂閱數據失敗");
+        }
         const subsData = await subsRes.json();
         const subscriptions: Subscription[] = Array.isArray(subsData) ? subsData : [];
 
@@ -230,6 +244,7 @@ export function useDashboardStats() {
         });
       } catch (error) {
         console.error("獲取統計數據失敗:", error);
+        setError(error instanceof Error ? error.message : "獲取統計數據失敗");
       } finally {
         setLoading(false);
       }
@@ -243,5 +258,5 @@ export function useDashboardStats() {
     return () => clearInterval(interval);
   }, []);
 
-  return { stats, loading };
+  return { stats, loading, error };
 }

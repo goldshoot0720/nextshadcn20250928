@@ -15,7 +15,7 @@ import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 
 export default function ImageGallery() {
-  const { images, loading, loadImages } = useImages();
+  const { images, loading, error, loadImages } = useImages();
   const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingImage, setEditingImage] = useState<ImageData | null>(null);
@@ -57,6 +57,13 @@ export default function ImageGallery() {
       />
 
       <ImageStats images={images} />
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={loadImages} />
       
       {selectedImage && (

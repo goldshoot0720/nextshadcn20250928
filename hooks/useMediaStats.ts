@@ -18,9 +18,9 @@ interface MediaStats {
 }
 
 export function useMediaStats() {
-  const { images, loading: imagesLoading } = useImages();
-  const { videos, loading: videosLoading } = useVideos();
-  const { music, loading: musicLoading } = useMusic();
+  const { images, loading: imagesLoading, error: imagesError } = useImages();
+  const { videos, loading: videosLoading, error: videosError } = useVideos();
+  const { music, loading: musicLoading, error: musicError } = useMusic();
   
   const [stats, setStats] = useState<MediaStats>({
     totalImages: 0,
@@ -35,6 +35,7 @@ export function useMediaStats() {
   });
 
   const loading = imagesLoading || videosLoading || musicLoading;
+  const error = imagesError || videosError || musicError;
 
   useEffect(() => {
     // Calculate storage sizes (estimated based on file count since we don't have actual file sizes in the data)
@@ -63,5 +64,5 @@ export function useMediaStats() {
     });
   }, [images, videos, music]);
 
-  return { stats, loading };
+  return { stats, loading, error };
 }

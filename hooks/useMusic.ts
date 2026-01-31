@@ -29,7 +29,12 @@ export function useMusic() {
     setError(null);
     try {
       const response = await fetch(API_ENDPOINTS.MUSIC);
-      if (!response.ok) throw new Error("載入失敗");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Table music 不存在，請至「鋒兄設定」中初始化。");
+        }
+        throw new Error("載入失敗");
+      }
       
       const data = await response.json();
       // Ensure data is an array

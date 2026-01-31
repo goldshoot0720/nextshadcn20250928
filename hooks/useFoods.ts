@@ -16,7 +16,12 @@ export function useFoods() {
     setError(null);
     try {
       const res = await fetch(API_ENDPOINTS.FOOD, { cache: "no-store" });
-      if (!res.ok) throw new Error("載入失敗");
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error("Table food 不存在，請至「鋒兄設定」中初始化。");
+        }
+        throw new Error("載入失敗");
+      }
       
       const resData = await res.json();
       let data: Food[] = Array.isArray(resData) ? resData : [];

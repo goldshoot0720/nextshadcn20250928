@@ -153,6 +153,34 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
+// 銀行相關類型
+export interface Bank {
+  $id: string;
+  name: string;
+  deposit?: number;
+  site?: string;
+  address?: string;
+  withdrawals?: number;
+  transfer?: number;
+  activity?: string;
+  card?: string;
+  account?: string;
+  $createdAt: string;
+  $updatedAt: string;
+}
+
+export interface BankFormData {
+  name: string;
+  deposit?: number;
+  site?: string;
+  address?: string;
+  withdrawals?: number;
+  transfer?: number;
+  activity?: string;
+  card?: string;
+  account?: string;
+}
+
 // 常用帳號類型
 export interface CommonAccount {
   $id: string;
