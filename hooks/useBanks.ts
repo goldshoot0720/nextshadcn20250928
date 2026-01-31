@@ -17,7 +17,11 @@ export function useBanks() {
       const res = await fetch('/api/bank', { cache: "no-store" });
       if (!res.ok) {
         if (res.status === 404) {
-          throw new Error("Table bank 不存在，請至「鋒兄設定」中初始化。");
+          // 檢查是否真的是 collection not found
+          const errorData = await res.json().catch(() => ({}));
+          if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
+            throw new Error("Table bank 不存在，請至「鋒兄設定」中初始化。");
+          }
         }
         throw new Error("載入失敗");
       }

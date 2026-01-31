@@ -69,13 +69,17 @@ export async function fetchApi<T>(
 
   if (!response.ok) {
     if (response.status === 404) {
-      // Extract table name from URL
-      let tableName = url.split('/api/')[1]?.split('/')[0] || 'table';
-      // Convert common-account to commonaccount
-      if (tableName === 'common-account') {
-        tableName = 'commonaccount';
+      // 檢查是否真的是 collection not found
+      const errorData = await response.json().catch(() => ({}));
+      if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
+        // Extract table name from URL
+        let tableName = url.split('/api/')[1]?.split('/')[0] || 'table';
+        // Convert common-account to commonaccount
+        if (tableName === 'common-account') {
+          tableName = 'commonaccount';
+        }
+        throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
       }
-      throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
     }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
