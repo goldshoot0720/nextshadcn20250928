@@ -114,6 +114,7 @@ export default function MusicManagement() {
       {showFormModal && (
         <MusicFormModal
           music={editingMusic}
+          existingMusic={music}
           onClose={() => {
             setShowFormModal(false);
             setEditingMusic(null);
@@ -214,7 +215,7 @@ function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProp
 }
 
 // 音樂表單模態框
-function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null; onClose: () => void; onSuccess: () => void }) {
+function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: MusicData | null; existingMusic: MusicData[]; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     name: music?.name || '',
     file: music?.file || '',
@@ -232,8 +233,30 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
   const [previewLoading, setPreviewLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
+  const [duplicateWarning, setDuplicateWarning] = useState<string>(''); // 重複警告
+  const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string>('');
+  const [coverPreviewLoading, setCoverPreviewLoading] = useState(false);
+  const [coverUploadProgress, setCoverUploadProgress] = useState(0);
+  const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 計算檔案 SHA-256 hash
+  const calculateFileHash = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    } catch (error) {
+      console.error('Hash calculation error:', error);
+      // 如果計算失敗，使用備用方案
+      return `fallback_${file.name}_${file.size}_${file.lastModified}`;
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -255,11 +278,26 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
     setPreviewLoading(true);
     setUploadStatus('idle');
     setUploadProgress(0);
+    setDuplicateWarning(''); // 清除之前的警告
     
     // 儲存檔案並產生預覽 URL
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+    
+    // 計算檔案 hash
+    const hash = await calculateFileHash(file);
+    setFileHash(hash);
+    setFormData({ ...formData, hash });
+    
+    // 檢查是否有重複的 hash
+    const duplicateMusic = existingMusic.find(m => 
+      m.hash === hash && (!music || m.$id !== music.$id)
+    );
+    
+    if (duplicateMusic) {
+      setDuplicateWarning(`警告：此音樂與「${duplicateMusic.name}」相同，請勿重複上傳！`);
+    }
     
     // 模擬預覽載入完成
     setTimeout(() => setPreviewLoading(false), 300);
@@ -304,10 +342,87 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
     }
   };
 
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('檔案大小不能超過 50MB');
+      return;
+    }
+
+    // 檢查檔案類型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
+      return;
+    }
+
+    // 顯示預覽載入狀態
+    setCoverPreviewLoading(true);
+    setCoverUploadStatus('idle');
+    setCoverUploadProgress(0);
+    
+    // 儲存檔案並產生預覽 URL
+    setSelectedCoverFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setCoverPreviewUrl(objectUrl);
+    
+    // 模擬預覽載入完成
+    setTimeout(() => setCoverPreviewLoading(false), 300);
+  };
+
+  const uploadCoverFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
+    setCoverUploadStatus('uploading');
+    setCoverUploadProgress(0);
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    // 模擬上傳進度
+    const progressInterval = setInterval(() => {
+      setCoverUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
+    try {
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      clearInterval(progressInterval);
+      setCoverUploadProgress(100);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '封面圖上傳失敗');
+      }
+
+      const data = await response.json();
+      setCoverUploadStatus('success');
+      return { url: data.url, fileId: data.fileId || '' };
+    } catch (error) {
+      clearInterval(progressInterval);
+      setCoverUploadStatus('error');
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       alert('請輸入音樂名稱');
+      return;
+    }
+
+    // 檢查是否有重複
+    if (duplicateWarning) {
+      alert('此音樂與既有音樂重複，無法上傳！請選擇其他音樂。');
       return;
     }
 
@@ -319,7 +434,17 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
       if (selectedFile) {
         const { url, fileId } = await uploadFileToAppwrite(selectedFile);
         finalFormData.file = url;
-        finalFormData.hash = fileId;
+        // 使用已計算的 hash，如果沒有則使用 fileId
+        finalFormData.hash = fileHash || fileId;
+      } else if (!music && !formData.hash) {
+        // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
+        finalFormData.hash = `no_file_${Date.now()}`;
+      }
+
+      // 如果有選擇封面圖檔案，上傳到 Appwrite
+      if (selectedCoverFile) {
+        const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
+        finalFormData.cover = url;
       }
 
       const url = music ? `${API_ENDPOINTS.MUSIC}/${music.$id}` : API_ENDPOINTS.MUSIC;
@@ -402,6 +527,13 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
                   <audio src={previewUrl} controls className="w-full" />
                 </div>
               )}
+              {duplicateWarning && (
+                <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                    {duplicateWarning}
+                  </p>
+                </div>
+              )}
               {uploadStatus === 'uploading' && (
                 <div className="mt-2">
                   <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -463,14 +595,61 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              封面圖片 URL
+              封面圖 URL 或上傳檔案
             </label>
-            <Input
-              value={formData.cover}
-              onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
-              placeholder="https://example.com/cover.jpg"
-              maxLength={150}
-            />
+            <div className="space-y-3">
+              <Input
+                value={formData.cover}
+                onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
+                placeholder="https://example.com/cover.jpg"
+                disabled={submitting}
+                maxLength={150}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
+                <label className="flex-1">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB)'}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleCoverFileSelect}
+                    disabled={submitting || coverPreviewLoading}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {coverPreviewUrl && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">封面圖預覽：</p>
+                  <img src={coverPreviewUrl} alt="Cover Preview" className="max-h-32 rounded-lg border border-gray-200 dark:border-gray-700" />
+                </div>
+              )}
+              {coverUploadStatus === 'uploading' && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span>上傳封面圖至 Appwrite...</span>
+                    <span>{coverUploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${coverUploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {coverUploadStatus === 'success' && (
+                <p className="text-sm text-green-600 dark:text-green-400">✓ 封面圖上傳成功</p>
+              )}
+              {coverUploadStatus === 'error' && (
+                <p className="text-sm text-red-600 dark:text-red-400">✗ 封面圖上傳失敗</p>
+              )}
+            </div>
           </div>
 
           <div>
@@ -499,12 +678,13 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Hash
+                Hash (程式自動生成)
               </label>
               <Input
                 value={formData.hash}
-                onChange={(e) => setFormData({ ...formData, hash: e.target.value })}
-                placeholder="音樂 hash 值"
+                disabled
+                placeholder="上傳檔案後自動生成"
+                className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
               />
             </div>
           </div>
@@ -513,7 +693,11 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
             <Button type="button" onClick={onClose} className="flex-1 bg-gray-500 hover:bg-gray-600 rounded-xl">
               取消
             </Button>
-            <Button type="submit" disabled={submitting} className="flex-1 bg-purple-500 hover:bg-purple-600 rounded-xl">
+            <Button 
+              type="submit" 
+              disabled={submitting || !!duplicateWarning} 
+              className="flex-1 bg-purple-500 hover:bg-purple-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {submitting ? '處理中...' : (music ? '更新' : '新增')}
             </Button>
           </div>
