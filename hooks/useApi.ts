@@ -72,17 +72,18 @@ export async function fetchApi<T>(
 
   if (!response.ok) {
     if (response.status === 404) {
-      // 檢查是否真的是 collection not found
+      // 讀取錯誤訊息
       const errorData = await response.json().catch(() => ({}));
-      if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
-        // Extract table name from URL
-        let tableName = url.split('/api/')[1]?.split('/')[0] || 'table';
-        // Convert common-account to commonaccount
-        if (tableName === 'common-account') {
-          tableName = 'commonaccount';
-        }
-        throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
+      if (errorData.error) {
+        // 直接使用 API 回傳的錯誤訊息
+        throw new Error(errorData.error);
       }
+      // 如果沒有錯誤訊息，嘗試從 URL 提取 table 名稱
+      let tableName = url.split('/api/')[1]?.split('/')[0]?.split('?')[0] || 'table';
+      if (tableName === 'common-account') {
+        tableName = 'commonaccount';
+      }
+      throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
     }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
