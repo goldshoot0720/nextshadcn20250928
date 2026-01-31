@@ -4,11 +4,12 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const apiKey = process.env.APPWRITE_API_KEY;
-  const bucketId = process.env.APPWRITE_BUCKET_ID;
+function createAppwrite(config) {
+  // Use config from request headers (user input) or fallback to env
+  const endpoint = config?.endpoint || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = config?.projectId || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const apiKey = config?.apiKey || process.env.APPWRITE_API_KEY;
+  const bucketId = config?.bucketId || process.env.APPWRITE_BUCKET_ID;
 
   if (!endpoint || !projectId || !apiKey || !bucketId) {
     throw new Error("Appwrite configuration is missing");
@@ -21,13 +22,21 @@ function createAppwrite() {
 
   const storage = new sdk.Storage(client);
 
-  return { storage, bucketId };
+  return { storage, bucketId, endpoint, projectId };
 }
 
 // POST /api/upload-music - Upload audio file to Appwrite Storage
 export async function POST(request) {
   try {
-    const { storage, bucketId } = createAppwrite();
+    // Get Appwrite config from headers (user input from localStorage)
+    const appwriteConfig = {
+      endpoint: request.headers.get('x-appwrite-endpoint'),
+      projectId: request.headers.get('x-appwrite-project'),
+      apiKey: request.headers.get('x-appwrite-key'),
+      bucketId: request.headers.get('x-appwrite-bucket'),
+    };
+
+    const { storage, bucketId, endpoint, projectId } = createAppwrite(appwriteConfig);
     
     const formData = await request.formData();
     const file = formData.get('file');
@@ -62,7 +71,7 @@ export async function POST(request) {
     );
 
     // 獲取檔案 URL
-    const fileUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${uploadedFile.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+    const fileUrl = `${endpoint}/storage/buckets/${bucketId}/files/${uploadedFile.$id}/view?project=${projectId}`;
 
     return NextResponse.json({
       success: true,

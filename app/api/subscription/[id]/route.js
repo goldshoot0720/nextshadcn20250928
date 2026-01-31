@@ -51,11 +51,12 @@ export async function PUT(req, context) {
     };
 
     // 只有在提供值時才添加可選欄位
-    if (nextdate !== undefined) bodyData.nextdate = nextdate || "";  // 允許空字串
-    if (site !== undefined) bodyData.site = site || "";  // 允許空字串
-    if (note !== undefined) bodyData.note = note || "";  // 允許空字串
-    if (account !== undefined) bodyData.account = account || "";  // 允許空字串
-    if (currency !== undefined) bodyData.currency = currency || "";  // 允許空字串
+    // 日期欄位：空字串轉為 null（Appwrite datetime 不接受空字串）
+    if (nextdate !== undefined) bodyData.nextdate = nextdate || null;
+    if (site !== undefined) bodyData.site = site || "";
+    if (note !== undefined) bodyData.note = note || "";
+    if (account !== undefined) bodyData.account = account || "";
+    if (currency !== undefined) bodyData.currency = currency || "";
 
     const res = await databases.updateDocument(
       databaseId,

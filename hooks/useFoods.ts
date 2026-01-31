@@ -5,17 +5,50 @@ import { Food, FoodFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatDate, getDaysFromToday, getExpiryStatus } from "@/lib/formatters";
 
+// 全域快取
+let cachedFoods: Food[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useFoods() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入食品資料
-  const loadFoods = useCallback(async () => {
+  // 從localStorage 讀取上次 CRUD 的時間戳
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    const accountSwitched = localStorage.getItem('appwrite_account_switched');
+    if (accountSwitched) return accountSwitched;
+    return localStorage.getItem('foods_refresh_key') || '';
+  };
+
+  const setRefreshKey = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('foods_refresh_key', Date.now().toString());
+  };
+
+  // 載入食品資料（使用快取）
+  const loadFoods = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    const accountSwitched = typeof window !== 'undefined' ? localStorage.getItem('appwrite_account_switched') : null;
+      
+    if (accountSwitched && cacheTimestamp < parseInt(accountSwitched)) {
+      cachedFoods = null;
+      forceRefresh = true;
+    }
+      
+    // 如果有快取且沒有 CRUD 操作，直接使用快取
+    if (!forceRefresh && cachedFoods && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setFoods(cachedFoods);
+      setLoading(false);
+      return cachedFoods;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_ENDPOINTS.FOOD, { cache: "no-store" });
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const res = await fetch(API_ENDPOINTS.FOOD + cacheParam);
       if (!res.ok) {
         if (res.status === 404) {
           // 檢查是否真的是 collection not found
@@ -33,6 +66,11 @@ export function useFoods() {
       data = data.sort(
         (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
       );
+      
+      // 更新快取
+      cachedFoods = data;
+      cacheTimestamp = Date.now();
+      
       setFoods(data);
       return data;
     } catch (err) {
@@ -62,6 +100,8 @@ export function useFoods() {
           (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
         );
       });
+      cachedFoods = null;
+      setRefreshKey();
       return newFood;
     } catch (err) {
       console.error("新增食品失敗:", err);
@@ -86,6 +126,8 @@ export function useFoods() {
           (a, b) => new Date(a.todate).getTime() - new Date(b.todate).getTime()
         );
       });
+      cachedFoods = null;
+      setRefreshKey();
       return updatedFood;
     } catch (err) {
       console.error("更新食品失敗:", err);
@@ -100,6 +142,8 @@ export function useFoods() {
       if (!res.ok) throw new Error("刪除失敗");
       
       setFoods((prev) => prev.filter((f) => f.$id !== id));
+      cachedFoods = null;
+      setRefreshKey();
       return true;
     } catch (err) {
       console.error("刪除食品失敗:", err);

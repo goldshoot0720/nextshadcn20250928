@@ -13,6 +13,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
+import { getAppwriteHeaders } from "@/lib/utils";
 
 export default function MusicManagement() {
   const { music, loading, error, stats, loadMusic } = useMusic();
@@ -324,6 +325,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     try {
       const response = await fetch('/api/upload-music', {
         method: 'POST',
+        headers: getAppwriteHeaders(),
         body: formDataUpload,
       });
 
@@ -395,6 +397,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     try {
       const response = await fetch('/api/upload-image', {
         method: 'POST',
+        headers: getAppwriteHeaders(),
         body: formDataUpload,
       });
 

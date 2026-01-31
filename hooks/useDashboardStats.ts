@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { convertToTWD } from "@/lib/formatters";
 
 interface Food {
   $id: string;
@@ -16,6 +17,7 @@ interface Subscription {
   site: string;
   price: number;
   nextdate: string;
+  currency?: string;
 }
 
 interface FoodDetail {
@@ -58,6 +60,10 @@ interface DashboardStats {
   overdueSubscriptionsList: SubscriptionDetail[];
 }
 
+// 全域快变
+let cachedStats: DashboardStats | null = null;
+let cacheTimestamp: number = 0;
+
 export function useDashboardStats() {
   const [stats, setStats] = useState<DashboardStats>({
     totalFoods: 0,
@@ -84,8 +90,34 @@ export function useDashboardStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    const accountSwitched = localStorage.getItem('appwrite_account_switched');
+    if (accountSwitched) return accountSwitched;
+    return localStorage.getItem('dashboard_refresh_key') || '';
+  };
+
+  const setRefreshKeyValue = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('dashboard_refresh_key', Date.now().toString());
+  };
+
   useEffect(() => {
     async function fetchStats() {
+      const storedRefreshKey = getRefreshKey();
+      const accountSwitched = typeof window !== 'undefined' ? localStorage.getItem('appwrite_account_switched') : null;
+        
+      if (accountSwitched && cacheTimestamp < parseInt(accountSwitched)) {
+        cachedStats = null;
+      }
+        
+      // 如果有快取且沒有 CRUD 操作，直接使用快变
+      if (cachedStats && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+        setStats(cachedStats);
+        setLoading(false);
+        return;
+      }
+
       setError(null);
       try {
         const errors: string[] = [];
@@ -102,10 +134,14 @@ export function useDashboardStats() {
           { name: 'video', api: '/api/video', label: 'Table video' },
         ];
 
+        // 使用快取，但在 CRUD 操作後會透過 refreshKey 重新取得
+        const refreshKey = getRefreshKey();
+        const cacheParam = refreshKey ? `?t=${refreshKey}` : '';
+
         // 並行檢查所有表
         const checkPromises = tablesToCheck.map(async (table) => {
           try {
-            const res = await fetch(table.api, { cache: "no-store" });
+            const res = await fetch(table.api + cacheParam);
             if (res.status === 404) {
               return `${table.label} 不存在，請至「鋒兄設定」中初始化。`;
             }
@@ -122,40 +158,40 @@ export function useDashboardStats() {
           throw new Error(tableErrors.join('\n'));
         }
         
-        // 獲取食品數據
-        const foodsRes = await fetch("/api/food", { cache: "no-store" });
+        // 獲取食品數據（使用快取）
+        const foodsRes = await fetch("/api/food" + cacheParam);
         let foods: Food[] = [];
         if (foodsRes.ok) {
           const foodsData = await foodsRes.json();
           foods = Array.isArray(foodsData) ? foodsData : [];
         }
 
-        // 獲取訂閱數據
-        const subsRes = await fetch("/api/subscription", { cache: "no-store" });
+        // 獲取訂閱數據（使用快取）
+        const subsRes = await fetch("/api/subscription" + cacheParam);
         let subscriptions: Subscription[] = [];
         if (subsRes.ok) {
           const subsData = await subsRes.json();
           subscriptions = Array.isArray(subsData) ? subsData : [];
         }
 
-        // 獲取筆記數據
-        const articlesRes = await fetch("/api/article", { cache: "no-store" });
+        // 獲取筆記數據（使用快取）
+        const articlesRes = await fetch("/api/article" + cacheParam);
         let articles: any[] = [];
         if (articlesRes.ok) {
           const articlesData = await articlesRes.json();
           articles = Array.isArray(articlesData) ? articlesData : [];
         }
 
-        // 獲取常用帳號數據
-        const commonAccountsRes = await fetch("/api/common-account", { cache: "no-store" });
+        // 獲取常用帳號數據（使用快取）
+        const commonAccountsRes = await fetch("/api/common-account" + cacheParam);
         let commonAccounts: any[] = [];
         if (commonAccountsRes.ok) {
           const commonAccountsData = await commonAccountsRes.json();
           commonAccounts = Array.isArray(commonAccountsData) ? commonAccountsData : [];
         }
 
-        // 獲取銀行數據
-        const banksRes = await fetch("/api/bank", { cache: "no-store" });
+        // 獲取銀行數據（使用快取）
+        const banksRes = await fetch("/api/bank" + cacheParam);
         let banks: any[] = [];
         if (banksRes.ok) {
           const banksData = await banksRes.json();
@@ -220,10 +256,11 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        // 計算訂閱統計和詳細列表
+        // 計算訂閱統計和詳細列表（排除無日期的訂閱）
         const subsToProcess = Array.isArray(subscriptions) ? subscriptions : [];
         const subscriptionsExpiring3DaysList: SubscriptionDetail[] = subsToProcess
           .filter(sub => {
+            if (!sub.nextdate) return false; // 排除無日期
             const nextDate = new Date(sub.nextdate);
             return nextDate <= threeDaysFromNow && nextDate >= today;
           })
@@ -243,6 +280,7 @@ export function useDashboardStats() {
 
         const subscriptionsExpiring7DaysList: SubscriptionDetail[] = subsToProcess
           .filter(sub => {
+            if (!sub.nextdate) return false; // 排除無日期
             const nextDate = new Date(sub.nextdate);
             return nextDate <= sevenDaysFromNow && nextDate >= today;
           })
@@ -262,6 +300,7 @@ export function useDashboardStats() {
 
         const overdueSubscriptionsList: SubscriptionDetail[] = subsToProcess
           .filter(sub => {
+            if (!sub.nextdate) return false; // 排除無日期
             const nextDate = new Date(sub.nextdate);
             return nextDate < today;
           })
@@ -279,15 +318,15 @@ export function useDashboardStats() {
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        const totalMonthlyFee = subsToProcess.reduce((total, sub) => total + sub.price, 0);
+        const totalMonthlyFee = subsToProcess.reduce((total, sub) => total + convertToTWD(sub.price, sub.currency), 0);
         
-        // 計算年費總計 (所有訂閱服務費用總和)
-        const totalAnnualFee = subsToProcess.reduce((total, sub) => total + sub.price, 0);
+        // 計算年費總計 (所有訂閱服務費用總和，換算成台幣)
+        const totalAnnualFee = subsToProcess.reduce((total, sub) => total + convertToTWD(sub.price, sub.currency), 0);
         
         // 計算銀行總存款
         const totalBankDeposit = banks.reduce((total, bank) => total + (bank.deposit || 0), 0);
 
-        setStats({
+        const newStats = {
           totalFoods: foodsToProcess.length,
           totalSubscriptions: subsToProcess.length,
           totalArticles: articles.length,
@@ -308,7 +347,13 @@ export function useDashboardStats() {
           subscriptionsExpiring3DaysList,
           subscriptionsExpiring7DaysList,
           overdueSubscriptionsList,
-        });
+        };
+              
+        // 更新快取
+        cachedStats = newStats;
+        cacheTimestamp = Date.now();
+              
+        setStats(newStats);
       } catch (error) {
         console.error("獲取統計數據失敗:", error);
         setError(error instanceof Error ? error.message : "獲取統計數據失敗");
@@ -318,12 +363,12 @@ export function useDashboardStats() {
     }
 
     fetchStats();
-    
-    // 每分鐘更新一次數據
-    const interval = setInterval(fetchStats, 60000);
-    
-    return () => clearInterval(interval);
   }, []);
 
-  return { stats, loading, error };
+  // 提供一個函數供 CRUD 操作後呼叫，強制重新取得數據
+  const refresh = () => {
+    setRefreshKeyValue();
+  };
+
+  return { stats, loading, error, refresh };
 }

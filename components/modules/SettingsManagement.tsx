@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus, X, CheckCircle2 } from "lucide-react";
+import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus, X, CheckCircle2, Key } from "lucide-react";
 import { Button, DataCard, SectionHeader } from "@/components/ui";
+import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/providers/theme-provider";
+import { clearAllCaches, getAppwriteConfig } from "@/lib/utils";
 
 interface CollectionStats {
   name: string;
@@ -37,9 +39,86 @@ export default function SettingsManagement() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<string | null>(null);
   const [progress, setProgress] = useState<CreateProgress | null>(null);
+  const [appwriteConfig, setAppwriteConfig] = useState({
+    endpoint: '',
+    projectId: '',
+    databaseId: '',
+    bucketId: '',
+    apiKey: ''
+  });
+  const [configSaved, setConfigSaved] = useState(false);
+
+  // 載入 Appwrite 設定
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = {
+      endpoint: localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT') || '',
+      projectId: localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID') || '',
+      databaseId: localStorage.getItem('APPWRITE_DATABASE_ID') || '',
+      bucketId: localStorage.getItem('APPWRITE_BUCKET_ID') || '',
+      apiKey: localStorage.getItem('APPWRITE_API_KEY') || ''
+    };
+    setAppwriteConfig(saved);
+  }, []);
+
+  const handleSaveConfig = () => {
+    if (typeof window === 'undefined') return;
+    
+    // 驗證所有欄位已填寫
+    if (!appwriteConfig.endpoint || !appwriteConfig.projectId || !appwriteConfig.databaseId || !appwriteConfig.bucketId || !appwriteConfig.apiKey) {
+      alert('⚠️ 請填寫所有 Appwrite 設定欄位');
+      return;
+    }
+
+    // 儲存新設定
+    localStorage.setItem('NEXT_PUBLIC_APPWRITE_ENDPOINT', appwriteConfig.endpoint);
+    localStorage.setItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID', appwriteConfig.projectId);
+    localStorage.setItem('APPWRITE_DATABASE_ID', appwriteConfig.databaseId);
+    localStorage.setItem('APPWRITE_BUCKET_ID', appwriteConfig.bucketId);
+    localStorage.setItem('APPWRITE_API_KEY', appwriteConfig.apiKey);
+    
+    // 清除所有快取
+    clearAllCaches();
+    
+    setConfigSaved(true);
+    setTimeout(() => setConfigSaved(false), 2000);
+    
+    // 重新載入資料庫統計
+    setLoading(true);
+    setTimeout(() => {
+      fetchStats();
+    }, 100);
+    
+    alert('✅ Appwrite 帳號設定已儲存！\n所有快取已清除。\n\n請重新整理網頁套用新設定。');
+  };
+
+  const handleCopyEnvTemplate = () => {
+    const envTemplate = `# Appwrite Configuration
+NEXT_PUBLIC_APPWRITE_ENDPOINT=${appwriteConfig.endpoint}
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=${appwriteConfig.projectId}
+APPWRITE_DATABASE_ID=${appwriteConfig.databaseId}
+APPWRITE_BUCKET_ID=${appwriteConfig.bucketId}
+APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
+    
+    navigator.clipboard.writeText(envTemplate).then(() => {
+      alert('✅ .env 設定已複製到剪貼簿！\n\n請執行以下步驟：\n1. 在專案根目錄建立或開啟 .env 檔案\n2. 貼上複製的內容\n3. 儲存檔案\n4. 重新啟動開發伺服器 (npm run dev)');
+    }).catch(() => {
+      alert('複製失敗，請手動複製以下內容：\n\n' + envTemplate);
+    });
+  };
 
   const fetchStats = () => {
-    fetch("/api/database-stats", { cache: "no-store" })
+    // 添加 Appwrite 配置參數到 URL
+    const config = getAppwriteConfig();
+    const params = new URLSearchParams();
+    if (config.endpoint) params.set('_endpoint', config.endpoint);
+    if (config.projectId) params.set('_project', config.projectId);
+    if (config.databaseId) params.set('_database', config.databaseId);
+    if (config.apiKey) params.set('_key', config.apiKey);
+    
+    const url = `/api/database-stats?${params.toString()}`;
+    
+    fetch(url, { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
         setDbStats(data);
@@ -152,7 +231,92 @@ export default function SettingsManagement() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 資料庫欄位統計 - 第一欄位 */}
+        {/* Appwrite 帳號切換 - 第一欄位 */}
+        <DataCard className="p-6 md:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+              <Key size={20} className="text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Appwrite 帳號切換</h3>
+              <p className="text-xs text-gray-400">基於使用者輸入資訊，儲存於瀏覽器 localStorage</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">NEXT_PUBLIC_APPWRITE_ENDPOINT</label>
+              <Input 
+                type="text" 
+                placeholder="https://fra.cloud.appwrite.io/v1"
+                value={appwriteConfig.endpoint}
+                onChange={(e) => setAppwriteConfig({...appwriteConfig, endpoint: e.target.value})}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">NEXT_PUBLIC_APPWRITE_PROJECT_ID</label>
+              <Input 
+                type="text" 
+                placeholder="Project ID"
+                value={appwriteConfig.projectId}
+                onChange={(e) => setAppwriteConfig({...appwriteConfig, projectId: e.target.value})}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">APPWRITE_DATABASE_ID</label>
+              <Input 
+                type="text" 
+                placeholder="Database ID"
+                value={appwriteConfig.databaseId}
+                onChange={(e) => setAppwriteConfig({...appwriteConfig, databaseId: e.target.value})}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">APPWRITE_BUCKET_ID</label>
+              <Input 
+                type="text" 
+                placeholder="Bucket ID"
+                value={appwriteConfig.bucketId}
+                onChange={(e) => setAppwriteConfig({...appwriteConfig, bucketId: e.target.value})}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">APPWRITE_API_KEY</label>
+              <Input 
+                type="password" 
+                placeholder="API Key"
+                value={appwriteConfig.apiKey}
+                onChange={(e) => setAppwriteConfig({...appwriteConfig, apiKey: e.target.value})}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            <Button 
+              onClick={handleSaveConfig} 
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {configSaved ? (
+                <><CheckCircle2 size={16} /> 已儲存，請重新整理網頁</>
+              ) : (
+                <>🔄 儲存 Appwrite 設定</>
+              )}
+            </Button>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                <span className="text-base">💡</span>
+                <span>
+                  <strong>動態切換：</strong>設定儲存後，重新整理網頁即可套用新的 Appwrite 帳號。所有功能（包含檔案上傳）都會使用新設定。
+                </span>
+              </p>
+            </div>
+          </div>
+        </DataCard>
+
+        {/* 資料庫欄位統計 - 第二欄位 */}
         <DataCard className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
@@ -171,10 +335,10 @@ export default function SettingsManagement() {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
                 <span className="text-gray-600 dark:text-gray-300">總欄位數</span>
-                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns}</span>
+                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns || 0}</span>
               </div>
               <div className="space-y-2 text-sm">
-                {dbStats.collections.map(col => {
+                {dbStats.collections && dbStats.collections.map(col => {
                   // 綠燈: 有資料, 黃燈: 無資料, 紅燈: Table不存在
                   const statusColor = col.error 
                     ? "bg-red-500" 

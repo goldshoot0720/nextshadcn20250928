@@ -4,17 +4,40 @@ import { useState, useEffect, useCallback } from "react";
 import { Article, ArticleFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 
+// 全域快取
+let cachedArticles: Article[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useArticles() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入文章資料
-  const loadArticles = useCallback(async () => {
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('articles_refresh_key') || '';
+  };
+
+  const setRefreshKey = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('articles_refresh_key', Date.now().toString());
+  };
+
+  // 載入文章資料（使用快取）
+  const loadArticles = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    
+    if (!forceRefresh && cachedArticles && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setArticles(cachedArticles);
+      setLoading(false);
+      return cachedArticles;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_ENDPOINTS.ARTICLE, { cache: "no-store" });
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const res = await fetch(API_ENDPOINTS.ARTICLE + cacheParam);
       if (!res.ok) {
         if (res.status === 404) {
           // 檢查是否真的是 collection not found
@@ -32,6 +55,10 @@ export function useArticles() {
       data = data.sort(
         (a, b) => new Date(b.newDate).getTime() - new Date(a.newDate).getTime()
       );
+      
+      cachedArticles = data;
+      cacheTimestamp = Date.now();
+      
       setArticles(data);
       return data;
     } catch (err) {
@@ -88,6 +115,8 @@ export function useArticles() {
           (a, b) => new Date(b.newDate).getTime() - new Date(a.newDate).getTime()
         );
       });
+      cachedArticles = null;
+      setRefreshKey();
       return newArticle;
     } catch (err) {
       console.error("新增文章失敗:", err);
@@ -139,6 +168,8 @@ export function useArticles() {
           (a, b) => new Date(b.newDate).getTime() - new Date(a.newDate).getTime()
         );
       });
+      cachedArticles = null;
+      setRefreshKey();
       return updatedArticle;
     } catch (err) {
       console.error("更新文章失敗:", err);
@@ -153,6 +184,8 @@ export function useArticles() {
       if (!res.ok) throw new Error("刪除失敗");
       
       setArticles((prev) => prev.filter((a) => a.$id !== id));
+      cachedArticles = null;
+      setRefreshKey();
       return true;
     } catch (err) {
       console.error("刪除文章失敗:", err);

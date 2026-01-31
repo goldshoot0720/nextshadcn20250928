@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { VideoItem } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
+import { getAppwriteHeaders } from "@/lib/utils";
 
 
 
@@ -454,6 +455,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     try {
       const response = await fetch('/api/upload-video', {
         method: 'POST',
+        headers: getAppwriteHeaders(),
         body: formDataUpload,
       });
 
@@ -525,6 +527,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     try {
       const response = await fetch('/api/upload-image', {
         method: 'POST',
+        headers: getAppwriteHeaders(),
         body: formDataUpload,
       });
 

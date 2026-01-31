@@ -16,17 +16,40 @@ export interface ImageData {
   $updatedAt: string;
 }
 
+// 全域快取
+let cachedImages: ImageData[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useImages() {
   const [images, setImages] = useState<ImageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入圖片資料
-  const loadImages = useCallback(async () => {
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('images_refresh_key') || '';
+  };
+
+  const setRefreshKeyValue = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('images_refresh_key', Date.now().toString());
+  };
+
+  // 載入圖片資料（使用快取）
+  const loadImages = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    
+    if (!forceRefresh && cachedImages && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setImages(cachedImages);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(API_ENDPOINTS.IMAGE);
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const response = await fetch(API_ENDPOINTS.IMAGE + cacheParam);
       if (!response.ok) {
         if (response.status === 404) {
           // 檢查是否真的是 collection not found
@@ -41,6 +64,10 @@ export function useImages() {
       const data = await response.json();
       // Ensure data is an array
       const imageList = Array.isArray(data) ? data : [];
+      
+      cachedImages = imageList;
+      cacheTimestamp = Date.now();
+      
       setImages(imageList);
     } catch (err) {
       const message = err instanceof Error ? err.message : "載入圖片失敗";
@@ -68,5 +95,6 @@ export function useImages() {
     error,
     stats,
     loadImages,
+    refresh: () => setRefreshKeyValue(),
   };
 }

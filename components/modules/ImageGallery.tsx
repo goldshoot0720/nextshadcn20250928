@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useImages, ImageData } from "@/hooks";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
+import { getAppwriteHeaders } from "@/lib/utils";
 
 export default function ImageGallery() {
   const { images, loading, error, loadImages } = useImages();
@@ -348,6 +349,7 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
     try {
       const response = await fetch('/api/upload-image', {
         method: 'POST',
+        headers: getAppwriteHeaders(),
         body: formDataUpload,
       });
 

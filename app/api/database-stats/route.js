@@ -4,11 +4,12 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const apiKey = process.env.APPWRITE_API_KEY;
+function createAppwrite(searchParams) {
+  // 優先使用 URL 參數（使用者輸入），其次使用環境變數
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -37,9 +38,10 @@ const TABLE_DEFINITIONS = {
 };
 
 // GET /api/database-stats
-export async function GET() {
+export async function GET(request) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     
     // List all collections in the database
     const allCollections = await databases.listCollections(databaseId);

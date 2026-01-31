@@ -135,7 +135,7 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         </div>
       )}
 
-      <PageTitle title={title} description="鳳兄資訊管理系統 - 數據匯總與分析" />
+      <PageTitle title={title} description="鋒兄資訊管理系統 - 數據匯總與分析" />
       
       {/* 詳細統計區域 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
@@ -428,7 +428,7 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
         />
         <MediaStatCard 
           icon={Music} 
-          title="鳳兄音樂" 
+          title="鋒兄音樂" 
           count={stats.totalMusic} 
           size={formatBytes(stats.musicSize)} 
           color="purple"

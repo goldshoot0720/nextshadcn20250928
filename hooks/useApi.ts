@@ -59,7 +59,10 @@ export async function fetchApi<T>(
   url: string,
   options?: RequestInit
 ): Promise<T> {
-  const response = await fetch(url, {
+  // 添加 Appwrite 配置到 URL (從 localStorage)
+  const urlWithConfig = addAppwriteConfigToUrl(url);
+  
+  const response = await fetch(urlWithConfig, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -87,16 +90,95 @@ export async function fetchApi<T>(
   return response.json();
 }
 
+// 添加 Appwrite 配置到 URL
+function addAppwriteConfigToUrl(url: string): string {
+  if (typeof window === 'undefined') return url;
+  
+  const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
+  const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
+  const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID');
+  const apiKey = localStorage.getItem('APPWRITE_API_KEY');
+  const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID');
+  
+  // 如果沒有自定義配置，返回原 URL
+  if (!endpoint && !projectId && !databaseId) {
+    return url;
+  }
+  
+  const separator = url.includes('?') ? '&' : '?';
+  const params = new URLSearchParams();
+  
+  if (endpoint) params.set('_endpoint', endpoint);
+  if (projectId) params.set('_project', projectId);
+  if (databaseId) params.set('_database', databaseId);
+  if (apiKey) params.set('_key', apiKey);
+  if (bucketId) params.set('_bucket', bucketId);
+  
+  const paramString = params.toString();
+  return paramString ? `${url}${separator}${paramString}` : url;
+}
+
 // CRUD 操作 hooks
 export function useCrud<T extends { $id: string }>(baseUrl: string) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchAll = useCallback(async () => {
+  // 全域快取 - 使用 Map 依據 baseUrl 儲存不同的快取
+  const getCacheKey = () => baseUrl.replace(/\//g, '_');
+  
+  if (typeof window !== 'undefined') {
+    if (!(window as any).__crudCache) {
+      (window as any).__crudCache = new Map<string, { data: any[], timestamp: number }>();
+    }
+  }
+
+  const getCache = () => {
+    if (typeof window === 'undefined') return null;
+    return (window as any).__crudCache?.get(getCacheKey());
+  };
+
+  const setCache = (data: T[]) => {
+    if (typeof window === 'undefined') return;
+    (window as any).__crudCache?.set(getCacheKey(), { data, timestamp: Date.now() });
+  };
+
+  const clearCache = () => {
+    if (typeof window === 'undefined') return;
+    (window as any).__crudCache?.delete(getCacheKey());
+  };
+
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    const key = `crud_${baseUrl.replace(/\//g, '_')}_refresh_key`;
+    return localStorage.getItem(key) || '';
+  };
+
+  const setRefreshKeyValue = () => {
+    if (typeof window === 'undefined') return;
+    const key = `crud_${baseUrl.replace(/\//g, '_')}_refresh_key`;
+    localStorage.setItem(key, Date.now().toString());
+  };
+
+  const fetchAll = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    const cache = getCache();
+    
+    // 如果有快取且沒有 CRUD 操作，直接使用快取
+    if (!forceRefresh && cache && (!storedRefreshKey || cache.timestamp >= parseInt(storedRefreshKey))) {
+      setItems(cache.data);
+      setLoading(false);
+      return cache.data;
+    }
+
     setLoading(true);
     try {
-      const data = await fetchApi<T[]>(baseUrl, { cache: "no-store" });
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const data = await fetchApi<T[]>(baseUrl + cacheParam);
+      
+      // 更新快取
+      setCache(data);
+      
       setItems(data);
       return data;
     } catch (err) {
@@ -115,6 +197,8 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
           body: JSON.stringify(item),
         });
         setItems((prev) => [...prev, newItem]);
+        clearCache();
+        setRefreshKeyValue();
         return newItem;
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Create failed"));
@@ -134,6 +218,8 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
         setItems((prev) =>
           prev.map((i) => (i.$id === id ? updatedItem : i))
         );
+        clearCache();
+        setRefreshKeyValue();
         return updatedItem;
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Update failed"));
@@ -148,6 +234,8 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
       try {
         await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
         setItems((prev) => prev.filter((i) => i.$id !== id));
+        clearCache();
+        setRefreshKeyValue();
         return true;
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Delete failed"));
@@ -166,5 +254,6 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
     create,
     update,
     remove,
+    refresh: () => setRefreshKeyValue(),
   };
 }

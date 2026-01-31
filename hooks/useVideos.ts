@@ -16,17 +16,40 @@ export interface VideoData {
   $updatedAt: string;
 }
 
+// 全域快取
+let cachedVideos: VideoData[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useVideos() {
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入影片資料
-  const loadVideos = useCallback(async () => {
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('videos_refresh_key') || '';
+  };
+
+  const setRefreshKeyValue = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('videos_refresh_key', Date.now().toString());
+  };
+
+  // 載入影片資料（使用快取）
+  const loadVideos = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    
+    if (!forceRefresh && cachedVideos && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setVideos(cachedVideos);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(API_ENDPOINTS.VIDEO);
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const response = await fetch(API_ENDPOINTS.VIDEO + cacheParam);
       if (!response.ok) {
         if (response.status === 404) {
           // 檢查是否真的是 collection not found
@@ -41,6 +64,10 @@ export function useVideos() {
       const data = await response.json();
       // Ensure data is an array
       const videoList = Array.isArray(data) ? data : [];
+      
+      cachedVideos = videoList;
+      cacheTimestamp = Date.now();
+      
       setVideos(videoList);
     } catch (err) {
       const message = err instanceof Error ? err.message : "載入影片失敗";
@@ -68,5 +95,6 @@ export function useVideos() {
     error,
     stats,
     loadVideos,
+    refresh: () => setRefreshKeyValue(),
   };
 }

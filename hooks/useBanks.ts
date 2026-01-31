@@ -4,17 +4,40 @@ import { useState, useEffect, useCallback } from "react";
 import { Bank, BankFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 
+// 全域快取
+let cachedBanks: Bank[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useBanks() {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入銀行資料
-  const loadBanks = useCallback(async () => {
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('banks_refresh_key') || '';
+  };
+
+  const setRefreshKey = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('banks_refresh_key', Date.now().toString());
+  };
+
+  // 載入銀行資料（使用快取）
+  const loadBanks = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    
+    if (!forceRefresh && cachedBanks && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setBanks(cachedBanks);
+      setLoading(false);
+      return cachedBanks;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/bank', { cache: "no-store" });
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const res = await fetch('/api/bank' + cacheParam);
       if (!res.ok) {
         if (res.status === 404) {
           // 檢查是否真的是 collection not found
@@ -30,6 +53,10 @@ export function useBanks() {
       let data: Bank[] = Array.isArray(resData) ? resData : [];
       // 按名稱排序
       data = data.sort((a, b) => a.name.localeCompare(b.name));
+      
+      cachedBanks = data;
+      cacheTimestamp = Date.now();
+      
       setBanks(data);
       return data;
     } catch (err) {
@@ -57,6 +84,8 @@ export function useBanks() {
         const updated = [...prev, newBank];
         return updated.sort((a, b) => a.name.localeCompare(b.name));
       });
+      cachedBanks = null;
+      setRefreshKey();
       return newBank;
     } catch (err) {
       console.error("新增銀行失敗:", err);
@@ -79,6 +108,8 @@ export function useBanks() {
         const updated = prev.map((b) => (b.$id === id ? updatedBank : b));
         return updated.sort((a, b) => a.name.localeCompare(b.name));
       });
+      cachedBanks = null;
+      setRefreshKey();
       return updatedBank;
     } catch (err) {
       console.error("更新銀行失敗:", err);
@@ -93,6 +124,8 @@ export function useBanks() {
       if (!res.ok) throw new Error("刪除失敗");
       
       setBanks((prev) => prev.filter((b) => b.$id !== id));
+      cachedBanks = null;
+      setRefreshKey();
       return true;
     } catch (err) {
       console.error("刪除銀行失敗:", err);

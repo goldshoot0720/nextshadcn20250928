@@ -18,17 +18,40 @@ export interface MusicData {
   $updatedAt: string;
 }
 
+// 全域快取
+let cachedMusic: MusicData[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useMusic() {
   const [music, setMusic] = useState<MusicData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入音樂資料
-  const loadMusic = useCallback(async () => {
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('music_refresh_key') || '';
+  };
+
+  const setRefreshKeyValue = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('music_refresh_key', Date.now().toString());
+  };
+
+  // 載入音樂資料（使用快取）
+  const loadMusic = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    
+    if (!forceRefresh && cachedMusic && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setMusic(cachedMusic);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(API_ENDPOINTS.MUSIC);
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const response = await fetch(API_ENDPOINTS.MUSIC + cacheParam);
       if (!response.ok) {
         if (response.status === 404) {
           // 檢查是否真的是 collection not found
@@ -43,6 +66,10 @@ export function useMusic() {
       const data = await response.json();
       // Ensure data is an array
       const musicList = Array.isArray(data) ? data : [];
+      
+      cachedMusic = musicList;
+      cacheTimestamp = Date.now();
+      
       setMusic(musicList);
     } catch (err) {
       const message = err instanceof Error ? err.message : "載入音樂失敗";
@@ -70,5 +97,6 @@ export function useMusic() {
     error,
     stats,
     loadMusic,
+    refresh: () => setRefreshKeyValue(),
   };
 }

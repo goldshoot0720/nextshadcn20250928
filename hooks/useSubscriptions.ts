@@ -5,17 +5,54 @@ import { Subscription, SubscriptionFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatDate, getDaysFromToday, getExpiryStatus, convertToTWD } from "@/lib/formatters";
 
+// 全域快取，儲存於模組外層
+let cachedSubscriptions: Subscription[] | null = null;
+let cacheTimestamp: number = 0;
+
 export function useSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 載入訂閱資料
-  const loadSubscriptions = useCallback(async () => {
+  const getRefreshKey = () => {
+    if (typeof window === 'undefined') return '';
+    // 檢查是否有 Appwrite 帳號切換
+    const accountSwitched = localStorage.getItem('appwrite_account_switched');
+    if (accountSwitched) {
+      return accountSwitched; // 強制重新載入
+    }
+    return localStorage.getItem('subscriptions_refresh_key') || '';
+  };
+
+  const setRefreshKey = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('subscriptions_refresh_key', Date.now().toString());
+  };
+
+  // 載入訂閱資料（使用快取）
+  const loadSubscriptions = useCallback(async (forceRefresh = false) => {
+    const storedRefreshKey = getRefreshKey();
+    const accountSwitched = typeof window !== 'undefined' ? localStorage.getItem('appwrite_account_switched') : null;
+      
+    // 如果切換了帳號，清除快取並強制重新載入
+    if (accountSwitched && cacheTimestamp < parseInt(accountSwitched)) {
+      cachedSubscriptions = null;
+      forceRefresh = true;
+    }
+      
+    // 如果有快取且沒有 CRUD 操作，直接使用快取
+    if (!forceRefresh && cachedSubscriptions && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+      setSubscriptions(cachedSubscriptions);
+      setLoading(false);
+      return cachedSubscriptions;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_ENDPOINTS.SUBSCRIPTION, { cache: "no-store" });
+      // 如果是強制重新載入或有 refreshKey，添加時間戳破壞快取
+      const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
+      const res = await fetch(API_ENDPOINTS.SUBSCRIPTION + cacheParam);
       if (!res.ok) {
         if (res.status === 404) {
           // 檢查是否真的是 collection not found
@@ -31,8 +68,17 @@ export function useSubscriptions() {
       let data: Subscription[] = Array.isArray(resData) ? resData : [];
       // 按下次付款日排序
       data = data.sort(
-        (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
+        (a, b) => {
+          if (!a.nextdate) return 1;
+          if (!b.nextdate) return -1;
+          return new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime();
+        }
       );
+      
+      // 更新快取
+      cachedSubscriptions = data;
+      cacheTimestamp = Date.now();
+      
       setSubscriptions(data);
       return data;
     } catch (err) {
@@ -62,6 +108,9 @@ export function useSubscriptions() {
           (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
         );
       });
+      // CRUD 操作後重新載入
+      cachedSubscriptions = null; // 清空快取
+      setRefreshKey();
       return newSub;
     } catch (err) {
       console.error("新增訂閱失敗:", err);
@@ -86,6 +135,9 @@ export function useSubscriptions() {
           (a, b) => new Date(a.nextdate).getTime() - new Date(b.nextdate).getTime()
         );
       });
+      // CRUD 操作後重新載入
+      cachedSubscriptions = null; // 清空快取
+      setRefreshKey();
       return updatedSub;
     } catch (err) {
       console.error("更新訂閱失敗:", err);
@@ -100,6 +152,9 @@ export function useSubscriptions() {
       if (!res.ok) throw new Error("刪除失敗");
       
       setSubscriptions((prev) => prev.filter((s) => s.$id !== id));
+      // CRUD 操作後重新載入
+      cachedSubscriptions = null; // 清空快取
+      setRefreshKey();
       return true;
     } catch (err) {
       console.error("刪除訂閱失敗:", err);
