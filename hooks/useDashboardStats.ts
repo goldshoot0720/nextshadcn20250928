@@ -40,6 +40,7 @@ interface DashboardStats {
   totalArticles: number;
   totalCommonAccounts: number;
   totalBanks: number;
+  totalBankDeposit: number;
   foodsExpiring7Days: number;
   foodsExpiring30Days: number;
   subscriptionsExpiring3Days: number;
@@ -64,6 +65,7 @@ export function useDashboardStats() {
     totalArticles: 0,
     totalCommonAccounts: 0,
     totalBanks: 0,
+    totalBankDeposit: 0,
     foodsExpiring7Days: 0,
     foodsExpiring30Days: 0,
     subscriptionsExpiring3Days: 0,
@@ -281,6 +283,9 @@ export function useDashboardStats() {
         
         // 計算年費總計 (所有訂閱服務費用總和)
         const totalAnnualFee = subsToProcess.reduce((total, sub) => total + sub.price, 0);
+        
+        // 計算銀行總存款
+        const totalBankDeposit = banks.reduce((total, bank) => total + (bank.deposit || 0), 0);
 
         setStats({
           totalFoods: foodsToProcess.length,
@@ -288,6 +293,7 @@ export function useDashboardStats() {
           totalArticles: articles.length,
           totalCommonAccounts: commonAccounts.length,
           totalBanks: banks.length,
+          totalBankDeposit,
           foodsExpiring7Days: foodsExpiring7DaysList.length,
           foodsExpiring30Days: foodsExpiring30DaysList.length,
           subscriptionsExpiring3Days: subscriptionsExpiring3DaysList.length,
