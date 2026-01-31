@@ -37,8 +37,6 @@ export default function ImageGallery() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <CopyrightBanner />
-      
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
           {error}
@@ -73,27 +71,6 @@ export default function ImageGallery() {
       {showForm && (
         <ImageFormModal image={editingImage} existingImages={images} onClose={handleCloseForm} onSuccess={loadImages} />
       )}
-    </div>
-  );
-}
-
-// 版權橫幅
-function CopyrightBanner() {
-  return (
-    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
-      <div className="text-center space-y-2">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wide">鋒兄塗哥公關資訊</h2>
-        <div className="text-sm sm:text-base opacity-90">© 版權所有 2025～2125</div>
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm opacity-80">
-          <span>前端使用 React (Next.js)</span>
-          <span className="hidden sm:inline text-white/50">|</span>
-          <span>後端使用 Appwrite</span>
-          <span className="hidden sm:inline text-white/50">|</span>
-          <span>網頁存放於 Vercel</span>
-          <span className="hidden sm:inline text-white/50">|</span>
-          <span>圖片存放於 Vercel Blob</span>
-        </div>
-      </div>
     </div>
   );
 }

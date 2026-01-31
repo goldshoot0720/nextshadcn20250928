@@ -7,6 +7,8 @@ import { PageTitle } from "@/components/ui/section-header";
 export default function AboutUs() {
   return (
     <div className="space-y-4 lg:space-y-6">
+      <CopyrightBanner />
+      
       <PageTitle title="鋒兄關於" description="了解鋒兄資訊管理系統的使命與願景" />
       
       <DataCard className="p-6 lg:p-8">
@@ -18,6 +20,27 @@ export default function AboutUs() {
           <Copyright />
         </div>
       </DataCard>
+    </div>
+  );
+}
+
+// 版權橫幅
+function CopyrightBanner() {
+  return (
+    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
+      <div className="text-center space-y-2">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wide">鋒兄塗哥公關資訊</h2>
+        <div className="text-sm sm:text-base opacity-90">© 版權所有 2025～2125</div>
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm opacity-80">
+          <span>前端使用 React (Next.js)</span>
+          <span className="hidden sm:inline text-white/50">|</span>
+          <span>後端使用 Appwrite</span>
+          <span className="hidden sm:inline text-white/50">|</span>
+          <span>網頁存放於 Vercel</span>
+          <span className="hidden sm:inline text-white/50">|</span>
+          <span>圖片存放於 Vercel Blob</span>
+        </div>
+      </div>
     </div>
   );
 }
