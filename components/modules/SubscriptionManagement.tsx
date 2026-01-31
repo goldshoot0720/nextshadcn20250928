@@ -17,7 +17,7 @@ import { SubscriptionFormData, Subscription } from "@/types";
 import { FaviconImage } from "@/components/ui/favicon-image";
 import { formatDate, formatDaysRemaining, formatCurrency } from "@/lib/formatters";
 
-const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "" };
+const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "", note: "", account: "" };
 
 export default function SubscriptionManagement() {
   const { subscriptions, loading, error, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
@@ -169,7 +169,14 @@ export default function SubscriptionManagement() {
   };
 
   const handleEdit = (sub: Subscription) => {
-    setForm({ ...sub, nextdate: formatDate(sub.nextdate) });
+    setForm({ 
+      name: sub.name,
+      site: sub.site,
+      price: sub.price,
+      nextdate: formatDate(sub.nextdate),
+      note: sub.note || "",
+      account: sub.account || ""
+    });
     setEditingId(sub.$id);
     setIsFormOpen(true);
     // 滾動到頁面頂部讓用戶看到編輯表單
@@ -254,6 +261,8 @@ export default function SubscriptionManagement() {
               <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} required className="h-12 rounded-xl" />
               <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
               <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
+              <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
+              <Input placeholder="備註" value={form.note || ""} onChange={(e) => setForm({ ...form, note: e.target.value })} className="h-12 rounded-xl" />
             </FormGrid>
             <FormActions>
               <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25">

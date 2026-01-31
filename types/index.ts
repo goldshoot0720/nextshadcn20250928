@@ -30,6 +30,8 @@ export interface Subscription {
   site: string;
   price: number;
   nextdate: string;
+  note?: string;
+  account?: string;
 }
 
 export interface SubscriptionFormData {
@@ -37,6 +39,8 @@ export interface SubscriptionFormData {
   site: string;
   price: number;
   nextdate: string;
+  note?: string;
+  account?: string;
 }
 
 export interface SubscriptionDetail {
