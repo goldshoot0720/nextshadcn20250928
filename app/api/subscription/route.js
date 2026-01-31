@@ -37,7 +37,18 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const { databases, databaseId } = createAppwrite(searchParams);
-    const collectionId = await getCollectionId(databases, databaseId, "subscription");
+    
+    // 嘗試取得 collection ID
+    let collectionId;
+    try {
+      collectionId = await getCollectionId(databases, databaseId, "subscription");
+    } catch (collectionErr) {
+      console.error("Collection not found:", collectionErr.message);
+      return NextResponse.json(
+        { error: "Table subscription 不存在，請至「鋒兄設定」中初始化。" }, 
+        { status: 404 }
+      );
+    }
     
     const res = await databases.listDocuments(
       databaseId,
@@ -51,10 +62,6 @@ export async function GET(request) {
   } catch (err) {
     console.error("GET /subscription error:", err);
     const message = err instanceof Error ? err.message : "Fetch failed";
-    // 如果是 collection not found，返回 404
-    if (message.includes('not found')) {
-      return NextResponse.json({ error: message }, { status: 404 });
-    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

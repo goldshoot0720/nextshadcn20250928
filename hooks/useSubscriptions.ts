@@ -74,12 +74,11 @@ export function useSubscriptions() {
       const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
       const res = await fetch(API_ENDPOINTS.SUBSCRIPTION + cacheParam);
       if (!res.ok) {
+        // 如果是 404，嘗試讀取錯誤訊息
         if (res.status === 404) {
-          // 檢查是否真的是 collection not found
           const errorData = await res.json().catch(() => ({}));
-          if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
-            throw new Error("Table subscription 不存在，請至「鋒兄設定」中初始化。");
-          }
+          const errorMessage = errorData.error || "Table subscription 不存在，請至「鋒兄設定」中初始化。";
+          throw new Error(errorMessage);
         }
         throw new Error("載入訂閱資料失敗");
       }

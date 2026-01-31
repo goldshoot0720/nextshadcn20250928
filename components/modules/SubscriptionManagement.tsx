@@ -322,7 +322,17 @@ export default function SubscriptionManagement() {
       )}
 
       <DataCard>
-        {subscriptions.length === 0 ? (
+        {error ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h3 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-2">
+              {error}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              請至「鋒兄設定」頁面初始化資料庫
+            </p>
+          </div>
+        ) : subscriptions.length === 0 ? (
           <EmptyState emoji="💳" title="暫無訂閱資料" description="點擊上方表單新增第一個訂閱" />
         ) : (
           <>
