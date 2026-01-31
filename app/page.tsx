@@ -11,7 +11,8 @@ import AboutUs from "@/components/modules/AboutUs";
 import MusicLyrics from "@/components/modules/MusicLyrics";
 import NotesManagement from "@/components/modules/NotesManagement";
 import CommonAccountManagement from "@/components/modules/CommonAccountManagement";
-import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus } from "lucide-react";
+import SettingsManagement from "@/components/modules/SettingsManagement";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus, Settings } from "lucide-react";
 import { MenuItem, CommonAccount } from "@/types";
 import { Input, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
@@ -30,6 +31,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "common", label: "鋒兄常用", icon: <Star size={18} /> },
   { id: "bank-stats", label: "銀行統計", icon: <BarChart3 size={18} /> },
   { id: "about", label: "關於我們", icon: <Info size={18} /> },
+  { id: "settings", label: "設定", icon: <Settings size={18} /> },
 ];
 
 export default function DashboardPage() {
@@ -62,6 +64,8 @@ export default function DashboardPage() {
         return <BankStatistics />;
       case "about":
         return <AboutUs />;
+      case "settings":
+        return <SettingsManagement />;
       default:
         return <NotFoundModule />;
     }
