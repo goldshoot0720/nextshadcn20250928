@@ -254,8 +254,24 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
   const [previewLoading, setPreviewLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 計算檔案 SHA-256 hash
+  const calculateFileHash = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    } catch (error) {
+      console.error('Hash calculation error:', error);
+      // 如果計算失敗，使用備用方案
+      return `fallback_${file.name}_${file.size}_${file.lastModified}`;
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -282,6 +298,11 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+    
+    // 計算檔案 hash
+    const hash = await calculateFileHash(file);
+    setFileHash(hash);
+    setFormData({ ...formData, hash });
     
     // 模擬預覽載入完成
     setTimeout(() => setPreviewLoading(false), 300);
@@ -341,10 +362,11 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
       if (selectedFile) {
         const { url, fileId } = await uploadFileToAppwrite(selectedFile);
         finalFormData.file = url;
-        finalFormData.hash = fileId; // 使用 Appwrite 的 fileId 作為 hash
-      } else if (!image) {
-        // 新增時如果沒有上傳檔案，生成隨機 hash
-        finalFormData.hash = `hash_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        // 使用已計算的 hash，如果沒有則使用 fileId
+        finalFormData.hash = fileHash || fileId;
+      } else if (!image && !formData.hash) {
+        // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
+        finalFormData.hash = `no_file_${Date.now()}`;
       }
 
       const url = image ? `${API_ENDPOINTS.IMAGE}/${image.$id}` : API_ENDPOINTS.IMAGE;
