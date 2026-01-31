@@ -21,8 +21,8 @@ import { API_ENDPOINTS } from "@/lib/constants";
 
 // 選單項目配置
 const MENU_ITEMS: MenuItem[] = [
-  { id: "home", label: "首頁", icon: <Home size={18} /> },
-  { id: "dashboard", label: "儀表板", icon: <BarChart3 size={18} /> },
+  { id: "home", label: "鋒兄首頁", icon: <Home size={18} /> },
+  { id: "dashboard", label: "鋒兄儀表", icon: <BarChart3 size={18} /> },
   { id: "images", label: "鋒兄圖片", icon: <Image size={18} /> },
   { id: "subscription", label: "鋒兄訂閱", icon: <CreditCard size={18} /> },
   { id: "food", label: "鋒兄食品", icon: <Package size={18} /> },
@@ -31,7 +31,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "music", label: "鋒兄音樂", icon: <Music size={18} /> },
   { id: "common", label: "鋒兄常用", icon: <Star size={18} /> },
   { id: "bank-stats", label: "銀行管理", icon: <BarChart3 size={18} /> },
-  { id: "about", label: "關於我們", icon: <Info size={18} /> },
+  { id: "about", label: "關於鋒兄", icon: <Info size={18} /> },
   { id: "settings", label: "設定", icon: <Settings size={18} /> },
 ];
 
