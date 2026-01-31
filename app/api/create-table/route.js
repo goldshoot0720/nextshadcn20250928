@@ -60,8 +60,11 @@ const TABLE_SCHEMAS = {
     attributes: [
       { key: 'name', type: 'string', size: 100, required: true },
       { key: 'amount', type: 'integer', required: false },
-      { key: 'todate', type: 'string', size: 100, required: false },
-      { key: 'photo', type: 'url', required: false }
+      { key: 'price', type: 'integer', required: false },
+      { key: 'shop', type: 'string', size: 100, required: false },
+      { key: 'todate', type: 'datetime', required: false },
+      { key: 'photo', type: 'url', required: false },
+      { key: 'photohash', type: 'string', size: 256, required: false }
     ]
   },
   subscription: {
