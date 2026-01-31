@@ -82,16 +82,42 @@ export function useDashboardStats() {
       try {
         const errors: string[] = [];
         
+        // 檢查所有表是否存在
+        const tablesToCheck = [
+          { name: 'subscription', api: '/api/subscription', label: 'Table subscription' },
+          { name: 'food', api: '/api/food', label: 'Table food' },
+          { name: 'article', api: '/api/article', label: 'Table article' },
+          { name: 'commonaccount', api: '/api/common-account', label: 'Table commonaccount' },
+          { name: 'image', api: '/api/image', label: 'Table image' },
+          { name: 'video', api: '/api/video', label: 'Table video' },
+          { name: 'music', api: '/api/music', label: 'Table music' },
+          { name: 'bank', api: '/api/bank', label: 'Table bank' },
+        ];
+
+        // 並行檢查所有表
+        const checkPromises = tablesToCheck.map(async (table) => {
+          try {
+            const res = await fetch(table.api, { cache: "no-store" });
+            if (res.status === 404) {
+              return `${table.label} 不存在，請至「鋒兄設定」中初始化。`;
+            }
+            return null;
+          } catch (err) {
+            return null;
+          }
+        });
+
+        const checkResults = await Promise.all(checkPromises);
+        const tableErrors = checkResults.filter(err => err !== null) as string[];
+        
+        if (tableErrors.length > 0) {
+          throw new Error(tableErrors.join('\n'));
+        }
+        
         // 獲取食品數據
         const foodsRes = await fetch("/api/food", { cache: "no-store" });
         let foods: Food[] = [];
-        if (!foodsRes.ok) {
-          if (foodsRes.status === 404) {
-            errors.push("Table food 不存在，請至「鋒兄設定」中初始化。");
-          } else {
-            errors.push("獲取食品數據失敗");
-          }
-        } else {
+        if (foodsRes.ok) {
           const foodsData = await foodsRes.json();
           foods = Array.isArray(foodsData) ? foodsData : [];
         }
@@ -99,20 +125,9 @@ export function useDashboardStats() {
         // 獲取訂閱數據
         const subsRes = await fetch("/api/subscription", { cache: "no-store" });
         let subscriptions: Subscription[] = [];
-        if (!subsRes.ok) {
-          if (subsRes.status === 404) {
-            errors.push("Table subscription 不存在，請至「鋒兄設定」中初始化。");
-          } else {
-            errors.push("獲取訂閱數據失敗");
-          }
-        } else {
+        if (subsRes.ok) {
           const subsData = await subsRes.json();
           subscriptions = Array.isArray(subsData) ? subsData : [];
-        }
-        
-        // 如果有错誤，拋出所有错誤訊息
-        if (errors.length > 0) {
-          throw new Error(errors.join('\n'));
         }
 
         const today = new Date();
