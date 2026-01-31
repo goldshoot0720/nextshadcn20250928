@@ -120,7 +120,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
       </div>
       <div>
         <h1 className={cn("font-bold text-gray-800 dark:text-gray-100", compact ? "text-xl" : "text-xl")}>鋒兄資訊管理系統</h1>
-        {!compact && <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄資訊管理系統</p>}
+        {!compact && <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄AI</p>}
       </div>
     </div>
   );
