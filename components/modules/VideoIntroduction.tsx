@@ -122,6 +122,12 @@ export default function VideoIntroduction() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄影片"
         subtitle="觀看精彩影片內容，支援本地快取減少流量使用"
@@ -139,12 +145,6 @@ export default function VideoIntroduction() {
         <StatCard title="已快取" value={cacheStats.cachedVideos} icon={CheckCircle} />
         <StatCard title="快取大小" value={formatFileSize(cacheStats.totalSize)} icon={HardDrive} />
       </div>
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       {/* 影片播放器 */}
       {showPlayer && currentVideo && currentVideoData && (

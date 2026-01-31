@@ -96,6 +96,12 @@ export default function BankManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄銀行"
         subtitle={`管理您的銀行帳戶、資產與相關資訊`}
@@ -106,12 +112,6 @@ export default function BankManagement() {
           </div>
         }
       />
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       <div className="flex justify-end">
         <Button

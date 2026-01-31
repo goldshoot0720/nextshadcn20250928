@@ -129,13 +129,13 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <PageTitle title={title} description="鋒兄資訊管理系統 - 數據匯總與分析" />
-
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
+
+      <PageTitle title={title} description="鋒兄資訊管理系統 - 數據匯總與分析" />
 
       {/* 主要統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

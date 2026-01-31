@@ -252,6 +252,12 @@ export default function CommonAccountManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error.message}
+        </div>
+      )}
+
       <SectionHeader 
         title="鋒兄常用" 
         subtitle={`共 ${accounts.length} 組帳號設定`}
@@ -265,12 +271,6 @@ export default function CommonAccountManagement() {
           </Button>
         }
       />
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error.message}
-        </div>
-      )}
 
       {isFormOpen && (
         <div className="space-y-4">

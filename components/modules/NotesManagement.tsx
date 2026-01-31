@@ -112,6 +112,12 @@ export default function NotesManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄筆記"
         subtitle={`共 ${stats.total} 篇筆記`}
@@ -119,12 +125,6 @@ export default function NotesManagement() {
           <StatCard title="筆記總數" value={stats.total} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
         }
       />
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       <FormCard 
         title={

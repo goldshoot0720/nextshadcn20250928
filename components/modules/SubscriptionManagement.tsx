@@ -209,6 +209,12 @@ export default function SubscriptionManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄訂閱"
         subtitle={`共 ${stats.total} 個訂閱服務`}
@@ -219,12 +225,6 @@ export default function SubscriptionManagement() {
           </div>
         }
       />
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       {canAskNotification && !notificationEnabled && (
         <div className="flex items-center justify-between rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">

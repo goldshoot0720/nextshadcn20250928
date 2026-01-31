@@ -66,6 +66,12 @@ export default function MusicManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄音樂"
         subtitle="管理音樂收藏，支援歌詞和多語言"
@@ -81,12 +87,6 @@ export default function MusicManagement() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard title="音樂總數" value={stats.total} icon={MusicIcon} />
       </div>
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       {/* 音樂列表 */}
       {music.length === 0 ? (

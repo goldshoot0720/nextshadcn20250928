@@ -39,6 +39,12 @@ export default function ImageGallery() {
     <div className="space-y-4 lg:space-y-6">
       <CopyrightBanner />
       
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄圖片"
         subtitle={loading ? "載入中..." : `共 ${images.length} 張圖片`}
@@ -57,12 +63,6 @@ export default function ImageGallery() {
       />
 
       <ImageStats images={images} />
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={loadImages} />
       

@@ -64,6 +64,12 @@ export default function FoodManagement() {
 
   return (
     <div className="space-y-4 lg:space-y-6" id="food-management-container">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <SectionHeader
         title="鋒兄食品"
         subtitle={`共 ${foods.length} 項食品`}
@@ -74,12 +80,6 @@ export default function FoodManagement() {
           </div>
         }
       />
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
 
       <div className="flex justify-end">
         <Button
