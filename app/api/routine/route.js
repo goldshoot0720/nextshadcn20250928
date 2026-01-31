@@ -12,11 +12,14 @@ async function getCollectionId(databases, databaseId, name) {
 }
 
 function createAppwrite(searchParams) {
-  // 從 URL 參數讀取配置（優先），否則使用 .env（支援新舊兩種變數名）
   const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
   const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+
+  if (!endpoint || !projectId || !databaseId || !apiKey) {
+    throw new Error("Appwrite configuration is missing");
+  }
 
   const client = new sdk.Client()
     .setEndpoint(endpoint)
@@ -24,66 +27,74 @@ function createAppwrite(searchParams) {
     .setKey(apiKey);
 
   const databases = new sdk.Databases(client);
+
   return { databases, databaseId };
 }
 
-// GET /api/food
+// GET /api/routine
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const { databases, databaseId } = createAppwrite(searchParams);
-    
-    // 嘗試取得 collection ID
-    let collectionId;
-    try {
-      collectionId = await getCollectionId(databases, databaseId, "food");
-    } catch (collectionErr) {
-      console.error("Collection not found:", collectionErr.message);
+    const collectionId = await getCollectionId(databases, databaseId, 'routine');
+
+    const res = await databases.listDocuments(
+      databaseId,
+      collectionId,
+      [
+        sdk.Query.limit(100),
+      ]
+    );
+    return NextResponse.json(res.documents);
+  } catch (err) {
+    console.error("GET /api/routine error:", err);
+    if (err.message.includes('not found')) {
       return NextResponse.json(
-        { error: "Table food 不存在，請至「鋒兄設定」中初始化。" }, 
+        { error: "Table routine 不存在，請至「鋒兄設定」中初始化。" }, 
         { status: 404 }
       );
     }
-    
-    const response = await databases.listDocuments(databaseId, collectionId, [
-      sdk.Query.limit(100),
-      sdk.Query.orderAsc('todate'),
-    ]);
-    return NextResponse.json(response.documents);
-  } catch (err) {
-    console.error("GET /api/food error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// POST /api/food
-export async function POST(req) {
+// POST /api/routine
+export async function POST(request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const { databases, databaseId } = createAppwrite(searchParams);
-    const collectionId = await getCollectionId(databases, databaseId, "food");
-    
-    const body = await req.json();
-    const { name, amount, todate, photo, price, shop, photohash } = body;
+    const body = await request.json();
+    const { name, note, lastdate1, lastdate2, lastdate3, link, photo } = body;
 
-    const response = await databases.createDocument(
+    if (!name) {
+      return NextResponse.json(
+        { error: "name is required" },
+        { status: 400 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    const collectionId = await getCollectionId(databases, databaseId, 'routine');
+
+    const payload = {
+      name,
+      note: note || "",
+      lastdate1: lastdate1 || null,
+      lastdate2: lastdate2 || null,
+      lastdate3: lastdate3 || null,
+      link: link || "",
+      photo: photo || "",
+    };
+
+    const res = await databases.createDocument(
       databaseId,
       collectionId,
       sdk.ID.unique(),
-      {
-        name,
-        amount: amount ? parseInt(amount, 10) : 0,
-        todate,
-        photo,
-        price: price ? parseInt(price, 10) : 0,
-        shop,
-        photohash
-      }
+      payload
     );
 
-    return NextResponse.json(response);
+    return NextResponse.json(res);
   } catch (err) {
-    console.error("POST /api/food error:", err);
+    console.error("POST /api/routine error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

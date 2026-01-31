@@ -8,8 +8,8 @@ function createAppwrite(searchParams) {
   // 優先使用 URL 參數（使用者輸入），其次使用環境變數（支援新舊兩種變數名）
   const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || process.env.APPWRITE_DATABASE_ID;
-  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY || process.env.APPWRITE_API_KEY;
+  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -34,7 +34,8 @@ const TABLE_DEFINITIONS = {
   subscription: ["name", "site", "price", "nextdate", "note", "account", "currency"],
   image: ["name", "file", "note", "ref", "category", "hash", "cover"],
   video: ["name", "file", "note", "ref", "category", "hash", "cover"],
-  music: ["name", "file", "lyrics", "note", "ref", "category", "hash", "language", "cover"]
+  music: ["name", "file", "lyrics", "note", "ref", "category", "hash", "language", "cover"],
+  routine: ["name", "note", "lastdate1", "lastdate2", "lastdate3", "link", "photo"]
 };
 
 // GET /api/database-stats
@@ -53,7 +54,7 @@ export async function GET(request) {
     });
     
     // Define expected tables
-    const tableNames = ["article", "bank", "commonaccount", "food", "image", "music", "subscription", "video"];
+    const tableNames = ["article", "bank", "commonaccount", "food", "image", "music", "routine", "subscription", "video"];
     
     // Get each collection's column count and document count dynamically
     const collectionsWithCounts = await Promise.all(

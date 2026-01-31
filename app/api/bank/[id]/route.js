@@ -1,23 +1,32 @@
 import { NextResponse } from "next/server";
-import { Client, Databases } from "appwrite";
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const collectionId = "bank";
+const sdk = require('node-appwrite');
 
-  if (!endpoint || !projectId || !databaseId || !collectionId) {
+function createAppwrite(searchParams) {
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+
+  if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
   }
 
-  const client = new Client()
+  const client = new sdk.Client()
     .setEndpoint(endpoint)
-    .setProject(projectId);
+    .setProject(projectId)
+    .setKey(apiKey);
 
-  const databases = new Databases(client);
+  const databases = new sdk.Databases(client);
 
-  return { databases, databaseId, collectionId };
+  return { databases, databaseId };
+}
+
+async function getCollectionId(databases, databaseId, name) {
+  const allCollections = await databases.listCollections(databaseId);
+  const col = allCollections.collections.find(c => c.name === name);
+  if (!col) throw new Error(`Collection ${name} not found`);
+  return col.$id;
 }
 
 // PUT /api/bank/[id]
@@ -42,7 +51,9 @@ export async function PUT(req, context) {
       account
     } = body;
 
-    const { databases, databaseId, collectionId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    const collectionId = await getCollectionId(databases, databaseId, 'bank');
 
     const payload = {};
     if (name !== undefined) payload.name = name;
@@ -78,7 +89,9 @@ export async function DELETE(req, context) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
 
-    const { databases, databaseId, collectionId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    const collectionId = await getCollectionId(databases, databaseId, 'bank');
 
     await databases.deleteDocument(databaseId, collectionId, id);
 

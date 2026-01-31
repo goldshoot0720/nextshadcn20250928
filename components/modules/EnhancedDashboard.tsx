@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useMediaStats } from "@/hooks/useMediaStats";
 import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive, FileText, Star, Building2, ChevronDown, ChevronUp } from "lucide-react";
@@ -23,9 +23,13 @@ interface EnhancedDashboardProps {
 export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", onlyTitle = false }: EnhancedDashboardProps) {
   const { stats, loading, error: dashboardError } = useDashboardStats();
   const { stats: mediaStats, loading: mediaLoading, error: mediaError } = useMediaStats();
+  const notificationSentRef = useRef(false);
 
   useEffect(() => {
-    if (onlyTitle) return; // Skip notification on home page if only title is shown
+    if (onlyTitle) return;
+    if (loading) return;
+    if (dashboardError) return; // Stop on error
+    if (notificationSentRef.current) return;
     if (typeof window === "undefined") return;
     if (typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
@@ -76,9 +80,10 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
 
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      notificationSentRef.current = true;
     } catch {
     }
-  }, [stats.subscriptionsExpiring3DaysList, onlyTitle]);
+  }, [loading, dashboardError, onlyTitle, stats.subscriptionsExpiring3DaysList.length]);
 
   if (onlyTitle) {
     return (

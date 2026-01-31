@@ -116,6 +116,18 @@ const TABLE_SCHEMAS = {
       { key: 'language', type: 'string', size: 100, required: false },
       { key: 'cover', type: 'string', size: 150, required: false }
     ]
+  },
+  routine: {
+    name: "routine",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'lastdate1', type: 'datetime', required: false },
+      { key: 'lastdate2', type: 'datetime', required: false },
+      { key: 'lastdate3', type: 'datetime', required: false },
+      { key: 'link', type: 'url', required: false },
+      { key: 'photo', type: 'url', required: false }
+    ]
   }
 };
 
@@ -144,8 +156,8 @@ export async function GET(request) {
         // 從 URL 參數讀取 Appwrite 配置
         const endpoint = searchParams.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
         const projectId = searchParams.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-        const databaseId = searchParams.get('_database') || process.env.APPWRITE_DATABASE_ID;
-        const apiKey = searchParams.get('_key') || process.env.APPWRITE_API_KEY;
+        const databaseId = searchParams.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+        const apiKey = searchParams.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
 
         if (!endpoint || !projectId || !databaseId || !apiKey) {
           send({ type: 'error', message: 'Missing Appwrite configuration' });
@@ -275,8 +287,8 @@ export async function POST(request) {
     const { searchParams } = new URL(request.url);
     const endpoint = searchParams.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
     const projectId = searchParams.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-    const databaseId = searchParams.get('_database') || process.env.APPWRITE_DATABASE_ID;
-    const apiKey = searchParams.get('_key') || process.env.APPWRITE_API_KEY;
+    const databaseId = searchParams.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+    const apiKey = searchParams.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
 
     if (!endpoint || !projectId || !databaseId || !apiKey) {
       return NextResponse.json(
