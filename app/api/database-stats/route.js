@@ -26,13 +26,13 @@ export async function GET() {
   try {
     const { databases, databaseId } = createAppwrite();
     
-    // 定義所有 collections 和它們的欄位數量
+    // 定義所有 collections 和它們的欄位數量 (id 是 Appwrite 實際的 collection ID)
     const collections = [
-      { name: "article", columns: ["title", "content", "newDate", "url1", "url2", "url3", "file1", "file1type", "file2", "file2type", "file3", "file3type"] },
-      { name: "bank", columns: ["name", "deposit", "site", "address", "withdrawals", "transfer", "activity", "card", "account"] },
-      { name: "commonaccount", columns: ["name", ...Array.from({length: 37}, (_, i) => `site${(i + 1).toString().padStart(2, '0')}`), ...Array.from({length: 37}, (_, i) => `note${(i + 1).toString().padStart(2, '0')}`)] },
-      { name: "food", columns: ["name", "amount", "todate", "photo"] },
-      { name: "subscription", columns: ["name", "site", "price", "nextdate"] },
+      { name: "article", id: "687fdfd70003cf0e3f97", columns: ["title", "content", "newDate", "url1", "url2", "url3", "file1", "file1type", "file2", "file2type", "file3", "file3type"] },
+      { name: "bank", id: "6875df530018459b05b6", columns: ["name", "deposit", "site", "address", "withdrawals", "transfer", "activity", "card", "account"] },
+      { name: "commonaccount", id: "commonaccount", columns: ["name", ...Array.from({length: 37}, (_, i) => `site${(i + 1).toString().padStart(2, '0')}`), ...Array.from({length: 37}, (_, i) => `note${(i + 1).toString().padStart(2, '0')}`)] },
+      { name: "food", id: "6868f512003b1abedb72", columns: ["name", "amount", "todate", "photo"] },
+      { name: "subscription", id: "687250d70020221fb26c", columns: ["name", "site", "price", "nextdate"] },
     ];
 
     // 計算總欄位數
@@ -42,7 +42,7 @@ export async function GET() {
     const collectionsWithCounts = await Promise.all(
       collections.map(async (col) => {
         try {
-          const docs = await databases.listDocuments(databaseId, col.name);
+          const docs = await databases.listDocuments(databaseId, col.id);
           return {
             name: col.name,
             columnCount: col.columns.length,
