@@ -52,7 +52,8 @@ export async function GET(request) {
 // POST /api/music - Create new music
 export async function POST(request) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const body = await request.json();
     
     // Get collection ID by name
@@ -60,7 +61,7 @@ export async function POST(request) {
     const musicCollection = allCollections.collections.find(col => col.name === 'music');
     
     if (!musicCollection) {
-      return NextResponse.json({ error: "Music collection not found" }, { status: 404 });
+      return NextResponse.json({ error: "Table music 不存在，請至「鋒兄設定」中初始化。" }, { status: 404 });
     }
     
     const collectionId = musicCollection.$id;

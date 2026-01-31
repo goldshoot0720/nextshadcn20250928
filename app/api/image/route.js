@@ -36,7 +36,7 @@ export async function GET(request) {
     const imageCollection = allCollections.collections.find(col => col.name === 'image');
     
     if (!imageCollection) {
-      return NextResponse.json({ error: "Image collection not found" }, { status: 404 });
+      return NextResponse.json({ error: "Table image 不存在，請至「鋒兄設定」中初始化。" }, { status: 404 });
     }
     
     const collectionId = imageCollection.$id;
@@ -52,7 +52,8 @@ export async function GET(request) {
 // POST /api/image - Create new image
 export async function POST(request) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const body = await request.json();
     
     // Get collection ID by name
@@ -60,7 +61,7 @@ export async function POST(request) {
     const imageCollection = allCollections.collections.find(col => col.name === 'image');
     
     if (!imageCollection) {
-      return NextResponse.json({ error: "Image collection not found" }, { status: 404 });
+      return NextResponse.json({ error: "Table image 不存在，請至「鋒兄設定」中初始化。" }, { status: 404 });
     }
     
     const collectionId = imageCollection.$id;
