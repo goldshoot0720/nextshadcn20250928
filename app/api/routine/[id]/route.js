@@ -7,6 +7,7 @@ function createAppwrite(searchParams) {
   const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
   const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+  const bucketId = searchParams?.get('_bucket') || process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -18,8 +19,9 @@ function createAppwrite(searchParams) {
     .setKey(apiKey);
 
   const databases = new sdk.Databases(client);
+  const storage = new sdk.Storage(client);
 
-  return { databases, databaseId };
+  return { databases, storage, databaseId, bucketId };
 }
 
 async function getCollectionId(databases, databaseId, name) {
@@ -84,8 +86,31 @@ export async function DELETE(req, context) {
     }
 
     const { searchParams } = new URL(req.url);
-    const { databases, databaseId } = createAppwrite(searchParams);
+    const { databases, storage, databaseId, bucketId } = createAppwrite(searchParams);
     const collectionId = await getCollectionId(databases, databaseId, 'routine');
+
+    // First, get the document to check if it has a photo
+    const document = await databases.getDocument(databaseId, collectionId, id);
+    
+    // If there's a photo URL, try to extract the file ID and delete it from storage
+    if (document.photo) {
+      try {
+        // Extract file ID from Appwrite storage URL
+        // Appwrite storage URLs typically have the format: https://cloud.appwrite.io/v1/storage/buckets/{bucketId}/files/{fileId}/view
+        const urlParts = document.photo.split('/');
+        const fileIdIndex = urlParts.indexOf('files') + 1;
+        if (fileIdIndex > 0 && fileIdIndex < urlParts.length) {
+          const fileId = urlParts[fileIdIndex];
+          if (fileId && bucketId) {
+            await storage.deleteFile(bucketId, fileId);
+            console.log(`Deleted file ${fileId} from bucket ${bucketId}`);
+          }
+        }
+      } catch (storageErr) {
+        console.error("Failed to delete photo from storage:", storageErr.message);
+        // Continue with document deletion even if photo deletion fails
+      }
+    }
 
     await databases.deleteDocument(databaseId, collectionId, id);
 
