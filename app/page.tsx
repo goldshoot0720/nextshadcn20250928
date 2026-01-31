@@ -12,7 +12,7 @@ import MusicLyrics from "@/components/modules/MusicLyrics";
 import NotesManagement from "@/components/modules/NotesManagement";
 import CommonAccountManagement from "@/components/modules/CommonAccountManagement";
 import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus } from "lucide-react";
-import { MenuItem, CommonAccountSite, CommonAccountNote } from "@/types";
+import { MenuItem, CommonAccount } from "@/types";
 import { Input, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
 import { useCrud } from "@/hooks/useApi";

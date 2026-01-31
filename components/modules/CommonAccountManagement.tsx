@@ -1,19 +1,13 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle } from "lucide-react";
-import { MenuItem, CommonAccountSite, CommonAccountNote, CommonAccountSiteFormData, CommonAccountNoteFormData } from "@/types";
-import { Input, Textarea, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent, SectionHeader, FormCard, FormGrid, FormActions } from "@/components/ui";
+import { CommonAccount, CommonAccountFormData } from "@/types";
+import { Input, Textarea, DataCard, Button, SectionHeader, FormCard, FormActions } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
 import { useCrud } from "@/hooks/useApi";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
-
-interface CombinedAccount {
-  name: string;
-  site?: CommonAccountSite;
-  note?: CommonAccountNote;
-}
 
 // Known site names mapped to their URLs
 const SITE_URL_MAP: Record<string, string> = {
@@ -26,28 +20,22 @@ const SITE_URL_MAP: Record<string, string> = {
   "TRAE": "https://www.trae.ai/",
 };
 
-const INITIAL_SITE_FORM: CommonAccountSiteFormData = {
+const INITIAL_FORM: CommonAccountFormData = {
   name: "",
-  ...Object.fromEntries([...Array(15)].map((_, i) => [`site${(i + 1).toString().padStart(2, '0')}`, ""]))
-} as any;
-
-const INITIAL_NOTE_FORM: CommonAccountNoteFormData = {
-  name: "",
+  ...Object.fromEntries([...Array(15)].map((_, i) => [`site${(i + 1).toString().padStart(2, '0')}`, ""])),
   ...Object.fromEntries([...Array(15)].map((_, i) => [`note${(i + 1).toString().padStart(2, '0')}`, ""]))
-} as any;
+} as CommonAccountFormData;
 
 export default function CommonAccountManagement() {
-  const { items: sites, loading: loadingSites, fetchAll: fetchSites, create: createSite, update: updateSite, remove: removeSite } = useCrud<CommonAccountSite>(API_ENDPOINTS.COMMON_ACCOUNT_SITE);
-  const { items: notes, loading: loadingNotes, fetchAll: fetchNotes, create: createNote, update: updateNote, remove: removeNote } = useCrud<CommonAccountNote>(API_ENDPOINTS.COMMON_ACCOUNT_NOTE);
+  const { items: accounts, loading, fetchAll, create, update, remove } = useCrud<CommonAccount>(API_ENDPOINTS.COMMON_ACCOUNT);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingName, setEditingName] = useState<string | null>(null);
-  const [siteForm, setSiteForm] = useState<CommonAccountSiteFormData>(INITIAL_SITE_FORM);
-  const [noteForm, setNoteForm] = useState<CommonAccountNoteFormData>(INITIAL_NOTE_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CommonAccountFormData>(INITIAL_FORM);
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const [expandedAccounts, setExpandedAccounts] = useState<Record<string, boolean>>({});
-  // Inline edit state: { accountName, idx, siteName, note }
-  const [inlineEdit, setInlineEdit] = useState<{ accountName: string; idx: string; siteName: string; note: string } | null>(null);
+  // Inline edit state: { accountId, idx, siteName, note }
+  const [inlineEdit, setInlineEdit] = useState<{ accountId: string; idx: string; siteName: string; note: string } | null>(null);
   // Site filter state
   const [siteFilter, setSiteFilter] = useState<string | null>(null);
   // Name search state
@@ -56,77 +44,67 @@ export default function CommonAccountManagement() {
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSites();
-    fetchNotes();
-  }, [fetchSites, fetchNotes]);
-
-  const combinedAccounts = useMemo(() => {
-    const accountMap = new Map<string, { site?: CommonAccountSite; note?: CommonAccountNote }>();
-    sites.forEach(site => accountMap.set(site.name, { ...accountMap.get(site.name), site }));
-    notes.forEach(note => accountMap.set(note.name, { ...accountMap.get(note.name), note }));
-    return Array.from(accountMap.entries()).map(([name, data]) => ({ name, ...data }));
-  }, [sites, notes]);
+    fetchAll();
+  }, [fetchAll]);
 
   // Collect all unique site names from all accounts
   const allSiteNames = useMemo(() => {
     const siteSet = new Set<string>();
-    combinedAccounts.forEach(account => {
-      if (account.site) {
-        [...Array(15)].forEach((_, i) => {
-          const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccountSite;
-          const siteName = account.site?.[siteKey] as string;
-          if (siteName) siteSet.add(siteName.trim());
-        });
-      }
+    accounts.forEach(account => {
+      [...Array(15)].forEach((_, i) => {
+        const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccount;
+        const siteName = account[siteKey] as string;
+        if (siteName) siteSet.add(siteName.trim());
+      });
     });
     // Sort alphabetically a~z A~Z
     return Array.from(siteSet).sort((a, b) => a.localeCompare(b));
-  }, [combinedAccounts]);
+  }, [accounts]);
 
   // Filter accounts based on selected site filter and search query
   const filteredAccounts = useMemo(() => {
-    return combinedAccounts.filter(account => {
+    return accounts.filter(account => {
       // Filter by search query (name)
       const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
       // Filter by site selection
       if (!siteFilter) return true;
-      if (!account.site) return false;
       return [...Array(15)].some((_, i) => {
-        const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccountSite;
-        const siteName = account.site?.[siteKey] as string;
+        const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccount;
+        const siteName = account[siteKey] as string;
         return siteName?.trim() === siteFilter.trim();
       });
     });
-  }, [combinedAccounts, siteFilter, searchQuery]);
+  }, [accounts, siteFilter, searchQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!siteForm.name) return;
+    if (!form.name) return;
 
     // 檢查名稱格式 (必須包含 @ 和 .)
     const nameRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!nameRegex.test(siteForm.name.trim())) {
+    if (!nameRegex.test(form.name.trim())) {
       setDuplicateError("帳號名稱格式不正確，必須符合 example@domain.com 格式");
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     // 檢查名稱是否重複 (僅限新增模式)
-    if (!editingName) {
-      const isExisting = combinedAccounts.some(a => a.name.trim().toLowerCase() === siteForm.name.trim().toLowerCase());
+    if (!editingId) {
+      const isExisting = accounts.some(a => a.name.trim().toLowerCase() === form.name.trim().toLowerCase());
       if (isExisting) {
-        setDuplicateError(`帳號名稱「${siteForm.name}」已存在，請勿重複新增`);
+        setDuplicateError(`帳號名稱「${form.name}」已存在，請勿重複新增`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
     } else {
       // 編輯模式：如果名稱被修改且新名稱已存在（且不是原本編輯的這個）
-      if (siteForm.name.trim().toLowerCase() !== editingName.trim().toLowerCase()) {
-        const isExisting = combinedAccounts.some(a => a.name.trim().toLowerCase() === siteForm.name.trim().toLowerCase());
+      const editingAccount = accounts.find(a => a.$id === editingId);
+      if (editingAccount && form.name.trim().toLowerCase() !== editingAccount.name.trim().toLowerCase()) {
+        const isExisting = accounts.some(a => a.name.trim().toLowerCase() === form.name.trim().toLowerCase());
         if (isExisting) {
-          setDuplicateError(`帳號名稱「${siteForm.name}」已存在，請使用其他名稱`);
+          setDuplicateError(`帳號名稱「${form.name}」已存在，請使用其他名稱`);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         }
@@ -134,9 +112,9 @@ export default function CommonAccountManagement() {
     }
 
     // 檢查站點名稱是否重複
-    const siteNames = Object.keys(siteForm)
+    const siteNames = Object.keys(form)
       .filter(key => key.startsWith('site') && key !== 'name')
-      .map(key => (siteForm as any)[key]?.trim())
+      .map(key => (form as any)[key]?.trim())
       .filter(name => name && name !== "");
     
     // 找出重複的名稱
@@ -169,71 +147,42 @@ export default function CommonAccountManagement() {
       return payload;
     };
 
-    const isUpdate = !!editingName;
-    const sitePayload = getPayload(siteForm, isUpdate);
-    const notePayload = getPayload({ ...noteForm, name: siteForm.name }, isUpdate);
+    const isUpdate = !!editingId;
+    const payload = getPayload(form, isUpdate);
 
     try {
-      if (editingName) {
-        const existingAccount = combinedAccounts.find(a => a.name === editingName);
-        
-        // Update Site
-        if (existingAccount?.site) {
-          await updateSite(existingAccount.site.$id, sitePayload);
-        } else {
-          await createSite(sitePayload);
-        }
-
-        // Update Note
-        if (existingAccount?.note) {
-          await updateNote(existingAccount.note.$id, notePayload);
-        } else {
-          await createNote(notePayload);
-        }
+      if (editingId) {
+        await update(editingId, payload);
       } else {
-        // Create New
-        await createSite(sitePayload);
-        await createNote(notePayload);
+        await create(payload);
       }
       resetForm();
-      fetchSites();
-      fetchNotes();
+      fetchAll();
     } catch (err) {
       console.error("Save failed:", err);
       alert("儲存失敗");
     }
   };
 
-  const handleEdit = (account: CombinedAccount) => {
-    const siteData = { ...INITIAL_SITE_FORM, name: account.name };
-    if (account.site) {
-      Object.keys(siteData).forEach(key => {
-        if (key in account.site!) siteData[key as keyof CommonAccountSiteFormData] = (account.site as any)[key];
-      });
-    }
-
-    const noteData = { ...INITIAL_NOTE_FORM, name: account.name };
-    if (account.note) {
-      Object.keys(noteData).forEach(key => {
-        if (key in account.note!) noteData[key as keyof CommonAccountNoteFormData] = (account.note as any)[key];
-      });
-    }
-
-    setSiteForm(siteData as any);
-    setNoteForm(noteData as any);
-    setEditingName(account.name);
+  const handleEdit = (account: CommonAccount) => {
+    const formData = { ...INITIAL_FORM };
+    Object.keys(formData).forEach(key => {
+      if (key in account) {
+        (formData as any)[key] = (account as any)[key] || "";
+      }
+    });
+    setForm(formData);
+    setEditingId(account.$id);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (account: CombinedAccount) => {
-    if (!confirm(`確定要刪除「${account.name}」的所有站點與筆記嗎？`)) return;
+  const handleDelete = async (account: CommonAccount) => {
+    if (!confirm(`確定要刪除「${account.name}」嗎？`)) return;
 
     try {
-      if (account.site) await removeSite(account.site.$id);
-      if (account.note) await removeNote(account.note.$id);
-      fetchSites();
-      fetchNotes();
+      await remove(account.$id);
+      fetchAll();
     } catch (err) {
       console.error("Delete failed:", err);
       alert("刪除失敗");
@@ -241,10 +190,9 @@ export default function CommonAccountManagement() {
   };
 
   const resetForm = () => {
-    setSiteForm(INITIAL_SITE_FORM);
-    setNoteForm(INITIAL_NOTE_FORM);
+    setForm(INITIAL_FORM);
     setExpandedNotes({});
-    setEditingName(null);
+    setEditingId(null);
     setDuplicateError(null);
     setIsFormOpen(false);
   };
@@ -253,13 +201,13 @@ export default function CommonAccountManagement() {
     setExpandedNotes(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  const toggleAccountExpand = (accountName: string) => {
-    setExpandedAccounts(prev => ({ ...prev, [accountName]: !prev[accountName] }));
+  const toggleAccountExpand = (accountId: string) => {
+    setExpandedAccounts(prev => ({ ...prev, [accountId]: !prev[accountId] }));
   };
 
   // Start inline editing for a single item
-  const startInlineEdit = (accountName: string, idx: string, siteName: string, note: string) => {
-    setInlineEdit({ accountName, idx, siteName, note });
+  const startInlineEdit = (accountId: string, idx: string, siteName: string, note: string) => {
+    setInlineEdit({ accountId, idx, siteName, note });
   };
 
   // Cancel inline edit
@@ -271,15 +219,15 @@ export default function CommonAccountManagement() {
   const saveInlineEdit = async () => {
     if (!inlineEdit) return;
     
-    const account = combinedAccounts.find(a => a.name === inlineEdit.accountName);
+    const account = accounts.find(a => a.$id === inlineEdit.accountId);
     if (!account) return;
 
     const siteKey = `site${inlineEdit.idx}`;
     const noteKey = `note${inlineEdit.idx}`;
 
     // 檢查站點名稱是否與該帳號其他站點重複
-    if (account.site && inlineEdit.siteName.trim() !== "") {
-      const otherSites = Object.entries(account.site)
+    if (inlineEdit.siteName.trim() !== "") {
+      const otherSites = Object.entries(account)
         .filter(([key, val]) => key.startsWith('site') && key !== siteKey && key !== 'name' && val)
         .map(([_, val]) => (val as string).trim());
       
@@ -290,34 +238,23 @@ export default function CommonAccountManagement() {
     }
 
     try {
-      // Update site
-      if (account.site) {
-        const sitePayload = { [siteKey]: inlineEdit.siteName };
-        await updateSite(account.site.$id, sitePayload);
-      }
-      // Update note
-      if (account.note) {
-        const notePayload = { [noteKey]: inlineEdit.note };
-        await updateNote(account.note.$id, notePayload);
-      }
+      const payload = { [siteKey]: inlineEdit.siteName, [noteKey]: inlineEdit.note };
+      await update(account.$id, payload);
       setInlineEdit(null);
-      fetchSites();
-      fetchNotes();
+      fetchAll();
     } catch (err) {
       console.error("Inline save failed:", err);
       alert("儲存失敗");
     }
   };
 
-  const isLoading = loadingSites || loadingNotes;
-
-  if (isLoading && combinedAccounts.length === 0) return <FullPageLoading text="載入常用帳號中..." />;
+  if (loading && accounts.length === 0) return <FullPageLoading text="載入常用帳號中..." />;
 
   return (
     <div className="space-y-4 lg:space-y-6">
       <SectionHeader 
         title="鋒兄常用" 
-        subtitle={`共 ${combinedAccounts.length} 組帳號設定`}
+        subtitle={`共 ${accounts.length} 組帳號設定`}
         action={
           <Button 
             onClick={() => setIsFormOpen(!isFormOpen)} 
@@ -345,16 +282,15 @@ export default function CommonAccountManagement() {
               </Button>
             </div>
           )}
-          <FormCard title={editingName ? `編輯帳號: ${editingName}` : "新增帳號組合"} accentColor="from-blue-500 to-blue-600">
+          <FormCard title={editingId ? `編輯帳號` : "新增帳號組合"} accentColor="from-blue-500 to-blue-600">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">帳號名稱</label>
                 <Input
                   placeholder="輸入帳號名稱 (例如: example@example.com)"
-                  value={siteForm.name}
+                  value={form.name}
                   onChange={(e) => {
-                    setSiteForm({ ...siteForm, name: e.target.value });
-                    setNoteForm({ ...noteForm, name: e.target.value });
+                    setForm({ ...form, name: e.target.value });
                     if (duplicateError) setDuplicateError(null);
                   }}
                   required
@@ -379,8 +315,8 @@ export default function CommonAccountManagement() {
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin">
                 {[...Array(15)].map((_, i) => {
                   const idx = (i + 1).toString().padStart(2, '0');
-                  const siteKey = `site${idx}` as keyof CommonAccountSiteFormData;
-                  const noteKey = `note${idx}` as keyof CommonAccountNoteFormData;
+                  const siteKey = `site${idx}` as keyof CommonAccountFormData;
+                  const noteKey = `note${idx}` as keyof CommonAccountFormData;
                   const isExpanded = expandedNotes[idx];
 
                   return (
@@ -389,8 +325,8 @@ export default function CommonAccountManagement() {
                         <span className="w-8 h-10 flex items-center justify-center text-xs text-gray-400 font-mono shrink-0">{idx}</span>
                         <Input
                           placeholder={`網站名稱/${idx}`}
-                          value={(siteForm as any)[siteKey] || ""}
-                          onChange={(e) => setSiteForm({ ...siteForm, [siteKey]: e.target.value } as any)}
+                          value={(form as any)[siteKey] || ""}
+                          onChange={(e) => setForm({ ...form, [siteKey]: e.target.value } as any)}
                           className="rounded-xl flex-1"
                         />
                         <Button
@@ -408,8 +344,8 @@ export default function CommonAccountManagement() {
                         <div className="pl-10 pr-2 pb-2">
                           <Textarea
                             placeholder={`備註內容/${idx}`}
-                            value={(noteForm as any)[noteKey] || ""}
-                            onChange={(e) => setNoteForm({ ...noteForm, [noteKey]: e.target.value } as any)}
+                            value={(form as any)[noteKey] || ""}
+                            onChange={(e) => setForm({ ...form, [noteKey]: e.target.value } as any)}
                             className="rounded-xl border-purple-100 dark:border-purple-900/30 min-h-[80px] resize-y py-2 text-sm shadow-inner"
                           />
                         </div>
@@ -457,14 +393,13 @@ export default function CommonAccountManagement() {
               onClick={() => setSiteFilter(null)}
               className={`h-8 px-3 rounded-lg text-sm shrink-0 ${siteFilter === null ? 'bg-blue-600 text-white' : ''}`}
             >
-              全部 ({combinedAccounts.length})
+              全部 ({accounts.length})
             </Button>
             {allSiteNames.map(siteName => {
-              const count = combinedAccounts.filter(account => {
-                if (!account.site) return false;
+              const count = accounts.filter(account => {
                 return [...Array(15)].some((_, i) => {
-                  const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccountSite;
-                  const name = account.site?.[siteKey] as string;
+                  const siteKey = `site${(i + 1).toString().padStart(2, '0')}` as keyof CommonAccount;
+                  const name = account[siteKey] as string;
                   return name?.trim() === siteName.trim();
                 });
               }).length;
@@ -499,7 +434,7 @@ export default function CommonAccountManagement() {
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {filteredAccounts.map((account) => (
-            <DataCard key={account.name} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 border-t-4 border-t-blue-500 overflow-hidden group">
+            <DataCard key={account.$id} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 border-t-4 border-t-blue-500 overflow-hidden group">
               <div className="p-4 pr-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <NoteIcon size={20} className="text-blue-500 shrink-0" />
@@ -522,15 +457,15 @@ export default function CommonAccountManagement() {
                   // Collect all non-empty site/note pairs
                   const items = [...Array(15)].map((_, i) => {
                     const idx = (i + 1).toString().padStart(2, '0');
-                    const siteKey = `site${idx}` as keyof CommonAccountSite;
-                    const noteKey = `note${idx}` as keyof CommonAccountNote;
-                    const siteName = account.site?.[siteKey] as string;
-                    const note = account.note?.[noteKey] as string;
+                    const siteKey = `site${idx}` as keyof CommonAccount;
+                    const noteKey = `note${idx}` as keyof CommonAccount;
+                    const siteName = account[siteKey] as string;
+                    const note = account[noteKey] as string;
                     if (!siteName && !note) return null;
                     return { idx, siteName, note };
                   }).filter(Boolean) as { idx: string; siteName: string; note: string }[];
 
-                  const isExpanded = expandedAccounts[account.name];
+                  const isExpanded = expandedAccounts[account.$id];
                   
                   // 篩選時且未展開時，將符合篩選條件的項目移到第一位
                   let displayItems = [...items];
@@ -549,7 +484,7 @@ export default function CommonAccountManagement() {
                     <>
                       {visibleItems.map(({ idx, siteName, note }) => {
                         const siteUrl = siteName ? SITE_URL_MAP[siteName] : undefined;
-                        const isInlineEditing = inlineEdit?.accountName === account.name && inlineEdit?.idx === idx;
+                        const isInlineEditing = inlineEdit?.accountId === account.$id && inlineEdit?.idx === idx;
                         
                         return (
                           <div key={idx} className="group/item relative bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800/50 transition-colors">
@@ -624,7 +559,7 @@ export default function CommonAccountManagement() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => startInlineEdit(account.name, idx, siteName || '', note || '')}
+                                    onClick={() => startInlineEdit(account.$id, idx, siteName || '', note || '')}
                                     className="h-7 w-7 p-0 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shrink-0"
                                     title="編輯此項目"
                                   >
@@ -640,7 +575,7 @@ export default function CommonAccountManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleAccountExpand(account.name)}
+                          onClick={() => toggleAccountExpand(account.$id)}
                           className="w-full h-10 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl flex items-center justify-center gap-2"
                         >
                           {isExpanded ? (

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Client, Databases } from "appwrite";
+import { Client, Databases, ID } from "appwrite";
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +7,7 @@ function createAppwrite() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const collectionId = process.env.APPWRITE_COMMON_ACCOUNT_NOTE_COLLECTION_ID || "commonaccountnote";
+  const collectionId = process.env.APPWRITE_COMMON_ACCOUNT_COLLECTION_ID || "commonaccount";
 
   if (!endpoint || !projectId || !databaseId || !collectionId) {
     throw new Error("Appwrite configuration is missing");
@@ -22,26 +22,13 @@ function createAppwrite() {
   return { databases, databaseId, collectionId };
 }
 
-// 更新 Note
-export async function PUT(req, context) {
+export async function GET() {
   try {
-    const { params } = context;
-    const { id } = await params;
-    const body = await req.json();
-
-    if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
-
     const { databases, databaseId, collectionId } = createAppwrite();
-
-    const res = await databases.updateDocument(
-      databaseId,
-      collectionId,
-      id,
-      body
-    );
-    return NextResponse.json(res);
+    const res = await databases.listDocuments(databaseId, collectionId);
+    return NextResponse.json(res.documents);
   } catch (err) {
-    console.error("PUT /api/common-account/note/[id] error:", err);
+    console.error("GET /api/common-account error:", err);
     return NextResponse.json(
       { error: err.message }, 
       { status: err.code || 500 }
@@ -49,20 +36,20 @@ export async function PUT(req, context) {
   }
 }
 
-// 刪除 Note
-export async function DELETE(req, context) {
+export async function POST(req) {
   try {
-    const { params } = context;
-    const { id } = await params;
-
-    if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
-
+    const body = await req.json();
     const { databases, databaseId, collectionId } = createAppwrite();
 
-    await databases.deleteDocument(databaseId, collectionId, id);
-    return NextResponse.json({ success: true });
+    const res = await databases.createDocument(
+      databaseId,
+      collectionId,
+      ID.unique(),
+      body
+    );
+    return NextResponse.json(res);
   } catch (err) {
-    console.error("DELETE /api/common-account/note/[id] error:", err);
+    console.error("POST /api/common-account error:", err);
     return NextResponse.json(
       { error: err.message }, 
       { status: err.code || 500 }

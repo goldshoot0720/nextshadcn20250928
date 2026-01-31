@@ -152,8 +152,8 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-// 常用帳號站點類型
-export interface CommonAccountSite {
+// 常用帳號類型
+export interface CommonAccount {
   $id: string;
   name: string;
   site01?: string;
@@ -171,33 +171,6 @@ export interface CommonAccountSite {
   site13?: string;
   site14?: string;
   site15?: string;
-  $createdAt?: string;
-  $updatedAt?: string;
-}
-
-export interface CommonAccountSiteFormData {
-  name: string;
-  site01?: string;
-  site02?: string;
-  site03?: string;
-  site04?: string;
-  site05?: string;
-  site06?: string;
-  site07?: string;
-  site08?: string;
-  site09?: string;
-  site10?: string;
-  site11?: string;
-  site12?: string;
-  site13?: string;
-  site14?: string;
-  site15?: string;
-}
-
-// 常用帳號筆記類型
-export interface CommonAccountNote {
-  $id: string;
-  name: string;
   note01?: string;
   note02?: string;
   note03?: string;
@@ -217,8 +190,23 @@ export interface CommonAccountNote {
   $updatedAt?: string;
 }
 
-export interface CommonAccountNoteFormData {
+export interface CommonAccountFormData {
   name: string;
+  site01?: string;
+  site02?: string;
+  site03?: string;
+  site04?: string;
+  site05?: string;
+  site06?: string;
+  site07?: string;
+  site08?: string;
+  site09?: string;
+  site10?: string;
+  site11?: string;
+  site12?: string;
+  site13?: string;
+  site14?: string;
+  site15?: string;
   note01?: string;
   note02?: string;
   note03?: string;
