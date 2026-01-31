@@ -11,11 +11,12 @@ async function getCollectionId(databases, databaseId, name) {
   return col.$id;
 }
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const apiKey = process.env.APPWRITE_API_KEY;
+function createAppwrite(searchParams) {
+  // 從 URL 參數讀取配置（優先），否則使用 .env
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.APPWRITE_API_KEY;
 
   const client = new sdk.Client()
     .setEndpoint(endpoint)
@@ -27,10 +28,22 @@ function createAppwrite() {
 }
 
 // GET /api/food
-export async function GET() {
+export async function GET(request) {
   try {
-    const { databases, databaseId } = createAppwrite();
-    const collectionId = await getCollectionId(databases, databaseId, "food");
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    
+    // 嘗試取得 collection ID
+    let collectionId;
+    try {
+      collectionId = await getCollectionId(databases, databaseId, "food");
+    } catch (collectionErr) {
+      console.error("Collection not found:", collectionErr.message);
+      return NextResponse.json(
+        { error: "Table food 不存在，請至「鋒兄設定」中初始化。" }, 
+        { status: 404 }
+      );
+    }
     
     const response = await databases.listDocuments(databaseId, collectionId, [
       sdk.Query.limit(100),
@@ -39,10 +52,6 @@ export async function GET() {
     return NextResponse.json(response.documents);
   } catch (err) {
     console.error("GET /api/food error:", err);
-    // 如果是 collection not found，返回 404
-    if (err.message && err.message.includes('not found')) {
-      return NextResponse.json({ error: err.message }, { status: 404 });
-    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -50,7 +59,8 @@ export async function GET() {
 // POST /api/food
 export async function POST(req) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const collectionId = await getCollectionId(databases, databaseId, "food");
     
     const body = await req.json();

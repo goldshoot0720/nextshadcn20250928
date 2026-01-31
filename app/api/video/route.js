@@ -4,11 +4,12 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.APPWRITE_DATABASE_ID;
-  const apiKey = process.env.APPWRITE_API_KEY;
+function createAppwrite(searchParams) {
+  // 從 URL 參數讀取配置（優先），否則使用 .env
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -25,9 +26,10 @@ function createAppwrite() {
 }
 
 // GET /api/video - List all videos
-export async function GET() {
+export async function GET(request) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     
     // Get collection ID by name
     const allCollections = await databases.listCollections(databaseId);
