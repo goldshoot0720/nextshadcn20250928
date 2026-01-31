@@ -142,6 +142,9 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         <FoodStatsCard stats={stats} onNavigate={onNavigate} />
         <SubscriptionStatsCard stats={stats} onNavigate={onNavigate} />
       </div>
+
+      {/* 多媒體儲存統計 */}
+      <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
       
       {/* 主要統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -169,9 +172,6 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         <StatCard title="銀行總數" value={stats.totalBanks} icon={Building2} gradient="from-cyan-500 to-cyan-600" />
         <StatCard title="銀行存款" value={formatCurrency(stats.totalBankDeposit)} icon={Building2} gradient="from-emerald-500 to-emerald-600" />
       </div>
-
-      {/* 多媒體儲存統計 */}
-      <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
 
       {/* 提醒和建議 */}
       {needsAttention && <AlertSection stats={stats} />}
@@ -360,6 +360,8 @@ function AlertSection({ stats }: { stats: ReturnType<typeof useDashboardStats>["
 
 // 多媒體儲存統計
 function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number; totalVideos: number; totalMusic: number; imagesSize: number; videosSize: number; musicSize: number; totalSize: number; storageLimit: number; usagePercentage: number }; onNavigate: (id: string) => void }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -373,31 +375,43 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
 
   return (
     <DataCard className="p-4 sm:p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-          <HardDrive className="text-purple-600 dark:text-purple-400" size={20} />
+      <div 
+        className="flex items-center justify-between mb-4 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+            <HardDrive className="text-purple-600 dark:text-purple-400" size={20} />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">多媒體儲存統計</h2>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">多媒體儲存統計</h2>
+        {isExpanded ? (
+          <ChevronUp className="text-gray-500 dark:text-gray-400" size={20} />
+        ) : (
+          <ChevronDown className="text-gray-500 dark:text-gray-400" size={20} />
+        )}
       </div>
 
-      {/* 儲存總覽 */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-600 dark:text-gray-400">累積容量</span>
-          <span className={`font-semibold ${usageColor}`}>
-            {formatBytes(stats.totalSize)} / {formatBytes(stats.storageLimit)} ({stats.usagePercentage.toFixed(1)}%)
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-          <div
-            className={`${progressColor} h-3 rounded-full transition-all duration-300`}
-            style={{ width: `${Math.min(stats.usagePercentage, 100)}%` }}
-          />
-        </div>
-      </div>
+      {isExpanded && (
+        <>
+          {/* 儲存總覽 */}
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600 dark:text-gray-400">累積容量</span>
+              <span className={`font-semibold ${usageColor}`}>
+                {formatBytes(stats.totalSize)} / {formatBytes(stats.storageLimit)} ({stats.usagePercentage.toFixed(1)}%)
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+              <div
+                className={`${progressColor} h-3 rounded-full transition-all duration-300`}
+                style={{ width: `${Math.min(stats.usagePercentage, 100)}%` }}
+              />
+            </div>
+          </div>
 
-      {/* 分類統計 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* 分類統計 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MediaStatCard 
           icon={Image} 
           title="鋒兄圖片" 
@@ -414,12 +428,14 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
         />
         <MediaStatCard 
           icon={Music} 
-          title="鋒兄音樂" 
+          title="鳳兄音樂" 
           count={stats.totalMusic} 
           size={formatBytes(stats.musicSize)} 
           color="purple"
         />
       </div>
+        </>
+      )}
     </DataCard>
   );
 }
