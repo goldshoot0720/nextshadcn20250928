@@ -22,6 +22,7 @@ interface EnhancedDashboardProps {
 
 export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", onlyTitle = false }: EnhancedDashboardProps) {
   const { stats, loading } = useDashboardStats();
+  const { stats: mediaStats, loading: mediaLoading } = useMediaStats();
 
   useEffect(() => {
     if (onlyTitle) return; // Skip notification on home page if only title is shown
