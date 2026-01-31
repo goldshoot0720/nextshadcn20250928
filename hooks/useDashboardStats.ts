@@ -127,7 +127,7 @@ export function useDashboardStats() {
         const tablesToCheck = [
           { name: 'article', api: '/api/article', label: 'Table article' },
           { name: 'bank', api: '/api/bank', label: 'Table bank' },
-          { name: 'commonaccount', api: '/api/common-account', label: 'Table commonaccount' },
+          { name: 'commonaccount', api: '/api/commonaccount', label: 'Table commonaccount' },
           { name: 'food', api: '/api/food', label: 'Table food' },
           { name: 'image', api: '/api/image', label: 'Table image' },
           { name: 'music', api: '/api/music', label: 'Table music' },
@@ -189,7 +189,7 @@ export function useDashboardStats() {
         // 獲取常用帳號數據（使用快取）
         let commonAccounts: any[] = [];
         try {
-          const commonAccountsData = await fetchApi<any[]>("/api/common-account" + cacheParam);
+          const commonAccountsData = await fetchApi<any[]>("/api/commonaccount" + cacheParam);
           commonAccounts = Array.isArray(commonAccountsData) ? commonAccountsData : [];
         } catch (err) {
           console.error('Failed to load common accounts:', err);

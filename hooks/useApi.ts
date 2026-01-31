@@ -80,9 +80,6 @@ export async function fetchApi<T>(
       }
       // 如果沒有錯誤訊息，嘗試從 URL 提取 table 名稱
       let tableName = url.split('/api/')[1]?.split('/')[0]?.split('?')[0] || 'table';
-      if (tableName === 'common-account') {
-        tableName = 'commonaccount';
-      }
       throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
     }
     throw new Error(`HTTP error! status: ${response.status}`);

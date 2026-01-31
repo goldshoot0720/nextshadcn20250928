@@ -78,7 +78,7 @@ export const API_ENDPOINTS = {
   VIDEO: "/api/video",
   MUSIC: "/api/music",
   ARTICLE: "/api/article",
-  COMMON_ACCOUNT: "/api/common-account",
+  COMMON_ACCOUNT: "/api/commonaccount",
 } as const;
 
 // 動畫設定
