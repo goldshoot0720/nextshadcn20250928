@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Food, FoodFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatDate, getDaysFromToday, getExpiryStatus } from "@/lib/formatters";
+import { fetchApi } from "@/hooks/useApi";
 
 // 全域快取
 let cachedFoods: Food[] | null = null;
@@ -48,19 +49,7 @@ export function useFoods() {
     setError(null);
     try {
       const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
-      const res = await fetch(API_ENDPOINTS.FOOD + cacheParam);
-      if (!res.ok) {
-        if (res.status === 404) {
-          // 檢查是否真的是 collection not found
-          const errorData = await res.json().catch(() => ({}));
-          if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
-            throw new Error("Table food 不存在，請至「鋒兄設定」中初始化。");
-          }
-        }
-        throw new Error("載入失敗");
-      }
-      
-      const resData = await res.json();
+      const resData = await fetchApi<Food[]>(API_ENDPOINTS.FOOD + cacheParam);
       let data: Food[] = Array.isArray(resData) ? resData : [];
       // 按到期日排序
       data = data.sort(

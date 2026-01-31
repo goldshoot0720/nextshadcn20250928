@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Article, ArticleFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
+import { fetchApi } from "@/hooks/useApi";
 
 // 全域快取
 let cachedArticles: Article[] | null = null;
@@ -37,19 +38,7 @@ export function useArticles() {
     setError(null);
     try {
       const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
-      const res = await fetch(API_ENDPOINTS.ARTICLE + cacheParam);
-      if (!res.ok) {
-        if (res.status === 404) {
-          // 檢查是否真的是 collection not found
-          const errorData = await res.json().catch(() => ({}));
-          if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
-            throw new Error("Table article 不存在，請至「鋒兄設定」中初始化。");
-          }
-        }
-        throw new Error("載入文章資料失敗");
-      }
-
-      const resData = await res.json();
+      const resData = await fetchApi<Article[]>(API_ENDPOINTS.ARTICLE + cacheParam);
       let data: Article[] = Array.isArray(resData) ? resData : [];
       // 按日期排序（最新的在前）
       data = data.sort(

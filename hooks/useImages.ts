@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { API_ENDPOINTS } from "@/lib/constants";
+import { fetchApi } from "@/hooks/useApi";
 
 export interface ImageData {
   $id: string;
@@ -49,19 +50,7 @@ export function useImages() {
     setError(null);
     try {
       const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
-      const response = await fetch(API_ENDPOINTS.IMAGE + cacheParam);
-      if (!response.ok) {
-        if (response.status === 404) {
-          // 檢查是否真的是 collection not found
-          const errorData = await response.json().catch(() => ({}));
-          if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
-            throw new Error("Table image 不存在，請至「鋒兄設定」中初始化。");
-          }
-        }
-        throw new Error("載入失敗");
-      }
-      
-      const data = await response.json();
+      const data = await fetchApi<ImageData[]>(API_ENDPOINTS.IMAGE + cacheParam);
       // Ensure data is an array
       const imageList = Array.isArray(data) ? data : [];
       

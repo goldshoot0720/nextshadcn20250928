@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Bank, BankFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
+import { fetchApi } from "@/hooks/useApi";
 
 // 全域快取
 let cachedBanks: Bank[] | null = null;
@@ -37,19 +38,7 @@ export function useBanks() {
     setError(null);
     try {
       const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
-      const res = await fetch('/api/bank' + cacheParam);
-      if (!res.ok) {
-        if (res.status === 404) {
-          // 檢查是否真的是 collection not found
-          const errorData = await res.json().catch(() => ({}));
-          if (errorData.error && (errorData.error.includes('could not be found') || errorData.error.includes('not found'))) {
-            throw new Error("Table bank 不存在，請至「鋒兄設定」中初始化。");
-          }
-        }
-        throw new Error("載入失敗");
-      }
-      
-      const resData = await res.json();
+      const resData = await fetchApi<Bank[]>('/api/bank' + cacheParam);
       let data: Bank[] = Array.isArray(resData) ? resData : [];
       // 按名稱排序
       data = data.sort((a, b) => a.name.localeCompare(b.name));
