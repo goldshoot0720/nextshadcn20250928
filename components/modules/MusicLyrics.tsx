@@ -1503,6 +1503,12 @@ export default function MusicLyrics() {
       <SectionHeader
         title="鋒兄音樂"
         subtitle="播放您喜愛的歌曲與查看歌詞"
+        action={
+          <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+            <Plus size={16} />
+            新增歌曲
+          </Button>
+        }
       />
       {/* 添加歌词样式 */}
       <style jsx>{`
@@ -1570,22 +1576,6 @@ export default function MusicLyrics() {
         }
       `}</style>
       
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Music className="text-purple-600" />
-            鋒兄音樂歌詞
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            收藏和管理您喜愛的歌曲歌詞
-          </p>
-        </div>
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-          <Plus size={16} />
-          新增歌曲
-        </Button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 歌曲列表 */}
         <div className="lg:col-span-1">

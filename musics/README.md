@@ -13,7 +13,7 @@ This folder contains the lyrics for the viral story of Tu Ge (塗哥), the legen
 The tale begins on June 15, 2004, when junior high graduates were signing yearbooks. This marks the beginning of Tu Sanjie's (塗三傑) journey to becoming the legendary Tu Ge, a water and electricity worker who would inspire TV dramas, academic papers, and cultural phenomena across Taiwan.
 
 ## Files:
-- `feng-xiong-lyrics.md` - 鋒兄音樂歌詞集 (Feng Xiong's Music Lyrics Collection)
+- `feng-xiong-lyrics.md` - 鋒兄音樂集 (Feng Xiong's Music Collection)
 - `tu-ge-story-zh-tw.md` - Traditional Chinese version
 - `tu-ge-story-en.md` - English version
 - `tu-ge-story-ja.md` - Japanese version
