@@ -191,6 +191,7 @@ export default function VideoIntroduction() {
       {showFormModal && (
         <VideoFormModal
           video={editingVideo}
+          existingVideos={videos}
           onClose={() => {
             setShowFormModal(false);
             setEditingVideo(null);
@@ -329,7 +330,7 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
 }
 
 // 影片表單模態框
-function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null; onClose: () => void; onSuccess: () => void }) {
+function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: VideoData | null; existingVideos: VideoData[]; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     name: video?.name || '',
     file: video?.file || '',
@@ -344,8 +345,25 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
   const [previewLoading, setPreviewLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
+  const [duplicateWarning, setDuplicateWarning] = useState<string>(''); // 重複警告
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 計算檔案 SHA-256 hash
+  const calculateFileHash = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    } catch (error) {
+      console.error('Hash calculation error:', error);
+      // 如果計算失敗，使用備用方案
+      return `fallback_${file.name}_${file.size}_${file.lastModified}`;
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -367,11 +385,26 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
     setPreviewLoading(true);
     setUploadStatus('idle');
     setUploadProgress(0);
+    setDuplicateWarning(''); // 清除之前的警告
     
     // 儲存檔案並產生預覽 URL
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+    
+    // 計算檔案 hash
+    const hash = await calculateFileHash(file);
+    setFileHash(hash);
+    setFormData({ ...formData, hash });
+    
+    // 檢查是否有重複的 hash
+    const duplicateVideo = existingVideos.find(vid => 
+      vid.hash === hash && (!video || vid.$id !== video.$id)
+    );
+    
+    if (duplicateVideo) {
+      setDuplicateWarning(`警告：此影片與「${duplicateVideo.name}」相同，請勿重複上傳！`);
+    }
     
     // 模擬預覽載入完成
     setTimeout(() => setPreviewLoading(false), 300);
@@ -423,6 +456,12 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
       return;
     }
 
+    // 檢查是否有重複
+    if (duplicateWarning) {
+      alert('此影片與既有影片重複，無法上傳！請選擇其他影片。');
+      return;
+    }
+
     setSubmitting(true);
     try {
       let finalFormData = { ...formData };
@@ -431,7 +470,11 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
       if (selectedFile) {
         const { url, fileId } = await uploadFileToAppwrite(selectedFile);
         finalFormData.file = url;
-        finalFormData.hash = fileId;
+        // 使用已計算的 hash，如果沒有則使用 fileId
+        finalFormData.hash = fileHash || fileId;
+      } else if (!video && !formData.hash) {
+        // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
+        finalFormData.hash = `no_file_${Date.now()}`;
       }
 
       const url = video ? `${API_ENDPOINTS.VIDEO}/${video.$id}` : API_ENDPOINTS.VIDEO;
@@ -514,6 +557,13 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
                   <video src={previewUrl} controls className="max-h-48 rounded-lg border border-gray-200 dark:border-gray-700" />
                 </div>
               )}
+              {duplicateWarning && (
+                <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                    {duplicateWarning}
+                  </p>
+                </div>
+              )}
               {uploadStatus === 'uploading' && (
                 <div className="mt-2">
                   <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -575,12 +625,13 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Hash
+              Hash (程式自動生成)
             </label>
             <Input
               value={formData.hash}
-              onChange={(e) => setFormData({ ...formData, hash: e.target.value })}
-              placeholder="影片 hash 值"
+              disabled
+              placeholder="上傳檔案後自動生成"
+              className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
             />
           </div>
 
@@ -588,7 +639,11 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
             <Button type="button" onClick={onClose} className="flex-1 bg-gray-500 hover:bg-gray-600 rounded-xl">
               取消
             </Button>
-            <Button type="submit" disabled={submitting} className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-xl">
+            <Button 
+              type="submit" 
+              disabled={submitting || !!duplicateWarning} 
+              className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {submitting ? '處理中...' : (video ? '更新' : '新增')}
             </Button>
           </div>
