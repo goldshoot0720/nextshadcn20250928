@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
-import { Client, Storage, ID, InputFile } from 'node-appwrite';
+
+const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
-
-// 設定最大檔案大小為 50MB
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 function createAppwrite() {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
@@ -20,12 +14,12 @@ function createAppwrite() {
     throw new Error("Appwrite configuration is missing");
   }
 
-  const client = new Client()
+  const client = new sdk.Client()
     .setEndpoint(endpoint)
     .setProject(projectId)
     .setKey(apiKey);
 
-  const storage = new Storage(client);
+  const storage = new sdk.Storage(client);
 
   return { storage, bucketId };
 }
@@ -61,8 +55,8 @@ export async function POST(request) {
     // 上傳到 Appwrite Storage
     const uploadedFile = await storage.createFile(
       bucketId,
-      ID.unique(),
-      InputFile.fromBuffer(buffer, file.name)
+      sdk.ID.unique(),
+      sdk.InputFile.fromBuffer(buffer, file.name)
     );
 
     // 獲取檔案 URL
