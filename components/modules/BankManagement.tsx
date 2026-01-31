@@ -84,7 +84,13 @@ export default function BankManagement() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`確定要刪除「${name}」的資料嗎？`)) return;
+    const userInput = prompt(`請輸入 "DELETE ${name}" 來確認刪除「${name}」的資料：`);
+    if (!userInput || userInput !== `DELETE ${name}`) {
+      if (userInput !== null) { // User didn't cancel
+        alert("輸入不正確，取消刪除操作");
+      }
+      return;
+    }
     try {
       await deleteBank(id);
     } catch {
