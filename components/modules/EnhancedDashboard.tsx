@@ -395,27 +395,24 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MediaStatCard 
           icon={Image} 
-          title="鄒允圖片" 
+          title="鋒允圖片" 
           count={stats.totalImages} 
           size={formatBytes(stats.imagesSize)} 
           color="blue"
-          onClick={() => onNavigate('image')}
         />
         <MediaStatCard 
           icon={FileVideo} 
-          title="鄒允影片" 
+          title="鋒允影片" 
           count={stats.totalVideos} 
           size={formatBytes(stats.videosSize)} 
           color="indigo"
-          onClick={() => onNavigate('video')}
         />
         <MediaStatCard 
           icon={Music} 
-          title="鄒允音樂" 
+          title="鋒允音樂" 
           count={stats.totalMusic} 
           size={formatBytes(stats.musicSize)} 
           color="purple"
-          onClick={() => onNavigate('music')}
         />
       </div>
     </DataCard>
@@ -423,20 +420,17 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
 }
 
 // 多媒體統計卡片
-function MediaStatCard({ icon: Icon, title, count, size, color, onClick }: { icon: any; title: string; count: number; size: string; color: string; onClick: () => void }) {
-  const colorMap: Record<string, { bg: string; text: string; hover: string }> = {
-    blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400', hover: 'hover:bg-blue-100 dark:hover:bg-blue-900/30' },
-    indigo: { bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-600 dark:text-indigo-400', hover: 'hover:bg-indigo-100 dark:hover:bg-indigo-900/30' },
-    purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400', hover: 'hover:bg-purple-100 dark:hover:bg-purple-900/30' },
+function MediaStatCard({ icon: Icon, title, count, size, color }: { icon: any; title: string; count: number; size: string; color: string }) {
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400' },
+    indigo: { bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-600 dark:text-indigo-400' },
+    purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400' },
   };
 
   const colors = colorMap[color];
 
   return (
-    <button
-      onClick={onClick}
-      className={`${colors.bg} ${colors.hover} p-4 rounded-xl transition-colors duration-200 text-left border border-transparent hover:border-gray-200 dark:hover:border-gray-700`}
-    >
+    <div className={`${colors.bg} p-4 rounded-xl border border-transparent`}>
       <div className="flex items-center gap-2 mb-2">
         <Icon className={colors.text} size={20} />
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
@@ -445,6 +439,6 @@ function MediaStatCard({ icon: Icon, title, count, size, color, onClick }: { ico
         <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{count}</p>
         <p className="text-xs text-gray-500 dark:text-gray-400">容量: {size}</p>
       </div>
-    </button>
+    </div>
   );
 }
