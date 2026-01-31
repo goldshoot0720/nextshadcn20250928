@@ -82,8 +82,8 @@ export async function POST(request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const { databases, databaseId } = createAppwrite(searchParams);
+    // Use environment variables directly like article does
+    const { databases, databaseId } = createAppwrite();
     const collectionId = await getCollectionId(databases, databaseId, 'routine');
 
     const payload = {
