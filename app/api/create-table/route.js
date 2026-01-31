@@ -75,12 +75,143 @@ const TABLE_SCHEMAS = {
   }
 };
 
-// POST /api/create-table
+// Export schemas for other uses
+export { TABLE_SCHEMAS };
+
+// GET /api/create-table - SSE endpoint for progress streaming
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const tableName = searchParams.get('table');
+
+  if (!tableName || !TABLE_SCHEMAS[tableName]) {
+    return NextResponse.json({ error: 'Invalid table name' }, { status: 400 });
+  }
+
+  const schema = TABLE_SCHEMAS[tableName];
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      };
+
+      try {
+        const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+        const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+        const databaseId = process.env.APPWRITE_DATABASE_ID;
+        const apiKey = process.env.APPWRITE_API_KEY;
+
+        if (!endpoint || !projectId || !databaseId || !apiKey) {
+          send({ type: 'error', message: 'Missing Appwrite configuration' });
+          controller.close();
+          return;
+        }
+
+        const client = new sdk.Client()
+          .setEndpoint(endpoint)
+          .setProject(projectId)
+          .setKey(apiKey);
+
+        const databases = new sdk.Databases(client);
+
+        // Check if collection exists
+        try {
+          await databases.getCollection(databaseId, tableName);
+          send({ type: 'error', message: `${tableName} table already exists` });
+          controller.close();
+          return;
+        } catch (err) {
+          if (err.code !== 404) {
+            send({ type: 'error', message: err.message });
+            controller.close();
+            return;
+          }
+        }
+
+        // Send start message
+        send({ type: 'start', tableName, totalColumns: schema.attributes.length });
+
+        // Create collection
+        send({ type: 'progress', step: 'collection', message: `Creating ${tableName} collection...` });
+        const collection = await databases.createCollection(
+          databaseId,
+          sdk.ID.unique(),
+          tableName,
+          [
+            sdk.Permission.read(sdk.Role.any()),
+            sdk.Permission.create(sdk.Role.any()),
+            sdk.Permission.update(sdk.Role.any()),
+            sdk.Permission.delete(sdk.Role.any()),
+          ]
+        );
+
+        const collectionId = collection.$id;
+        send({ type: 'progress', step: 'collection', message: `Collection created (ID: ${collectionId})`, collectionId });
+
+        // Create attributes
+        const total = schema.attributes.length;
+        for (let i = 0; i < total; i++) {
+          const attr = schema.attributes[i];
+          try {
+            switch (attr.type) {
+              case 'string':
+                await databases.createStringAttribute(databaseId, collectionId, attr.key, attr.size, attr.required);
+                break;
+              case 'integer':
+                await databases.createIntegerAttribute(databaseId, collectionId, attr.key, attr.required);
+                break;
+              case 'url':
+                await databases.createUrlAttribute(databaseId, collectionId, attr.key, attr.required);
+                break;
+            }
+            send({ 
+              type: 'progress', 
+              step: 'attribute', 
+              current: i + 1, 
+              total, 
+              percent: Math.round(((i + 1) / total) * 100),
+              attribute: attr.key,
+              message: `Creating ${attr.key} (${i + 1}/${total})`
+            });
+            await new Promise(resolve => setTimeout(resolve, 150));
+          } catch (err) {
+            if (err.code !== 409) {
+              send({ type: 'warning', attribute: attr.key, message: err.message });
+            }
+          }
+        }
+
+        // Complete
+        send({ 
+          type: 'complete', 
+          success: true, 
+          message: `${tableName} table created with ${total} columns`,
+          collectionId 
+        });
+        controller.close();
+
+      } catch (err) {
+        send({ type: 'error', message: err.message });
+        controller.close();
+      }
+    }
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
+}
+
+// POST /api/create-table - Non-streaming endpoint (kept for backward compatibility)
 export async function POST(request) {
   try {
     const { tableName } = await request.json();
 
-    // Check if table schema is defined
     const schema = TABLE_SCHEMAS[tableName];
     if (!schema) {
       return NextResponse.json(
@@ -108,7 +239,6 @@ export async function POST(request) {
 
     const databases = new sdk.Databases(client);
 
-    // Check if collection exists
     try {
       await databases.getCollection(databaseId, tableName);
       return NextResponse.json(
@@ -119,7 +249,6 @@ export async function POST(request) {
       if (err.code !== 404) throw err;
     }
 
-    // Create collection (let Appwrite generate ID)
     const collection = await databases.createCollection(
       databaseId,
       sdk.ID.unique(),
@@ -134,37 +263,19 @@ export async function POST(request) {
 
     const collectionId = collection.$id;
 
-    // Create attributes based on type
     for (const attr of schema.attributes) {
       try {
         switch (attr.type) {
           case 'string':
-            await databases.createStringAttribute(
-              databaseId,
-              collectionId,
-              attr.key,
-              attr.size,
-              attr.required
-            );
+            await databases.createStringAttribute(databaseId, collectionId, attr.key, attr.size, attr.required);
             break;
           case 'integer':
-            await databases.createIntegerAttribute(
-              databaseId,
-              collectionId,
-              attr.key,
-              attr.required
-            );
+            await databases.createIntegerAttribute(databaseId, collectionId, attr.key, attr.required);
             break;
           case 'url':
-            await databases.createUrlAttribute(
-              databaseId,
-              collectionId,
-              attr.key,
-              attr.required
-            );
+            await databases.createUrlAttribute(databaseId, collectionId, attr.key, attr.required);
             break;
         }
-        // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 200));
       } catch (err) {
         if (err.code !== 409) {

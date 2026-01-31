@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus } from "lucide-react";
+import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus, X, CheckCircle2 } from "lucide-react";
 import { Button, DataCard, SectionHeader } from "@/components/ui";
 import { useTheme } from "@/components/providers/theme-provider";
 
@@ -19,11 +19,24 @@ interface DatabaseStats {
   databaseId: string;
 }
 
+interface CreateProgress {
+  tableName: string;
+  totalColumns: number;
+  currentColumn: number;
+  percent: number;
+  currentAttribute: string;
+  message: string;
+  isComplete: boolean;
+  isError: boolean;
+  collectionId?: string;
+}
+
 export default function SettingsManagement() {
   const { theme, setTheme } = useTheme();
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<string | null>(null);
+  const [progress, setProgress] = useState<CreateProgress | null>(null);
 
   const fetchStats = () => {
     fetch("/api/database-stats")
@@ -44,24 +57,91 @@ export default function SettingsManagement() {
 
   const handleCreateTable = async (tableName: string) => {
     setCreating(tableName);
+    setProgress({
+      tableName,
+      totalColumns: 0,
+      currentColumn: 0,
+      percent: 0,
+      currentAttribute: '',
+      message: '正在連線...',
+      isComplete: false,
+      isError: false
+    });
+
     try {
-      const res = await fetch("/api/create-table", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableName })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(`${tableName} Table 建立成功! (ID: ${data.collectionId})`);
-        fetchStats();
-      } else {
-        alert(`建立失敗: ${data.error}`);
-      }
+      const eventSource = new EventSource(`/api/create-table?table=${tableName}`);
+      
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case 'start':
+            setProgress(prev => prev ? {
+              ...prev,
+              totalColumns: data.totalColumns,
+              message: `開始建立 ${data.tableName} (${data.totalColumns} 欄位)`
+            } : null);
+            break;
+          case 'progress':
+            if (data.step === 'attribute') {
+              setProgress(prev => prev ? {
+                ...prev,
+                currentColumn: data.current,
+                percent: data.percent,
+                currentAttribute: data.attribute,
+                message: data.message
+              } : null);
+            } else {
+              setProgress(prev => prev ? {
+                ...prev,
+                message: data.message,
+                collectionId: data.collectionId
+              } : null);
+            }
+            break;
+          case 'complete':
+            setProgress(prev => prev ? {
+              ...prev,
+              percent: 100,
+              isComplete: true,
+              message: data.message,
+              collectionId: data.collectionId
+            } : null);
+            eventSource.close();
+            fetchStats();
+            break;
+          case 'error':
+            setProgress(prev => prev ? {
+              ...prev,
+              isError: true,
+              message: `錯誤: ${data.message}`
+            } : null);
+            eventSource.close();
+            break;
+        }
+      };
+
+      eventSource.onerror = () => {
+        setProgress(prev => prev ? {
+          ...prev,
+          isError: true,
+          message: '連線失敗'
+        } : null);
+        eventSource.close();
+      };
+
     } catch (err) {
-      alert(`建立失敗: ${err}`);
-    } finally {
-      setCreating(null);
+      setProgress(prev => prev ? {
+        ...prev,
+        isError: true,
+        message: `錯誤: ${err}`
+      } : null);
     }
+  };
+
+  const closeProgressDialog = () => {
+    setProgress(null);
+    setCreating(null);
   };
 
   return (
@@ -240,6 +320,89 @@ export default function SettingsManagement() {
           </div>
         </div>
       </DataCard>
+
+      {/* 建立進度對話框 */}
+      {progress && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                {progress.isComplete ? (
+                  <CheckCircle2 size={20} className="text-green-500" />
+                ) : progress.isError ? (
+                  <X size={20} className="text-red-500" />
+                ) : (
+                  <Loader2 size={20} className="text-blue-500 animate-spin" />
+                )}
+                建立 {progress.tableName} Table
+              </h3>
+              {(progress.isComplete || progress.isError) && (
+                <Button variant="ghost" size="sm" onClick={closeProgressDialog}>
+                  <X size={18} />
+                </Button>
+              )}
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">進度</span>
+                  <span className="font-mono font-bold text-blue-600">{progress.percent}%</span>
+                </div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-300 ${
+                      progress.isError ? 'bg-red-500' : progress.isComplete ? 'bg-green-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${progress.percent}%` }}
+                  />
+                </div>
+              </div>
+              
+              {/* Current Status */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">{progress.message}</p>
+                {progress.currentAttribute && !progress.isComplete && (
+                  <p className="text-xs text-gray-400 mt-1 font-mono">
+                    欄位: {progress.currentAttribute}
+                  </p>
+                )}
+                {progress.collectionId && (
+                  <p className="text-xs text-gray-400 mt-1 font-mono">
+                    ID: {progress.collectionId}
+                  </p>
+                )}
+              </div>
+
+              {/* Column Counter */}
+              {progress.totalColumns > 0 && (
+                <div className="flex justify-center">
+                  <span className="text-3xl font-bold text-gray-800 dark:text-gray-200">
+                    {progress.currentColumn}
+                  </span>
+                  <span className="text-lg text-gray-400 self-end mb-1">
+                    /{progress.totalColumns} 欄位
+                  </span>
+                </div>
+              )}
+
+              {/* Close Button */}
+              {(progress.isComplete || progress.isError) && (
+                <Button 
+                  className="w-full" 
+                  onClick={closeProgressDialog}
+                  variant={progress.isError ? "destructive" : "default"}
+                >
+                  {progress.isError ? '關閉' : '完成'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
