@@ -51,7 +51,7 @@ export async function GET() {
     });
     
     // Define expected tables
-    const tableNames = ["article", "bank", "commonaccount", "food", "subscription", "image", "video", "music"];
+    const tableNames = ["article", "bank", "commonaccount", "food", "image", "music", "subscription", "video"];
     
     // Calculate total columns
     const totalColumns = tableNames.reduce((sum, name) => sum + TABLE_DEFINITIONS[name].length, 0);
