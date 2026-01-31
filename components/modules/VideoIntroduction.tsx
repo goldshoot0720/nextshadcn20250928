@@ -338,6 +338,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     ref: video?.ref || '',
     category: video?.category || '',
     hash: video?.hash || '',
+    cover: video?.cover || '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -632,6 +633,18 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
               disabled
               placeholder="上傳檔案後自動生成"
               className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              封面圖 URL
+            </label>
+            <Input
+              value={formData.cover}
+              onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
+              placeholder="輸入封面圖網址（非必填）"
+              maxLength={150}
             />
           </div>
 
