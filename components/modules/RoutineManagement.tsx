@@ -166,9 +166,9 @@ export default function RoutineManagement() {
     setForm({
       name: routine.name,
       note: routine.note || "",
-      lastdate1: routine.lastdate1 ? routine.lastdate1.substring(0, 16) : "",
-      lastdate2: routine.lastdate2 ? routine.lastdate2.substring(0, 16) : "",
-      lastdate3: routine.lastdate3 ? routine.lastdate3.substring(0, 16) : "",
+      lastdate1: routine.lastdate1 ? routine.lastdate1.substring(0, 10) : "",
+      lastdate2: routine.lastdate2 ? routine.lastdate2.substring(0, 10) : "",
+      lastdate3: routine.lastdate3 ? routine.lastdate3.substring(0, 10) : "",
       link: routine.link || "",
       photo: routine.photo || "",
     });
@@ -194,12 +194,10 @@ export default function RoutineManagement() {
 
   const formatDateTime = (datetime: string | null) => {
     if (!datetime) return "-";
-    return new Date(datetime).toLocaleString("zh-TW", {
+    return new Date(datetime).toLocaleDateString("zh-TW", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -262,7 +260,7 @@ export default function RoutineManagement() {
                   <div>
                     <label className="block text-sm font-medium mb-2">最近例行日期之一(最近)</label>
                     <Input
-                      type="datetime-local"
+                      type="date"
                       value={form.lastdate1}
                       onChange={(e) => setForm({ ...form, lastdate1: e.target.value })}
                     />
@@ -271,7 +269,7 @@ export default function RoutineManagement() {
                   <div>
                     <label className="block text-sm font-medium mb-2">最近例行日期之二(次近)</label>
                     <Input
-                      type="datetime-local"
+                      type="date"
                       value={form.lastdate2}
                       onChange={(e) => setForm({ ...form, lastdate2: e.target.value })}
                     />
@@ -280,7 +278,7 @@ export default function RoutineManagement() {
                   <div>
                     <label className="block text-sm font-medium mb-2">最近例行日期之三(最遠)</label>
                     <Input
-                      type="datetime-local"
+                      type="date"
                       value={form.lastdate3}
                       onChange={(e) => setForm({ ...form, lastdate3: e.target.value })}
                     />
