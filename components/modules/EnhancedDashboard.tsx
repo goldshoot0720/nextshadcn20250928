@@ -135,8 +135,14 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         </div>
       )}
 
-      <PageTitle title={title} description="鋒兄資訊管理系統 - 數據匯總與分析" />
-
+      <PageTitle title={title} description="鳳兄資訊管理系統 - 數據匯總與分析" />
+      
+      {/* 詳細統計區域 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <FoodStatsCard stats={stats} onNavigate={onNavigate} />
+        <SubscriptionStatsCard stats={stats} onNavigate={onNavigate} />
+      </div>
+      
       {/* 主要統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard title="訂閱服務" value={stats.totalSubscriptions} icon={CreditCard} gradient="from-green-500 to-green-600" />
@@ -166,12 +172,6 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
 
       {/* 多媒體儲存統計 */}
       <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
-
-      {/* 詳細統計區域 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        <FoodStatsCard stats={stats} onNavigate={onNavigate} />
-        <SubscriptionStatsCard stats={stats} onNavigate={onNavigate} />
-      </div>
 
       {/* 提醒和建議 */}
       {needsAttention && <AlertSection stats={stats} />}
