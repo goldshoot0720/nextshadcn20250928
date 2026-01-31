@@ -47,12 +47,18 @@ export async function PUT(req, context) {
 
     const payload = {};
     if (name !== undefined) payload.name = name;
-    if (note !== undefined) payload.note = note;
-    if (lastdate1 !== undefined) payload.lastdate1 = lastdate1 || null;
-    if (lastdate2 !== undefined) payload.lastdate2 = lastdate2 || null;
-    if (lastdate3 !== undefined) payload.lastdate3 = lastdate3 || null;
-    if (link !== undefined) payload.link = link;
-    if (photo !== undefined) payload.photo = photo;
+    if (note !== undefined) payload.note = note || "";
+    
+    // Only include datetime fields if they have values
+    if (lastdate1 !== undefined && lastdate1) payload.lastdate1 = lastdate1;
+    if (lastdate2 !== undefined && lastdate2) payload.lastdate2 = lastdate2;
+    if (lastdate3 !== undefined && lastdate3) payload.lastdate3 = lastdate3;
+    
+    // Only include URL fields if not empty
+    if (link !== undefined && link && link.trim()) payload.link = link;
+    if (photo !== undefined && photo && photo.trim()) payload.photo = photo;
+
+    console.log('Updating routine with payload:', JSON.stringify(payload, null, 2));
 
     const response = await databases.updateDocument(
       databaseId,
