@@ -369,6 +369,7 @@ export default function RoutineManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>圖片</TableHead>
                         <TableHead>名稱</TableHead>
                         <TableHead>備註</TableHead>
                         <TableHead>最近執行 1</TableHead>
@@ -380,6 +381,19 @@ export default function RoutineManagement() {
                     <TableBody>
                       {routines.map((routine) => (
                         <TableRow key={routine.$id}>
+                          <TableCell>
+                            {routine.photo ? (
+                              <img
+                                src={routine.photo}
+                                alt={routine.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                                <Calendar size={20} className="text-gray-400" />
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">{routine.name}</TableCell>
                           <TableCell className="text-gray-600 dark:text-gray-400">
                             {routine.note || "-"}
@@ -415,12 +429,25 @@ export default function RoutineManagement() {
                 {routines.map((routine) => (
                   <DataCard key={routine.$id}>
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-semibold text-lg">{routine.name}</h3>
+                      <div className="flex items-start gap-3">
+                        {routine.photo ? (
+                          <img
+                            src={routine.photo}
+                            alt={routine.name}
+                            className="w-16 h-16 object-cover rounded flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center flex-shrink-0">
+                            <Calendar size={24} className="text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{routine.name}</h3>
+                          {routine.note && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{routine.note}</p>
+                          )}
+                        </div>
                       </div>
-                      {routine.note && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{routine.note}</p>
-                      )}
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-500">最近執行 1:</span>
