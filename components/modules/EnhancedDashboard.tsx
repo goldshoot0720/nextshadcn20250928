@@ -187,10 +187,6 @@ function FoodStatsCard({ stats, onNavigate }: { stats: ReturnType<typeof useDash
         <DetailStatRow label="30天內過期" value={stats.foodsExpiring30Days} status="urgent" items={stats.foodsExpiring30DaysList} bgColor="bg-orange-50 dark:bg-orange-900/20" />
         <DetailStatRow label="已過期" value={stats.expiredFoods} status="expired" items={stats.expiredFoodsList} bgColor="bg-red-50 dark:bg-red-900/20" isExpired />
       </div>
-      
-      <Button onClick={() => onNavigate("food")} className="w-full mt-4 bg-blue-500 hover:bg-blue-600 rounded-xl">
-        前往食品管理
-      </Button>
     </DataCard>
   );
 }
@@ -212,10 +208,6 @@ function SubscriptionStatsCard({ stats, onNavigate }: { stats: ReturnType<typeof
         <DetailStatRowSub label="7天內到期" value={stats.subscriptionsExpiring7Days} status="urgent" items={stats.subscriptionsExpiring7DaysList} bgColor="bg-orange-50 dark:bg-orange-900/20" />
         <DetailStatRowSub label="已逾期" value={stats.overdueSubscriptions} status="expired" items={stats.overdueSubscriptionsList} bgColor="bg-red-50 dark:bg-red-900/20" isExpired />
       </div>
-      
-      <Button onClick={() => onNavigate("subscription")} className="w-full mt-4 bg-green-500 hover:bg-green-600 rounded-xl">
-        前往訂閱管理
-      </Button>
     </DataCard>
   );
 }
