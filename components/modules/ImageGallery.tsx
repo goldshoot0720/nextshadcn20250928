@@ -341,7 +341,10 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
       if (selectedFile) {
         const { url, fileId } = await uploadFileToAppwrite(selectedFile);
         finalFormData.file = url;
-        finalFormData.hash = fileId;
+        finalFormData.hash = fileId; // 使用 Appwrite 的 fileId 作為 hash
+      } else if (!image) {
+        // 新增時如果沒有上傳檔案，生成隨機 hash
+        finalFormData.hash = `hash_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
       }
 
       const url = image ? `${API_ENDPOINTS.IMAGE}/${image.$id}` : API_ENDPOINTS.IMAGE;
@@ -485,12 +488,13 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Hash
+              Hash (程式自動生成)
             </label>
             <Input
               value={formData.hash}
-              onChange={(e) => setFormData({ ...formData, hash: e.target.value })}
-              placeholder="圖片 hash 值"
+              disabled
+              placeholder="上傳檔案後自動生成"
+              className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
             />
           </div>
 
