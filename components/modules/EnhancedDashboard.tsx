@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useMediaStats } from "@/hooks/useMediaStats";
-import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive, FileText, Star, Building2 } from "lucide-react";
+import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive, FileText, Star, Building2, ChevronDown, ChevronUp } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
@@ -196,42 +196,70 @@ function IntroItem({ icon: Icon, label, value, color }: { icon: any, label: stri
 
 // 食品統計卡片
 function FoodStatsCard({ stats, onNavigate }: { stats: ReturnType<typeof useDashboardStats>["stats"]; onNavigate: (id: string) => void }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   return (
     <DataCard className="p-4 sm:p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-          <Package className="text-blue-600 dark:text-blue-400" size={20} />
+      <div 
+        className="flex items-center justify-between mb-4 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+            <Package className="text-blue-600 dark:text-blue-400" size={20} />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">食品管理統計</h2>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">食品管理統計</h2>
+        {isExpanded ? (
+          <ChevronUp className="text-gray-500 dark:text-gray-400" size={20} />
+        ) : (
+          <ChevronDown className="text-gray-500 dark:text-gray-400" size={20} />
+        )}
       </div>
       
-      <div className="space-y-3">
-        <StatRow label="正常食品" value={stats.totalFoods - stats.foodsExpiring30Days - stats.expiredFoods} status="success" />
-        <DetailStatRow label="7天內過期" value={stats.foodsExpiring7Days} status="warning" items={stats.foodsExpiring7DaysList} bgColor="bg-yellow-50 dark:bg-yellow-900/20" />
-        <DetailStatRow label="30天內過期" value={stats.foodsExpiring30Days} status="urgent" items={stats.foodsExpiring30DaysList} bgColor="bg-orange-50 dark:bg-orange-900/20" />
-        <DetailStatRow label="已過期" value={stats.expiredFoods} status="expired" items={stats.expiredFoodsList} bgColor="bg-red-50 dark:bg-red-900/20" isExpired />
-      </div>
+      {isExpanded && (
+        <div className="space-y-3">
+          <StatRow label="正常食品" value={stats.totalFoods - stats.foodsExpiring30Days - stats.expiredFoods} status="success" />
+          <DetailStatRow label="7天內過期" value={stats.foodsExpiring7Days} status="warning" items={stats.foodsExpiring7DaysList} bgColor="bg-yellow-50 dark:bg-yellow-900/20" />
+          <DetailStatRow label="30天內過期" value={stats.foodsExpiring30Days} status="urgent" items={stats.foodsExpiring30DaysList} bgColor="bg-orange-50 dark:bg-orange-900/20" />
+          <DetailStatRow label="已過期" value={stats.expiredFoods} status="expired" items={stats.expiredFoodsList} bgColor="bg-red-50 dark:bg-red-900/20" isExpired />
+        </div>
+      )}
     </DataCard>
   );
 }
 
 // 訂閱統計卡片
 function SubscriptionStatsCard({ stats, onNavigate }: { stats: ReturnType<typeof useDashboardStats>["stats"]; onNavigate: (id: string) => void }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   return (
     <DataCard className="p-4 sm:p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-          <CreditCard className="text-green-600 dark:text-green-400" size={20} />
+      <div 
+        className="flex items-center justify-between mb-4 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+            <CreditCard className="text-green-600 dark:text-green-400" size={20} />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">訂閱管理統計</h2>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">訂閱管理統計</h2>
+        {isExpanded ? (
+          <ChevronUp className="text-gray-500 dark:text-gray-400" size={20} />
+        ) : (
+          <ChevronDown className="text-gray-500 dark:text-gray-400" size={20} />
+        )}
       </div>
       
-      <div className="space-y-3">
-        <StatRow label="正常訂閱" value={stats.totalSubscriptions - stats.subscriptionsExpiring7Days - stats.overdueSubscriptions} status="success" />
-        <DetailStatRowSub label="3天內到期" value={stats.subscriptionsExpiring3Days} status="warning" items={stats.subscriptionsExpiring3DaysList} bgColor="bg-yellow-50 dark:bg-yellow-900/20" />
-        <DetailStatRowSub label="7天內到期" value={stats.subscriptionsExpiring7Days} status="urgent" items={stats.subscriptionsExpiring7DaysList} bgColor="bg-orange-50 dark:bg-orange-900/20" />
-        <DetailStatRowSub label="已逾期" value={stats.overdueSubscriptions} status="expired" items={stats.overdueSubscriptionsList} bgColor="bg-red-50 dark:bg-red-900/20" isExpired />
-      </div>
+      {isExpanded && (
+        <div className="space-y-3">
+          <StatRow label="正常訂閱" value={stats.totalSubscriptions - stats.subscriptionsExpiring7Days - stats.overdueSubscriptions} status="success" />
+          <DetailStatRowSub label="3天內到期" value={stats.subscriptionsExpiring3Days} status="warning" items={stats.subscriptionsExpiring3DaysList} bgColor="bg-yellow-50 dark:bg-yellow-900/20" />
+          <DetailStatRowSub label="7天內到期" value={stats.subscriptionsExpiring7Days} status="urgent" items={stats.subscriptionsExpiring7DaysList} bgColor="bg-orange-50 dark:bg-orange-900/20" />
+          <DetailStatRowSub label="已逾期" value={stats.overdueSubscriptions} status="expired" items={stats.overdueSubscriptionsList} bgColor="bg-red-50 dark:bg-red-900/20" isExpired />
+        </div>
+      )}
     </DataCard>
   );
 }
