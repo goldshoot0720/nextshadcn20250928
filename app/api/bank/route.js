@@ -90,7 +90,9 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing name field" }, { status: 400 });
     }
 
-    const { databases, databaseId, collectionId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    const collectionId = await getCollectionId(databases, databaseId, "bank");
 
     const payload = {
       name,
