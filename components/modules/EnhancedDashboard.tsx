@@ -161,9 +161,6 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         <SubscriptionStatsCard stats={stats} onNavigate={onNavigate} />
       </div>
 
-      {/* 快速操作區域 */}
-      <QuickActions onNavigate={onNavigate} />
-
       {/* 提醒和建議 */}
       {needsAttention && <AlertSection stats={stats} />}
     </div>
@@ -300,45 +297,6 @@ function DetailStatRowSub({ label, value, status, items, bgColor, isExpired = fa
         </div>
       )}
     </div>
-  );
-}
-
-// 快速操作
-function QuickActions({ onNavigate }: { onNavigate: (id: string) => void }) {
-  const actions = [
-    { id: "food", icon: Package, title: "新增食品", desc: "快速添加食品項目", color: "blue" },
-    { id: "subscription", icon: CreditCard, title: "新增訂閱", desc: "管理訂閱服務", color: "green" },
-    { id: "food", icon: AlertTriangle, title: "檢查過期", desc: "查看即將過期項目", color: "yellow" },
-    { id: "settings", icon: TrendingUp, title: "查看報告", desc: "詳細統計報告", color: "purple" },
-  ];
-
-  const colorMap: Record<string, string> = {
-    blue: "bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30",
-    green: "bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30",
-    yellow: "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30",
-    purple: "bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30",
-  };
-
-  const iconColorMap: Record<string, string> = {
-    blue: "text-blue-600 dark:text-blue-400",
-    green: "text-green-600 dark:text-green-400",
-    yellow: "text-yellow-600 dark:text-yellow-400",
-    purple: "text-purple-600 dark:text-purple-400",
-  };
-
-  return (
-    <DataCard className="p-4 sm:p-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">快速操作</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {actions.map((action) => (
-          <button key={action.title} onClick={() => onNavigate(action.id)} className={`p-4 ${colorMap[action.color]} rounded-xl transition-colors duration-200 text-left`}>
-            <action.icon className={`${iconColorMap[action.color]} mb-2`} size={24} />
-            <h3 className="font-medium text-gray-900 dark:text-gray-100">{action.title}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{action.desc}</p>
-          </button>
-        ))}
-      </div>
-    </DataCard>
   );
 }
 
