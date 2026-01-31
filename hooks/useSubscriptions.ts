@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Subscription, SubscriptionFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
-import { formatDate, getDaysFromToday, getExpiryStatus } from "@/lib/formatters";
+import { formatDate, getDaysFromToday, getExpiryStatus, convertToTWD } from "@/lib/formatters";
 
 export function useSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -136,8 +136,8 @@ export function useSubscriptions() {
     
     return {
       total: subsToProcess.length,
-      totalMonthlyFee: currentMonthSubscriptions.reduce((sum, s) => sum + s.price, 0),
-      nextMonthFee: nextMonthSubscriptions.reduce((sum, s) => sum + s.price, 0),
+      totalMonthlyFee: currentMonthSubscriptions.reduce((sum, s) => sum + convertToTWD(s.price, s.currency), 0),
+      nextMonthFee: nextMonthSubscriptions.reduce((sum, s) => sum + convertToTWD(s.price, s.currency), 0),
       overdue: subsToProcess.filter((s) => getDaysFromToday(s.nextdate) < 0).length,
       expiringSoon: subsToProcess.filter((s) => {
         const days = getDaysFromToday(s.nextdate);

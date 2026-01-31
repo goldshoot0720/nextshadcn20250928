@@ -50,6 +50,52 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
+ * 幣別匹率（對台幣）
+ */
+const EXCHANGE_RATES: Record<string, number> = {
+  TWD: 1,      // 台幣
+  USD: 35,     // 美元
+  EUR: 40,     // 歐元
+  JPY: 0.35,   // 日圓
+  CNY: 4.5,    // 人民幣
+  HKD: 4       // 港幣
+};
+
+/**
+ * 將外幣轉換為台幣
+ */
+export function convertToTWD(amount: number, currency: string = "TWD"): number {
+  const rate = EXCHANGE_RATES[currency] || 1;
+  return Math.round(amount * rate);
+}
+
+/**
+ * 格式化金額（帶幣別轉換）
+ */
+export function formatCurrencyWithExchange(amount: number, currency: string = "TWD"): string {
+  const twdAmount = convertToTWD(amount, currency);
+  if (currency === "TWD") {
+    return `NT$ ${amount.toLocaleString()}`;
+  }
+  return `NT$ ${twdAmount.toLocaleString()} (${getCurrencySymbol(currency)} ${amount.toLocaleString()})`;
+}
+
+/**
+ * 獲取幣別符號
+ */
+export function getCurrencySymbol(currency: string): string {
+  const symbols: Record<string, string> = {
+    TWD: "NT$",
+    USD: "$",
+    EUR: "€",
+    JPY: "¥",
+    CNY: "¥",
+    HKD: "HK$"
+  };
+  return symbols[currency] || currency;
+}
+
+/**
  * 格式化金額
  */
 export function formatCurrency(amount: number, currency = "NT$"): string {

@@ -17,7 +17,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { useSubscriptions, getSubscriptionExpiryInfo } from "@/hooks/useSubscriptions";
 import { SubscriptionFormData, Subscription } from "@/types";
 import { FaviconImage } from "@/components/ui/favicon-image";
-import { formatDate, formatDaysRemaining, formatCurrency } from "@/lib/formatters";
+import { formatDate, formatDaysRemaining, formatCurrency, formatCurrencyWithExchange, convertToTWD } from "@/lib/formatters";
 
 const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "", note: "", account: "", currency: "TWD" };
 
@@ -354,7 +354,7 @@ export default function SubscriptionManagement() {
                             {status !== "normal" && <StatusBadge status={status}>{formatDaysRemaining(daysRemaining)}</StatusBadge>}
                           </div>
                         </TableCell>
-                        <TableCell><span className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(sub.price)}</span></TableCell>
+                        <TableCell><span className="font-semibold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span></TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="rounded-xl">編輯</Button>
@@ -399,7 +399,7 @@ export default function SubscriptionManagement() {
                               )}
                             </div>
                           </div>
-                          <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(sub.price)}</span>
+                          <span className="font-bold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
