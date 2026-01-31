@@ -5,10 +5,20 @@ const sdk = require('node-appwrite');
 export const dynamic = 'force-dynamic';
 
 async function getCollectionId(databases, databaseId, name) {
-  const allCollections = await databases.listCollections(databaseId);
-  const col = allCollections.collections.find(c => c.name === name);
-  if (!col) throw new Error(`Collection ${name} not found`);
-  return col.$id;
+  try {
+    const allCollections = await databases.listCollections(databaseId);
+    const col = allCollections.collections.find(c => c.name === name);
+    if (!col) {
+      const error = new Error(`Collection ${name} not found`);
+      error.code = 404;
+      throw error;
+    }
+    return col.$id;
+  } catch (err) {
+    // Preserve 404 status if already set
+    if (!err.code) err.code = 404;
+    throw err;
+  }
 }
 
 function createAppwrite(searchParams) {
@@ -48,7 +58,8 @@ export async function GET(request) {
     return NextResponse.json(res.documents);
   } catch (err) {
     console.error("GET /api/routine error:", err);
-    if (err.message.includes('not found')) {
+    // Check for collection not found errors
+    if (err.message.includes('not found') || err.message.includes('Collection') || err.code === 404) {
       return NextResponse.json(
         { error: "Table routine 不存在，請至「鋒兄設定」中初始化。" }, 
         { status: 404 }
