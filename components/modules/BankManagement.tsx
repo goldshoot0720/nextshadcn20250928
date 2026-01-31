@@ -92,7 +92,7 @@ export default function BankManagement() {
     }
   };
 
-  if (loading && banks.length === 0) return <FullPageLoading text="載入銀行資料中..." />;
+  if (loading) return <FullPageLoading text="載入銀行資料中..." />;
 
   return (
     <div className="space-y-4 lg:space-y-6">
