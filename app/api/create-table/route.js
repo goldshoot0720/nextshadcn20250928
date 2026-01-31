@@ -75,7 +75,8 @@ const TABLE_SCHEMAS = {
       { key: 'price', type: 'integer', required: false },
       { key: 'nextdate', type: 'datetime', required: false },
       { key: 'note', type: 'string', size: 100, required: false },
-      { key: 'account', type: 'string', size: 100, required: false }
+      { key: 'account', type: 'string', size: 100, required: false },
+      { key: 'currency', type: 'string', size: 100, required: false }
     ]
   },
   image: {

@@ -32,6 +32,7 @@ export interface Subscription {
   nextdate: string;
   note?: string;
   account?: string;
+  currency?: string;
 }
 
 export interface SubscriptionFormData {
@@ -41,6 +42,7 @@ export interface SubscriptionFormData {
   nextdate: string;
   note?: string;
   account?: string;
+  currency?: string;
 }
 
 export interface SubscriptionDetail {

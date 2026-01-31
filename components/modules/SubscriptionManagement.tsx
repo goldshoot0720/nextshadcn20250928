@@ -18,7 +18,7 @@ import { SubscriptionFormData, Subscription } from "@/types";
 import { FaviconImage } from "@/components/ui/favicon-image";
 import { formatDate, formatDaysRemaining, formatCurrency } from "@/lib/formatters";
 
-const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "", note: "", account: "" };
+const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "", note: "", account: "", currency: "" };
 
 export default function SubscriptionManagement() {
   const { subscriptions, loading, error, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
@@ -176,7 +176,8 @@ export default function SubscriptionManagement() {
       price: sub.price,
       nextdate: formatDate(sub.nextdate),
       note: sub.note || "",
-      account: sub.account || ""
+      account: sub.account || "",
+      currency: sub.currency || ""
     });
     setEditingId(sub.$id);
     setIsFormOpen(true);
@@ -261,6 +262,7 @@ export default function SubscriptionManagement() {
               <Input placeholder="服務名稱" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl" />
               <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} className="h-12 rounded-xl" />
               <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
+              <Input placeholder="幣別" value={form.currency || ""} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="h-12 rounded-xl" />
               <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
               <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
             </FormGrid>
