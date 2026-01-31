@@ -146,14 +146,14 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
       </div>
 
       {/* 其他統計 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <StatCard title="筆記總數" value={stats.totalArticles} icon={FileText} gradient="from-indigo-500 to-indigo-600" />
         <StatCard title="常用帳號總數" value={stats.totalCommonAccounts} icon={Star} gradient="from-pink-500 to-pink-600" />
-        <StatCard title="銀行總數" value={stats.totalBanks} icon={Building2} gradient="from-cyan-500 to-cyan-600" />
       </div>
 
-      {/* 銀行存款 */}
-      <div className="grid grid-cols-1">
+      {/* 銀行統計 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <StatCard title="銀行總數" value={stats.totalBanks} icon={Building2} gradient="from-cyan-500 to-cyan-600" />
         <StatCard title="銀行存款" value={formatCurrency(stats.totalBankDeposit)} icon={Building2} gradient="from-emerald-500 to-emerald-600" />
       </div>
 
