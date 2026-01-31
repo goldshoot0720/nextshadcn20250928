@@ -64,7 +64,7 @@ export default function ImageGallery() {
       )}
 
       {showForm && (
-        <ImageFormModal image={editingImage} onClose={handleCloseForm} onSuccess={loadImages} />
+        <ImageFormModal image={editingImage} existingImages={images} onClose={handleCloseForm} onSuccess={loadImages} />
       )}
     </div>
   );
@@ -239,7 +239,7 @@ function ImagePreviewModal({ image, onClose }: { image: ImageData; onClose: () =
 }
 
 // 圖片表單模態框
-function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null; onClose: () => void; onSuccess: () => void }) {
+function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: ImageData | null; existingImages: ImageData[]; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     name: image?.name || '',
     file: image?.file || '',
@@ -255,6 +255,7 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
+  const [duplicateWarning, setDuplicateWarning] = useState<string>(''); // 重複警告
 
   // 計算檔案 SHA-256 hash
   const calculateFileHash = async (file: File): Promise<string> => {
@@ -293,6 +294,7 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
     setPreviewLoading(true);
     setUploadStatus('idle');
     setUploadProgress(0);
+    setDuplicateWarning(''); // 清除之前的警告
     
     // 儲存檔案並產生預覽 URL
     setSelectedFile(file);
@@ -303,6 +305,15 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
     const hash = await calculateFileHash(file);
     setFileHash(hash);
     setFormData({ ...formData, hash });
+    
+    // 檢查是否有重複的 hash
+    const duplicateImage = existingImages.find(img => 
+      img.hash === hash && (!image || img.$id !== image.$id)
+    );
+    
+    if (duplicateImage) {
+      setDuplicateWarning(`警告：此圖片與「${duplicateImage.name}」相同，請勿重複上傳！`);
+    }
     
     // 模擬預覽載入完成
     setTimeout(() => setPreviewLoading(false), 300);
@@ -351,6 +362,12 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
     e.preventDefault();
     if (!formData.name.trim()) {
       alert('請輸入圖片名稱');
+      return;
+    }
+
+    // 檢查是否有重複
+    if (duplicateWarning) {
+      alert('此圖片與既有圖片重複，無法上傳！請選擇其他圖片。');
       return;
     }
 
@@ -449,6 +466,13 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
                   <img src={previewUrl} alt="Preview" className="max-h-48 rounded-lg border border-gray-200 dark:border-gray-700" />
                 </div>
               )}
+              {duplicateWarning && (
+                <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                    {duplicateWarning}
+                  </p>
+                </div>
+              )}
               {uploadStatus === 'uploading' && (
                 <div className="mt-2">
                   <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -524,7 +548,11 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
             <Button type="button" onClick={onClose} className="flex-1 bg-gray-500 hover:bg-gray-600 rounded-xl">
               取消
             </Button>
-            <Button type="submit" disabled={submitting} className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-xl">
+            <Button 
+              type="submit" 
+              disabled={submitting || !!duplicateWarning} 
+              className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {submitting ? '處理中...' : (image ? '更新' : '新增')}
             </Button>
           </div>
