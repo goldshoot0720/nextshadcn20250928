@@ -258,7 +258,7 @@ export default function SubscriptionManagement() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormGrid>
               <Input placeholder="服務名稱" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl" />
-              <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} required className="h-12 rounded-xl" />
+              <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} className="h-12 rounded-xl" />
               <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
               <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} required className="h-12 rounded-xl" />
               <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
@@ -303,11 +303,15 @@ export default function SubscriptionManagement() {
                       <TableRow key={sub.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${rowClass}`}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />
+                            {sub.site && <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />}
                             <div className="flex items-center gap-2">
-                              <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
-                                {truncateName(sub.name, sub.$id)}
-                              </a>
+                              {sub.site ? (
+                                <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                                  {truncateName(sub.name, sub.$id)}
+                                </a>
+                              ) : (
+                                <span className="text-gray-900 dark:text-gray-100">{truncateName(sub.name, sub.$id)}</span>
+                              )}
                               {sub.name.length > 37 && (
                                 <Button
                                   type="button"
@@ -351,11 +355,15 @@ export default function SubscriptionManagement() {
                       <div className="space-y-3">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2 flex-1">
-                            <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />
+                            {sub.site && <FaviconImage siteUrl={sub.site} siteName={sub.name} size={20} />}
                             <div className="flex flex-col gap-1 flex-1">
-                              <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold">
-                                {truncateName(sub.name, sub.$id)}
-                              </a>
+                              {sub.site ? (
+                                <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold">
+                                  {truncateName(sub.name, sub.$id)}
+                                </a>
+                              ) : (
+                                <span className="text-gray-900 dark:text-gray-100 font-semibold">{truncateName(sub.name, sub.$id)}</span>
+                              )}
                               {sub.name.length > 37 && (
                                 <Button
                                   type="button"

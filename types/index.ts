@@ -27,7 +27,7 @@ export interface FoodDetail {
 export interface Subscription {
   $id: string;
   name: string;
-  site: string;
+  site?: string;
   price: number;
   nextdate: string;
   note?: string;
@@ -36,7 +36,7 @@ export interface Subscription {
 
 export interface SubscriptionFormData {
   name: string;
-  site: string;
+  site?: string;
   price: number;
   nextdate: string;
   note?: string;
