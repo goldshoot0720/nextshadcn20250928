@@ -96,6 +96,8 @@ export async function POST(request) {
       photo: photo || "",
     };
 
+    console.log('Creating routine with payload:', JSON.stringify(payload, null, 2));
+
     const res = await databases.createDocument(
       databaseId,
       collectionId,
@@ -106,6 +108,7 @@ export async function POST(request) {
     return NextResponse.json(res);
   } catch (err) {
     console.error("POST /api/routine error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("Error details:", JSON.stringify(err, null, 2));
+    return NextResponse.json({ error: err.message || String(err) }, { status: 500 });
   }
 }
