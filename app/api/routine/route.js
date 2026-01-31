@@ -82,19 +82,21 @@ export async function POST(request) {
       );
     }
 
-    // Use environment variables directly like article does
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const collectionId = await getCollectionId(databases, databaseId, 'routine');
 
     const payload = {
       name,
       note: note || "",
-      lastdate1: lastdate1 || null,
-      lastdate2: lastdate2 || null,
-      lastdate3: lastdate3 || null,
       link: link || "",
       photo: photo || "",
     };
+
+    // Only add datetime fields if they have values
+    if (lastdate1) payload.lastdate1 = lastdate1;
+    if (lastdate2) payload.lastdate2 = lastdate2;
+    if (lastdate3) payload.lastdate3 = lastdate3;
 
     console.log('Creating routine with payload:', JSON.stringify(payload, null, 2));
 
