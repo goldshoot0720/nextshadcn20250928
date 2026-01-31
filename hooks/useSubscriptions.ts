@@ -1,9 +1,8 @@
-"use client";
-
 import { useState, useEffect, useCallback } from "react";
 import { Subscription, SubscriptionFormData } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatDate, getDaysFromToday, getExpiryStatus, convertToTWD } from "@/lib/formatters";
+import { fetchApi } from "@/hooks/useApi";
 
 // 全域快取，儲存於模組外層
 let cachedSubscriptions: Subscription[] | null = null;
@@ -70,22 +69,10 @@ export function useSubscriptions() {
     setLoading(true);
     setError(null);
     try {
-      // 如果是強制重新載入或有 refreshKey，添加時間戳破壞快取
+      // 使用 fetchApi 會自動添加 Appwrite 配置參數
       const cacheParam = (forceRefresh || storedRefreshKey) ? `?t=${storedRefreshKey || Date.now()}` : '';
-      const res = await fetch(API_ENDPOINTS.SUBSCRIPTION + cacheParam);
-      if (!res.ok) {
-        // 如果是 404，嘗試讀取錯誤訊息
-        if (res.status === 404) {
-          const errorData = await res.json().catch(() => ({}));
-          const errorMessage = errorData.error || "Table subscription 不存在，請至「鋒兄設定」中初始化。";
-          throw new Error(errorMessage);
-        }
-        throw new Error("載入訂閱資料失敗");
-      }
-
-      const resData = await res.json();
+      const resData = await fetchApi<Subscription[]>(API_ENDPOINTS.SUBSCRIPTION + cacheParam);
       let data: Subscription[] = Array.isArray(resData) ? resData : [];
-      // 按下次付款日排序
       data = data.sort(
         (a, b) => {
           if (!a.nextdate) return 1;
