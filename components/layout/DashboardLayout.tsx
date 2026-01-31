@@ -119,8 +119,15 @@ function Logo({ compact = false }: { compact?: boolean }) {
         <span className={cn("text-white font-bold", compact ? "text-sm" : "text-base")}>鋒</span>
       </div>
       <div>
-        <h1 className={cn("font-bold text-gray-800 dark:text-gray-100", compact ? "text-xl" : "text-xl")}>鋒兄資訊管理系統</h1>
-        {!compact && <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄AI</p>}
+        <h1 className={cn("font-bold text-gray-800 dark:text-gray-100 leading-tight", compact ? "text-lg" : "text-xl")}>
+          鋒兄資訊<br />管理系統
+        </h1>
+        {!compact && (
+          <div className="flex items-center gap-2">
+            <ThemeToggleCompact />
+            <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄AI</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -134,12 +141,9 @@ function DesktopSidebar({ menuItems, currentModule, expandedItems, onMenuClick }
   onMenuClick: (item: MenuItem) => void;
 }) {
   return (
-    <aside className="hidden md:flex md:flex-col w-64 lg:w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 min-h-screen shadow-sm">
+    <aside className="hidden md:flex md:flex-col w-52 lg:w-56 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 min-h-screen shadow-sm">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <Logo />
-          <ThemeToggleCompact />
-        </div>
+        <Logo />
       </div>
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map(item => (

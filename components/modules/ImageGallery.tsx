@@ -1,20 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { Image as ImageIcon, Download, Eye, Calendar, RefreshCw } from "lucide-react";
+import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import { useImages } from "@/hooks";
-import { ImageFile } from "@/types";
-import { formatFileSize, formatShortDate, formatNumericDate, formatLocalDate } from "@/lib/formatters";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useImages, ImageData } from "@/hooks";
+import { API_ENDPOINTS } from "@/lib/constants";
+import { formatLocalDate } from "@/lib/formatters";
 
 export default function ImageGallery() {
   const { images, loading, loadImages } = useImages();
-  const [selectedImage, setSelectedImage] = useState<ImageFile | null>(null);
+  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingImage, setEditingImage] = useState<ImageData | null>(null);
+
+  const handleEdit = (image: ImageData) => {
+    setEditingImage(image);
+    setShowForm(true);
+  };
+
+  const handleAdd = () => {
+    setEditingImage(null);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingImage(null);
+  };
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -24,18 +43,28 @@ export default function ImageGallery() {
         title="鋒兄圖片"
         subtitle={loading ? "載入中..." : `共 ${images.length} 張圖片`}
         action={
-          <Button onClick={loadImages} disabled={loading} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">重新載入</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleAdd} className="gap-2 bg-green-500 hover:bg-green-600 rounded-xl">
+              <Plus size={16} />
+              <span className="hidden sm:inline">新增圖片</span>
+            </Button>
+            <Button onClick={loadImages} disabled={loading} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">重新載入</span>
+            </Button>
+          </div>
         }
       />
 
       <ImageStats images={images} />
-      <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} />
+      <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={loadImages} />
       
       {selectedImage && (
         <ImagePreviewModal image={selectedImage} onClose={() => setSelectedImage(null)} />
+      )}
+
+      {showForm && (
+        <ImageFormModal image={editingImage} onClose={handleCloseForm} onSuccess={loadImages} />
       )}
     </div>
   );
@@ -55,7 +84,7 @@ function CopyrightBanner() {
           <span className="hidden sm:inline text-white/50">|</span>
           <span>網頁存放於 Vercel</span>
           <span className="hidden sm:inline text-white/50">|</span>
-          <span>影片存放於 Vercel Blob</span>
+          <span>圖片存放於 Vercel Blob</span>
         </div>
       </div>
     </div>
@@ -63,29 +92,27 @@ function CopyrightBanner() {
 }
 
 // 統計卡片
-function ImageStats({ images }: { images: ImageFile[] }) {
-  const jpgCount = images.filter(img => ['.jpg', '.jpeg'].includes(img.extension.toLowerCase())).length;
-  const pngCount = images.filter(img => img.extension.toLowerCase() === '.png').length;
+function ImageStats({ images }: { images: ImageData[] }) {
+  const totalImages = images.length;
 
   return (
-    <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
-      <StatCard title="總圖片數" value={images.length} icon={ImageIcon} gradient="from-blue-500 to-blue-600" />
-      <StatCard title="JPG/JPEG" value={jpgCount} iconElement={<span className="text-2xl">📷</span>} gradient="from-green-500 to-green-600" />
-      <StatCard title="PNG" value={pngCount} iconElement={<span className="text-2xl">🖼️</span>} gradient="from-purple-500 to-purple-600" />
+    <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
+      <StatCard title="總圖片數" value={totalImages} icon={ImageIcon} gradient="from-blue-500 to-blue-600" />
+      <StatCard title="Appwrite 儲存" value={totalImages} iconElement={<span className="text-2xl">☁️</span>} gradient="from-purple-500 to-purple-600" />
     </div>
   );
 }
 
 // 圖片網格
-function ImageGrid({ images, loading, onSelectImage }: { images: ImageFile[]; loading: boolean; onSelectImage: (img: ImageFile) => void }) {
+function ImageGrid({ images, loading, onSelectImage, onEdit, onRefresh }: { images: ImageData[]; loading: boolean; onSelectImage: (img: ImageData) => void; onEdit: (img: ImageData) => void; onRefresh: () => void }) {
   if (loading) return <FullPageLoading text="載入圖片中..." />;
   if (images.length === 0) return <EmptyState icon={<ImageIcon className="text-gray-400" size={32} />} title="沒有找到圖片" />;
 
   return (
     <DataCard className="p-3 sm:p-4 lg:p-6">
-      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-3 sm:gap-4">
-        {images.map((image, index) => (
-          <ImageCard key={index} image={image} onSelect={() => onSelectImage(image)} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        {images.map((image) => (
+          <ImageCard key={image.$id} image={image} onSelect={() => onSelectImage(image)} onEdit={() => onEdit(image)} onRefresh={onRefresh} />
         ))}
       </div>
     </DataCard>
@@ -93,51 +120,73 @@ function ImageGrid({ images, loading, onSelectImage }: { images: ImageFile[]; lo
 }
 
 // 單張圖片卡片
-function ImageCard({ image, onSelect }: { image: ImageFile; onSelect: () => void }) {
+function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; onSelect: () => void; onEdit: () => void; onRefresh: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`確定要刪除圖片 "${image.name}" 嗎?`)) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`${API_ENDPOINTS.IMAGE}/${image.$id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('刪除失敗');
+      onRefresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '刪除失敗');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 hover:scale-105 active:scale-95">
-      <div className="relative aspect-square overflow-hidden">
-        <img
-          src={image.path}
-          alt={image.name}
-          className="w-full h-full object-cover bg-gray-50 group-hover:scale-110 transition-transform duration-500"
-          loading="lazy"
-          onClick={onSelect}
-        />
-        
-        {/* 漸變遮罩 */}
+    <div className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+      {/* 圖片預覽區 */}
+      <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" onClick={onSelect}>
+        {image.file ? (
+          <img src={image.file} alt={image.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="text-gray-400 w-16 h-16" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* 操作按鈕 */}
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1.5">
-          <button onClick={(e) => { e.stopPropagation(); onSelect(); }} className="p-1.5 sm:p-2 bg-black/80 backdrop-blur-sm rounded-lg hover:bg-black/95 transition-colors" title="查看大圖">
-            <Eye className="text-white w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
-          <a href={image.path} download={image.name} onClick={(e) => e.stopPropagation()} className="p-1.5 sm:p-2 bg-black/80 backdrop-blur-sm rounded-lg hover:bg-black/95 transition-colors" title="下載圖片">
-            <Download className="text-white w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </a>
-        </div>
-        
-        {/* 格式標籤 */}
-        <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <span className="px-2 py-1 bg-black/80 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
-            {image.extension.replace('.', '').toUpperCase()}
-          </span>
-        </div>
       </div>
       
-      {/* 圖片資訊 */}
-      <div className="p-2 sm:p-3">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate mb-1" title={image.name}>
-          {image.name.length > 20 ? `${image.name.substring(0, 20)}...` : image.name}
+      {/* 資訊區 */}
+      <div className="p-3 sm:p-4">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base truncate mb-2" title={image.name}>
+          {image.name}
         </h3>
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span className="font-medium">{formatFileSize(image.size)}</span>
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            <span className="hidden sm:inline">{formatShortDate(image.modified)}</span>
-            <span className="sm:hidden">{formatNumericDate(image.modified)}</span>
-          </span>
+        
+        {image.note && (
+          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">{image.note}</p>
+        )}
+        
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <Calendar className="w-3 h-3" />
+          <span>{formatLocalDate(image.$createdAt)}</span>
+        </div>
+
+        {/* 操作按鈕 */}
+        <div className="flex gap-2">
+          <Button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="flex-1 gap-1 bg-blue-500 hover:bg-blue-600 rounded-lg text-xs py-1.5"
+          >
+            <Edit size={14} />
+            編輯
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 gap-1 bg-red-500 hover:bg-red-600 rounded-lg text-xs py-1.5"
+          >
+            <Trash2 size={14} />
+            {deleting ? '刪除中...' : '刪除'}
+          </Button>
         </div>
       </div>
     </div>
@@ -145,49 +194,271 @@ function ImageCard({ image, onSelect }: { image: ImageFile; onSelect: () => void
 }
 
 // 圖片預覽模態框
-function ImagePreviewModal({ image, onClose }: { image: ImageFile; onClose: () => void }) {
+function ImagePreviewModal({ image, onClose }: { image: ImageData; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" onClick={onClose}>
       <div className="relative w-full h-full max-w-7xl flex flex-col">
         {/* 圖片 */}
         <div className="flex-1 flex items-center justify-center p-12 sm:p-16">
-          <img src={image.path} alt={image.name} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          {image.file ? (
+            <img src={image.file} alt={image.name} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          ) : (
+            <div className="text-white text-center">
+              <ImageIcon className="mx-auto mb-4 w-24 h-24" />
+              <p>沒有圖片 URL</p>
+            </div>
+          )}
         </div>
         
         {/* 頂部控制欄 */}
-        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 flex justify-between items-start">
-          <div className="flex gap-2">
-            <span className="px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg text-white text-sm font-medium">
-              {image.extension.replace('.', '').toUpperCase()}
-            </span>
-            <span className="px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg text-white text-sm">
-              {formatFileSize(image.size)}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <a href={image.path} download={image.name} className="p-2.5 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/95 transition-colors" onClick={(e) => e.stopPropagation()}>
-              <Download className="w-5 h-5" />
-            </a>
-            <button onClick={onClose} className="p-2.5 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/95 transition-colors">
-              <span className="text-lg font-bold">✕</span>
-            </button>
-          </div>
+        <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
+          <button onClick={onClose} className="p-2.5 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/95 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         {/* 底部資訊欄 */}
         <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4">
           <div className="bg-black/80 backdrop-blur-sm rounded-xl p-3 sm:p-4 text-white">
-            <h3 className="font-medium mb-2 truncate">{image.name}</h3>
+            <h3 className="font-medium mb-2">{image.name}</h3>
+            {image.note && <p className="text-sm opacity-90 mb-2">{image.note}</p>}
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span>大小: <span className="font-medium">{formatFileSize(image.size)}</span></span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                修改: <span className="font-medium">{formatLocalDate(image.modified)}</span>
+                {formatLocalDate(image.$createdAt)}
               </span>
+              {image.category && <span>分類: {image.category}</span>}
+              {image.ref && <span>參考: {image.ref}</span>}
               <span className="ml-auto text-xs opacity-75">點擊空白處關閉</span>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// 圖片表單模態框
+function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null; onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    name: image?.name || '',
+    file: image?.file || '',
+    note: image?.note || '',
+    ref: image?.ref || '',
+    category: image?.category || '',
+    hash: image?.hash || '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('檔案大小不能超過 50MB');
+      return;
+    }
+
+    // 檢查檔案類型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '上傳失敗');
+      }
+
+      const data = await response.json();
+      
+      // 更新表單資料
+      setFormData(prev => ({
+        ...prev,
+        file: data.url,
+        hash: data.fileId || '',
+      }));
+
+      setUploadProgress(100);
+    } catch (error) {
+      console.error('上傳錯誤:', error);
+      alert(error instanceof Error ? error.message : '上傳失敗');
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadProgress(0), 2000);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      alert('請輸入圖片名稱');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const url = image ? `${API_ENDPOINTS.IMAGE}/${image.$id}` : API_ENDPOINTS.IMAGE;
+      const method = image ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error(image ? '更新失敗' : '新增失敗');
+      
+      onSuccess();
+      onClose();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '操作失敗');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            {image ? '編輯圖片' : '新增圖片'}
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              圖片名稱 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="請輸入圖片名稱"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              圖片 URL 或上傳檔案
+            </label>
+            <div className="space-y-3">
+              <Input
+                value={formData.file}
+                onChange={(e) => setFormData({ ...formData, file: e.target.value })}
+                placeholder="https://example.com/image.jpg"
+                disabled={uploading}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
+                <label className="flex-1">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      {uploading ? '上傳中...' : '上傳圖片 (最大 50MB)'}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
+              {uploadProgress === 100 && (
+                <p className="text-sm text-green-600 dark:text-green-400">✓ 上傳成功</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              備註
+            </label>
+            <Textarea
+              value={formData.note}
+              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+              placeholder="圖片備註說明"
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                分類
+              </label>
+              <Input
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="圖片分類"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                參考
+              </label>
+              <Input
+                value={formData.ref}
+                onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
+                placeholder="參考資訊"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Hash
+            </label>
+            <Input
+              value={formData.hash}
+              onChange={(e) => setFormData({ ...formData, hash: e.target.value })}
+              placeholder="圖片 hash 值"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button type="button" onClick={onClose} className="flex-1 bg-gray-500 hover:bg-gray-600 rounded-xl">
+              取消
+            </Button>
+            <Button type="submit" disabled={submitting} className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-xl">
+              {submitting ? '處理中...' : (image ? '更新' : '新增')}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

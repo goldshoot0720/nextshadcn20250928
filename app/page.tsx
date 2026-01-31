@@ -8,7 +8,7 @@ import EnhancedDashboard from "@/components/modules/EnhancedDashboard";
 import VideoIntroduction from "@/components/modules/VideoIntroduction";
 import ImageGallery from "@/components/modules/ImageGallery";
 import AboutUs from "@/components/modules/AboutUs";
-import MusicLyrics from "@/components/modules/MusicLyrics";
+import MusicManagement from "@/components/modules/MusicManagement";
 import NotesManagement from "@/components/modules/NotesManagement";
 import CommonAccountManagement from "@/components/modules/CommonAccountManagement";
 import SettingsManagement from "@/components/modules/SettingsManagement";
@@ -60,7 +60,7 @@ export default function DashboardPage() {
       case "notes":
         return <NotesManagement />;
       case "music":
-        return <MusicLyrics />;
+        return <MusicManagement />;
       case "common":
         return <CommonAccountManagement />;
       case "bank-stats":

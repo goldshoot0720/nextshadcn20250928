@@ -31,7 +31,7 @@ const TABLE_DEFINITIONS = {
   commonaccount: ["name", ...Array.from({length: 37}, (_, i) => `site${(i + 1).toString().padStart(2, '0')}`), ...Array.from({length: 37}, (_, i) => `note${(i + 1).toString().padStart(2, '0')}`)],
   food: ["name", "amount", "price", "shop", "todate", "photo", "photohash"],
   subscription: ["name", "site", "price", "nextdate", "note", "account"],
-  image: ["name", "file", "note", "hash"],
+  image: ["name", "file", "note", "ref", "category", "hash"],
   video: ["name", "file", "note", "ref", "category", "hash"],
   music: ["name", "file", "lyrics", "note", "ref", "category", "hash", "language", "cover"]
 };

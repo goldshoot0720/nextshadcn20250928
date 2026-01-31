@@ -84,6 +84,8 @@ const TABLE_SCHEMAS = {
       { key: 'name', type: 'string', size: 100, required: true },
       { key: 'file', type: 'string', size: 150, required: false },
       { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'ref', type: 'string', size: 100, required: false },
+      { key: 'category', type: 'string', size: 100, required: false },
       { key: 'hash', type: 'string', size: 300, required: false }
     ]
   },

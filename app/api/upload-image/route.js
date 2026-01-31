@@ -1,0 +1,84 @@
+import { NextResponse } from "next/server";
+import { Client, Storage, ID, InputFile } from 'node-appwrite';
+
+export const dynamic = 'force-dynamic';
+
+// 設定最大檔案大小為 50MB
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+function createAppwrite() {
+  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const apiKey = process.env.APPWRITE_API_KEY;
+  const bucketId = process.env.APPWRITE_BUCKET_ID;
+
+  if (!endpoint || !projectId || !apiKey || !bucketId) {
+    throw new Error("Appwrite configuration is missing");
+  }
+
+  const client = new Client()
+    .setEndpoint(endpoint)
+    .setProject(projectId)
+    .setKey(apiKey);
+
+  const storage = new Storage(client);
+
+  return { storage, bucketId };
+}
+
+// POST /api/upload-image - Upload image to Appwrite Storage
+export async function POST(request) {
+  try {
+    const { storage, bucketId } = createAppwrite();
+    
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file || !(file instanceof File)) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    // 檢查檔案大小 (50MB)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: '檔案大小不能超過 50MB' }, { status: 400 });
+    }
+
+    // 檢查檔案類型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      return NextResponse.json({ error: '只支援 JPG, PNG, GIF, WEBP 格式' }, { status: 400 });
+    }
+
+    // 讀取檔案內容
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上傳到 Appwrite Storage
+    const uploadedFile = await storage.createFile(
+      bucketId,
+      ID.unique(),
+      InputFile.fromBuffer(buffer, file.name)
+    );
+
+    // 獲取檔案 URL
+    const fileUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${uploadedFile.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+
+    return NextResponse.json({
+      success: true,
+      fileId: uploadedFile.$id,
+      url: fileUrl,
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+    });
+
+  } catch (err) {
+    console.error("POST /api/upload-image error:", err);
+    return NextResponse.json({ error: err.message || '上傳失敗' }, { status: 500 });
+  }
+}

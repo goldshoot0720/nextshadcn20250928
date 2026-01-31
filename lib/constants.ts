@@ -73,7 +73,10 @@ export const API_ENDPOINTS = {
   FOOD: "/api/food",
   SUBSCRIPTION: "/api/subscription",
   IMAGES: "/api/images",
+  IMAGE: "/api/image",
   VIDEOS: "/api/videos",
+  VIDEO: "/api/video",
+  MUSIC: "/api/music",
   ARTICLE: "/api/article",
   COMMON_ACCOUNT: "/api/common-account",
 } as const;
