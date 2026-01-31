@@ -175,7 +175,7 @@ export default function SubscriptionManagement() {
       name: sub.name,
       site: sub.site,
       price: sub.price,
-      nextdate: formatDate(sub.nextdate),
+      nextdate: sub.nextdate ? formatDate(sub.nextdate) : "",
       note: sub.note || "",
       account: sub.account || "",
       currency: sub.currency || "TWD"
@@ -188,6 +188,7 @@ export default function SubscriptionManagement() {
 
   const handleExtend30Days = () => {
     if (!editingId) return;
+    if (!form.nextdate) return; // 如果沒有日期，不執行操作
     
     // 計算新日期 (+30天)
     const currentDate = new Date(form.nextdate);
@@ -200,6 +201,7 @@ export default function SubscriptionManagement() {
 
   const handleReduce30Days = () => {
     if (!editingId) return;
+    if (!form.nextdate) return; // 如果沒有日期，不執行操作
     
     // 計算新日期 (-30天)
     const currentDate = new Date(form.nextdate);
