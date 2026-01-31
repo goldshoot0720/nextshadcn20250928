@@ -53,10 +53,12 @@ export async function POST(request) {
     const buffer = Buffer.from(arrayBuffer);
 
     // 上傳到 Appwrite Storage
+    // In node-appwrite v21, create File object with buffer
+    const fileObject = new File([buffer], file.name, { type: file.type });
     const uploadedFile = await storage.createFile(
       bucketId,
       sdk.ID.unique(),
-      sdk.InputFile.fromBuffer(buffer, file.name)
+      fileObject
     );
 
     // 獲取檔案 URL

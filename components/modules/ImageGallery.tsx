@@ -249,10 +249,10 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
     hash: image?.hash || '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -270,40 +270,28 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
       return;
     }
 
-    setUploading(true);
-    setUploadProgress(0);
+    // 儲存檔案並產生預覽 URL
+    setSelectedFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
 
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
+  const uploadFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
 
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formDataUpload,
-      });
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formDataUpload,
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '上傳失敗');
-      }
-
-      const data = await response.json();
-      
-      // 更新表單資料
-      setFormData(prev => ({
-        ...prev,
-        file: data.url,
-        hash: data.fileId || '',
-      }));
-
-      setUploadProgress(100);
-    } catch (error) {
-      console.error('上傳錯誤:', error);
-      alert(error instanceof Error ? error.message : '上傳失敗');
-    } finally {
-      setUploading(false);
-      setTimeout(() => setUploadProgress(0), 2000);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || '上傳失敗');
     }
+
+    const data = await response.json();
+    return { url: data.url, fileId: data.fileId || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -315,13 +303,22 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
 
     setSubmitting(true);
     try {
+      let finalFormData = { ...formData };
+
+      // 如果有選擇新檔案，先上傳到 Appwrite
+      if (selectedFile) {
+        const { url, fileId } = await uploadFileToAppwrite(selectedFile);
+        finalFormData.file = url;
+        finalFormData.hash = fileId;
+      }
+
       const url = image ? `${API_ENDPOINTS.IMAGE}/${image.$id}` : API_ENDPOINTS.IMAGE;
       const method = image ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(finalFormData),
       });
 
       if (!response.ok) throw new Error(image ? '更新失敗' : '新增失敗');
@@ -369,7 +366,7 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
                 value={formData.file}
                 onChange={(e) => setFormData({ ...formData, file: e.target.value })}
                 placeholder="https://example.com/image.jpg"
-                disabled={uploading}
+                disabled={submitting}
               />
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
@@ -377,28 +374,23 @@ function ImageFormModal({ image, onClose, onSuccess }: { image: ImageData | null
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {uploading ? '上傳中...' : '上傳圖片 (最大 50MB)'}
+                      {selectedFile ? `已選擇: ${selectedFile.name}` : '上傳圖片 (最大 50MB)'}
                     </span>
                   </div>
                   <input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
+                    onChange={handleFileSelect}
+                    disabled={submitting}
                     className="hidden"
                   />
                 </label>
               </div>
-              {uploadProgress > 0 && uploadProgress < 100 && (
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
+              {previewUrl && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">預覽：</p>
+                  <img src={previewUrl} alt="Preview" className="max-h-48 rounded-lg border border-gray-200 dark:border-gray-700" />
                 </div>
-              )}
-              {uploadProgress === 100 && (
-                <p className="text-sm text-green-600 dark:text-green-400">✓ 上傳成功</p>
               )}
             </div>
           </div>
