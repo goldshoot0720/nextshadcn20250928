@@ -41,18 +41,18 @@ const TABLE_SCHEMAS = {
   article: {
     name: "article",
     attributes: [
-      { key: 'title', type: 'string', size: 255, required: false },
-      { key: 'content', type: 'string', size: 10000, required: false },
-      { key: 'newDate', type: 'string', size: 100, required: false },
+      { key: 'title', type: 'string', size: 100, required: false },
+      { key: 'content', type: 'string', size: 1000, required: false },
+      { key: 'newDate', type: 'datetime', required: false },
       { key: 'url1', type: 'url', required: false },
       { key: 'url2', type: 'url', required: false },
       { key: 'url3', type: 'url', required: false },
-      { key: 'file1', type: 'string', size: 500, required: false },
-      { key: 'file1type', type: 'string', size: 50, required: false },
-      { key: 'file2', type: 'string', size: 500, required: false },
-      { key: 'file2type', type: 'string', size: 50, required: false },
-      { key: 'file3', type: 'string', size: 500, required: false },
-      { key: 'file3type', type: 'string', size: 50, required: false }
+      { key: 'file1', type: 'string', size: 100, required: false },
+      { key: 'file2', type: 'string', size: 100, required: false },
+      { key: 'file3', type: 'string', size: 100, required: false },
+      { key: 'file1type', type: 'string', size: 100, required: false },
+      { key: 'file2type', type: 'string', size: 100, required: false },
+      { key: 'file3type', type: 'string', size: 100, required: false }
     ]
   },
   food: {
@@ -164,6 +164,9 @@ export async function GET(request) {
               case 'url':
                 await databases.createUrlAttribute(databaseId, collectionId, attr.key, attr.required);
                 break;
+            case 'datetime':
+                await databases.createDatetimeAttribute(databaseId, collectionId, attr.key, attr.required);
+                break;
             }
             send({ 
               type: 'progress', 
@@ -274,6 +277,9 @@ export async function POST(request) {
             break;
           case 'url':
             await databases.createUrlAttribute(databaseId, collectionId, attr.key, attr.required);
+            break;
+          case 'datetime':
+            await databases.createDatetimeAttribute(databaseId, collectionId, attr.key, attr.required);
             break;
         }
         await new Promise(resolve => setTimeout(resolve, 200));

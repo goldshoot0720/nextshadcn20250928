@@ -160,11 +160,12 @@ export default function NotesManagement() {
           </FormGrid>
           
           <Textarea
-            placeholder="筆記內容"
+            placeholder="筆記內容 (上限 1000 字)"
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             required
             className="min-h-[200px] rounded-xl"
+            maxLength={1000}
           />
 
           <div className="space-y-2">
@@ -242,11 +243,12 @@ export default function NotesManagement() {
                       </FormGrid>
                       
                       <Textarea
-                        placeholder="筆記內容"
+                        placeholder="筆記內容 (上限 1000 字)"
                         value={editForm.content}
                         onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
                         required
                         className="min-h-[150px] rounded-lg text-sm"
+                        maxLength={1000}
                       />
 
                       <div className="grid grid-cols-1 gap-2">
