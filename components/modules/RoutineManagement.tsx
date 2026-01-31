@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,10 +46,72 @@ const INITIAL_FORM: RoutineFormData = {
 };
 
 export default function RoutineManagement() {
-  const { items: routines, loading, error, create, update, remove } = useCrud<Routine>(API_ENDPOINTS.ROUTINE);
+  const { items: routines, loading, error, create, update, remove, fetchAll } = useCrud<Routine>(API_ENDPOINTS.ROUTINE);
   const [form, setForm] = useState<RoutineFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const getAppwriteHeaders = () => {
+    if (typeof window === 'undefined') return {};
+    const endpoint = localStorage.getItem('appwrite_endpoint');
+    const project = localStorage.getItem('appwrite_project');
+    const database = localStorage.getItem('appwrite_database');
+    const apiKey = localStorage.getItem('appwrite_api_key');
+    return {
+      ...(endpoint && { 'X-Appwrite-Endpoint': endpoint }),
+      ...(project && { 'X-Appwrite-Project': project }),
+      ...(database && { 'X-Appwrite-Database': database }),
+      ...(apiKey && { 'X-Appwrite-API-Key': apiKey }),
+    };
+  };
+
+  const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
+      return;
+    }
+
+    setSelectedPhotoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPhotoPreviewUrl(objectUrl);
+  };
+
+  const uploadPhotoToAppwrite = async (file: File): Promise<string> => {
+    setPhotoUploading(true);
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: getAppwriteHeaders(),
+        body: formDataUpload,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '圖片上傳失敗');
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      throw error;
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,21 +120,35 @@ export default function RoutineManagement() {
       return;
     }
 
-    const payload = {
-      ...form,
-      lastdate1: form.lastdate1 || null,
-      lastdate2: form.lastdate2 || null,
-      lastdate3: form.lastdate3 || null,
-    };
+    try {
+      let finalPhoto = form.photo;
 
-    const success = editingId
-      ? await update(editingId, payload)
-      : await create(payload);
+      // 如果有選擇圖片檔案，上傳到 Appwrite
+      if (selectedPhotoFile) {
+        finalPhoto = await uploadPhotoToAppwrite(selectedPhotoFile);
+      }
 
-    if (success) {
-      setForm(INITIAL_FORM);
-      setEditingId(null);
-      setIsFormOpen(false);
+      const payload = {
+        ...form,
+        photo: finalPhoto,
+        lastdate1: form.lastdate1 || null,
+        lastdate2: form.lastdate2 || null,
+        lastdate3: form.lastdate3 || null,
+      };
+
+      const success = editingId
+        ? await update(editingId, payload)
+        : await create(payload);
+
+      if (success) {
+        setForm(INITIAL_FORM);
+        setEditingId(null);
+        setIsFormOpen(false);
+        setSelectedPhotoFile(null);
+        setPhotoPreviewUrl("");
+      }
+    } catch (err) {
+      alert("操作失敗：" + (err instanceof Error ? err.message : "請稍後再試"));
     }
   };
 
@@ -88,6 +164,8 @@ export default function RoutineManagement() {
     });
     setEditingId(routine.$id);
     setIsFormOpen(true);
+    setPhotoPreviewUrl(routine.photo || "");
+    setSelectedPhotoFile(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -100,6 +178,8 @@ export default function RoutineManagement() {
     setForm(INITIAL_FORM);
     setEditingId(null);
     setIsFormOpen(false);
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl("");
   };
 
   const formatDateTime = (datetime: string | null) => {
@@ -206,22 +286,53 @@ export default function RoutineManagement() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">圖片網址</label>
-                    <Input
-                      type="url"
-                      value={form.photo}
-                      onChange={(e) => setForm({ ...form, photo: e.target.value })}
-                      placeholder="https://..."
-                    />
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium mb-2">圖片</label>
+                    <div className="space-y-3">
+                      {/* URL 輸入 */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">圖片網址</label>
+                        <Input
+                          type="url"
+                          value={form.photo}
+                          onChange={(e) => {
+                            setForm({ ...form, photo: e.target.value });
+                            setPhotoPreviewUrl(e.target.value);
+                            setSelectedPhotoFile(null);
+                          }}
+                          placeholder="https://..."
+                        />
+                      </div>
+
+                      {/* 或者上傳檔案 */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">或上傳圖片檔案</label>
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                          onChange={handlePhotoFileSelect}
+                        />
+                      </div>
+
+                      {/* 預覽 */}
+                      {photoPreviewUrl && (
+                        <div className="mt-2">
+                          <img
+                            src={photoPreviewUrl}
+                            alt="圖片預覽"
+                            className="w-32 h-32 object-cover rounded border"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </FormGrid>
 
                 <FormActions>
-                  <Button type="submit">
-                    {editingId ? "更新" : "新增"}
+                  <Button type="submit" disabled={photoUploading}>
+                    {photoUploading ? "上傳中..." : editingId ? "更新" : "新增"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={handleCancel}>
+                  <Button type="button" variant="outline" onClick={handleCancel} disabled={photoUploading}>
                     取消
                   </Button>
                 </FormActions>
