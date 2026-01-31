@@ -76,15 +76,25 @@ export default function RoutineManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      alert(`檔案大小超過限制（${Math.round(file.size / 1024 / 1024)}MB > 50MB）`);
+      return;
+    }
+
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
       return;
     }
 
+    // Store file for later upload, create preview URL
     setSelectedPhotoFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPhotoPreviewUrl(objectUrl);
+    // Clear the URL input when file is selected
+    setForm({ ...form, photo: "" });
   };
 
   const uploadPhotoToAppwrite = async (file: File): Promise<string> => {
@@ -306,12 +316,17 @@ export default function RoutineManagement() {
 
                       {/* 或者上傳檔案 */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">或上傳圖片檔案</label>
+                        <label className="block text-xs text-gray-500 mb-1">或上傳圖片檔案（上限 50MB）</label>
                         <Input
                           type="file"
                           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                           onChange={handlePhotoFileSelect}
                         />
+                        {selectedPhotoFile && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            已選擇: {selectedPhotoFile.name} ({Math.round(selectedPhotoFile.size / 1024)}KB)
+                          </p>
+                        )}
                       </div>
 
                       {/* 預覽 */}
