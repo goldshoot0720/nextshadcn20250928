@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap } from "lucide-react";
+import { useMediaStats } from "@/hooks/useMediaStats";
+import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
@@ -119,7 +120,7 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
     );
   }
 
-  if (loading) return <FullPageLoading text="載入統計數據中..." />;
+  if (loading || mediaLoading) return <FullPageLoading text="載入統計數據中..." />;
 
   const needsAttention = stats.foodsExpiring7Days > 0 || stats.subscriptionsExpiring3Days > 0 || stats.expiredFoods > 0 || stats.overdueSubscriptions > 0;
 
@@ -134,6 +135,12 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
         <StatCard title="需要關注" value={stats.foodsExpiring7Days + stats.subscriptionsExpiring3Days} icon={AlertTriangle} gradient="from-yellow-500 to-orange-500" />
         <StatCard title="年費總計" value={formatCurrency(stats.totalAnnualFee)} icon={DollarSign} gradient="from-purple-500 to-purple-600" />
       </div>
+
+      {/* 多媒體儲存統計 */}
+      <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
+
+      {/* 多媒體儲存統計 */}
+      <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
 
       {/* 詳細統計區域 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
@@ -345,5 +352,101 @@ function AlertSection({ stats }: { stats: ReturnType<typeof useDashboardStats>["
         {stats.subscriptionsExpiring3Days > 0 && <p className="text-orange-700 dark:text-orange-300">🔔 有 {stats.subscriptionsExpiring3Days} 項訂閱將在3天內到期</p>}
       </div>
     </div>
+  );
+}
+
+// 多媒體儲存統計
+function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number; totalVideos: number; totalMusic: number; imagesSize: number; videosSize: number; musicSize: number; totalSize: number; storageLimit: number; usagePercentage: number }; onNavigate: (id: string) => void }) {
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const usageColor = stats.usagePercentage > 80 ? 'text-red-600 dark:text-red-400' : stats.usagePercentage > 50 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400';
+  const progressColor = stats.usagePercentage > 80 ? 'bg-red-500' : stats.usagePercentage > 50 ? 'bg-orange-500' : 'bg-green-500';
+
+  return (
+    <DataCard className="p-4 sm:p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+          <HardDrive className="text-purple-600 dark:text-purple-400" size={20} />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">多媒體儲存統計</h2>
+      </div>
+
+      {/* 儲存總覽 */}
+      <div className="mb-4">
+        <div className="flex justify-between text-sm mb-2">
+          <span className="text-gray-600 dark:text-gray-400">累積容量</span>
+          <span className={`font-semibold ${usageColor}`}>
+            {formatBytes(stats.totalSize)} / {formatBytes(stats.storageLimit)} ({stats.usagePercentage.toFixed(1)}%)
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+          <div
+            className={`${progressColor} h-3 rounded-full transition-all duration-300`}
+            style={{ width: `${Math.min(stats.usagePercentage, 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* 分類統計 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <MediaStatCard 
+          icon={Image} 
+          title="鄒允圖片" 
+          count={stats.totalImages} 
+          size={formatBytes(stats.imagesSize)} 
+          color="blue"
+          onClick={() => onNavigate('image')}
+        />
+        <MediaStatCard 
+          icon={FileVideo} 
+          title="鄒允影片" 
+          count={stats.totalVideos} 
+          size={formatBytes(stats.videosSize)} 
+          color="indigo"
+          onClick={() => onNavigate('video')}
+        />
+        <MediaStatCard 
+          icon={Music} 
+          title="鄒允音樂" 
+          count={stats.totalMusic} 
+          size={formatBytes(stats.musicSize)} 
+          color="purple"
+          onClick={() => onNavigate('music')}
+        />
+      </div>
+    </DataCard>
+  );
+}
+
+// 多媒體統計卡片
+function MediaStatCard({ icon: Icon, title, count, size, color, onClick }: { icon: any; title: string; count: number; size: string; color: string; onClick: () => void }) {
+  const colorMap: Record<string, { bg: string; text: string; hover: string }> = {
+    blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400', hover: 'hover:bg-blue-100 dark:hover:bg-blue-900/30' },
+    indigo: { bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-600 dark:text-indigo-400', hover: 'hover:bg-indigo-100 dark:hover:bg-indigo-900/30' },
+    purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400', hover: 'hover:bg-purple-100 dark:hover:bg-purple-900/30' },
+  };
+
+  const colors = colorMap[color];
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${colors.bg} ${colors.hover} p-4 rounded-xl transition-colors duration-200 text-left border border-transparent hover:border-gray-200 dark:hover:border-gray-700`}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className={colors.text} size={20} />
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
+      </div>
+      <div className="space-y-1">
+        <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{count}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">容量: {size}</p>
+      </div>
+    </button>
   );
 }
