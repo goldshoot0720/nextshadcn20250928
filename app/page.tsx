@@ -12,7 +12,7 @@ import MusicLyrics from "@/components/modules/MusicLyrics";
 import NotesManagement from "@/components/modules/NotesManagement";
 import CommonAccountManagement from "@/components/modules/CommonAccountManagement";
 import SettingsManagement from "@/components/modules/SettingsManagement";
-import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus, Settings } from "lucide-react";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus, Settings, Image } from "lucide-react";
 import { MenuItem, CommonAccount } from "@/types";
 import { Input, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
@@ -23,6 +23,7 @@ import { API_ENDPOINTS } from "@/lib/constants";
 const MENU_ITEMS: MenuItem[] = [
   { id: "home", label: "首頁", icon: <Home size={18} /> },
   { id: "dashboard", label: "儀表板", icon: <BarChart3 size={18} /> },
+  { id: "images", label: "圖片管理", icon: <Image size={18} /> },
   { id: "subscription", label: "訂閱管理", icon: <CreditCard size={18} /> },
   { id: "food", label: "食品管理", icon: <Package size={18} /> },
   { id: "videos", label: "影片介紹", icon: <Play size={18} /> },
@@ -45,6 +46,8 @@ export default function DashboardPage() {
   const currentContent = useMemo(() => {
     switch (currentModule) {
       case "home":
+        return <ImageGallery />;
+      case "images":
         return <ImageGallery />;
       case "dashboard":
         return <EnhancedDashboard onNavigate={handleModuleChange} />;
