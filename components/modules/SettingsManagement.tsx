@@ -176,7 +176,16 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
     });
 
     try {
-      const eventSource = new EventSource(`/api/create-table?table=${tableName}`);
+      // 添加 Appwrite 配置參數到 URL
+      const config = getAppwriteConfig();
+      const params = new URLSearchParams();
+      params.set('table', tableName);
+      if (config.endpoint) params.set('_endpoint', config.endpoint);
+      if (config.projectId) params.set('_project', config.projectId);
+      if (config.databaseId) params.set('_database', config.databaseId);
+      if (config.apiKey) params.set('_key', config.apiKey);
+      
+      const eventSource = new EventSource(`/api/create-table?${params.toString()}`);
       
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
