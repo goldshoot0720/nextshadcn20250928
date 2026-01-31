@@ -141,10 +141,11 @@ export async function GET(request) {
       };
 
       try {
-        const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-        const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-        const databaseId = process.env.APPWRITE_DATABASE_ID;
-        const apiKey = process.env.APPWRITE_API_KEY;
+        // 從 URL 參數讀取 Appwrite 配置
+        const endpoint = searchParams.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+        const projectId = searchParams.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+        const databaseId = searchParams.get('_database') || process.env.APPWRITE_DATABASE_ID;
+        const apiKey = searchParams.get('_key') || process.env.APPWRITE_API_KEY;
 
         if (!endpoint || !projectId || !databaseId || !apiKey) {
           send({ type: 'error', message: 'Missing Appwrite configuration' });
@@ -270,10 +271,12 @@ export async function POST(request) {
       );
     }
 
-    const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-    const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-    const databaseId = process.env.APPWRITE_DATABASE_ID;
-    const apiKey = process.env.APPWRITE_API_KEY;
+    // 從 URL 參數讀取 Appwrite 配置
+    const { searchParams } = new URL(request.url);
+    const endpoint = searchParams.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+    const projectId = searchParams.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+    const databaseId = searchParams.get('_database') || process.env.APPWRITE_DATABASE_ID;
+    const apiKey = searchParams.get('_key') || process.env.APPWRITE_API_KEY;
 
     if (!endpoint || !projectId || !databaseId || !apiKey) {
       return NextResponse.json(
