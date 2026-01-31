@@ -229,6 +229,9 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -248,28 +251,57 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
       return;
     }
 
+    // 顯示預覽載入狀態
+    setPreviewLoading(true);
+    setUploadStatus('idle');
+    setUploadProgress(0);
+    
     // 儲存檔案並產生預覽 URL
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+    
+    // 模擬預覽載入完成
+    setTimeout(() => setPreviewLoading(false), 300);
   };
 
   const uploadFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
+    setUploadStatus('uploading');
+    setUploadProgress(0);
+
     const formDataUpload = new FormData();
     formDataUpload.append('file', file);
 
-    const response = await fetch('/api/upload-music', {
-      method: 'POST',
-      body: formDataUpload,
-    });
+    // 模擬上傳進度
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || '上傳失敗');
+    try {
+      const response = await fetch('/api/upload-music', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '上傳失敗');
+      }
+
+      const data = await response.json();
+      setUploadStatus('success');
+      return { url: data.url, fileId: data.fileId || '' };
+    } catch (error) {
+      clearInterval(progressInterval);
+      setUploadStatus('error');
+      throw error;
     }
-
-    const data = await response.json();
-    return { url: data.url, fileId: data.fileId || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -352,14 +384,14 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 50MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 50MB)'}
                     </span>
                   </div>
                   <input
                     type="file"
                     accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/aac,audio/flac,audio/m4a"
                     onChange={handleFileSelect}
-                    disabled={submitting}
+                    disabled={submitting || previewLoading}
                     className="hidden"
                   />
                 </label>
@@ -369,6 +401,26 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">預覽：</p>
                   <audio src={previewUrl} controls className="w-full" />
                 </div>
+              )}
+              {uploadStatus === 'uploading' && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span>上傳至 Appwrite...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {uploadStatus === 'success' && (
+                <p className="text-sm text-green-600 dark:text-green-400">✓ 上傳成功</p>
+              )}
+              {uploadStatus === 'error' && (
+                <p className="text-sm text-red-600 dark:text-red-400">✗ 上傳失敗</p>
               )}
             </div>
           </div>

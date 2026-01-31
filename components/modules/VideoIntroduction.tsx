@@ -341,6 +341,9 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -360,28 +363,57 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
       return;
     }
 
+    // 顯示預覽載入狀態
+    setPreviewLoading(true);
+    setUploadStatus('idle');
+    setUploadProgress(0);
+    
     // 儲存檔案並產生預覽 URL
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+    
+    // 模擬預覽載入完成
+    setTimeout(() => setPreviewLoading(false), 300);
   };
 
   const uploadFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
+    setUploadStatus('uploading');
+    setUploadProgress(0);
+
     const formDataUpload = new FormData();
     formDataUpload.append('file', file);
 
-    const response = await fetch('/api/upload-video', {
-      method: 'POST',
-      body: formDataUpload,
-    });
+    // 模擬上傳進度
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || '上傳失敗');
+    try {
+      const response = await fetch('/api/upload-video', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '上傳失敗');
+      }
+
+      const data = await response.json();
+      setUploadStatus('success');
+      return { url: data.url, fileId: data.fileId || '' };
+    } catch (error) {
+      clearInterval(progressInterval);
+      setUploadStatus('error');
+      throw error;
     }
-
-    const data = await response.json();
-    return { url: data.url, fileId: data.fileId || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -464,14 +496,14 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {selectedFile ? `已選擇: ${selectedFile.name}` : '上傳影片 (最大 50MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳影片 (最大 50MB)'}
                     </span>
                   </div>
                   <input
                     type="file"
                     accept="video/mp4,video/webm,video/ogg,video/quicktime"
                     onChange={handleFileSelect}
-                    disabled={submitting}
+                    disabled={submitting || previewLoading}
                     className="hidden"
                   />
                 </label>
@@ -481,6 +513,26 @@ function VideoFormModal({ video, onClose, onSuccess }: { video: VideoData | null
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">預覽：</p>
                   <video src={previewUrl} controls className="max-h-48 rounded-lg border border-gray-200 dark:border-gray-700" />
                 </div>
+              )}
+              {uploadStatus === 'uploading' && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span>上傳至 Appwrite...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {uploadStatus === 'success' && (
+                <p className="text-sm text-green-600 dark:text-green-400">✓ 上傳成功</p>
+              )}
+              {uploadStatus === 'error' && (
+                <p className="text-sm text-red-600 dark:text-red-400">✗ 上傳失敗</p>
               )}
             </div>
           </div>
