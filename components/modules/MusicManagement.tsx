@@ -469,6 +469,7 @@ function MusicFormModal({ music, onClose, onSuccess }: { music: MusicData | null
               value={formData.cover}
               onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
               placeholder="https://example.com/cover.jpg"
+              maxLength={150}
             />
           </div>
 
