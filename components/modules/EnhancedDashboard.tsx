@@ -140,9 +140,6 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
       {/* 多媒體儲存統計 */}
       <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
 
-      {/* 多媒體儲存統計 */}
-      <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
-
       {/* 詳細統計區域 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <FoodStatsCard stats={stats} onNavigate={onNavigate} />
