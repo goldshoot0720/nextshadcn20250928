@@ -4,15 +4,87 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
+// Table schemas definition
+const TABLE_SCHEMAS = {
+  commonaccount: {
+    name: "commonaccount",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      ...Array.from({ length: 37 }, (_, i) => ({
+        key: `site${(i + 1).toString().padStart(2, '0')}`,
+        type: 'string',
+        size: 100,
+        required: false
+      })),
+      ...Array.from({ length: 37 }, (_, i) => ({
+        key: `note${(i + 1).toString().padStart(2, '0')}`,
+        type: 'string',
+        size: 100,
+        required: false
+      }))
+    ]
+  },
+  bank: {
+    name: "bank",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'deposit', type: 'integer', required: false },
+      { key: 'site', type: 'url', required: false },
+      { key: 'address', type: 'string', size: 100, required: false },
+      { key: 'withdrawals', type: 'integer', required: false },
+      { key: 'transfer', type: 'integer', required: false },
+      { key: 'activity', type: 'url', required: false },
+      { key: 'card', type: 'string', size: 100, required: false },
+      { key: 'account', type: 'string', size: 100, required: false }
+    ]
+  },
+  article: {
+    name: "article",
+    attributes: [
+      { key: 'title', type: 'string', size: 255, required: false },
+      { key: 'content', type: 'string', size: 10000, required: false },
+      { key: 'newDate', type: 'string', size: 100, required: false },
+      { key: 'url1', type: 'url', required: false },
+      { key: 'url2', type: 'url', required: false },
+      { key: 'url3', type: 'url', required: false },
+      { key: 'file1', type: 'string', size: 500, required: false },
+      { key: 'file1type', type: 'string', size: 50, required: false },
+      { key: 'file2', type: 'string', size: 500, required: false },
+      { key: 'file2type', type: 'string', size: 50, required: false },
+      { key: 'file3', type: 'string', size: 500, required: false },
+      { key: 'file3type', type: 'string', size: 50, required: false }
+    ]
+  },
+  food: {
+    name: "food",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'amount', type: 'integer', required: false },
+      { key: 'todate', type: 'string', size: 100, required: false },
+      { key: 'photo', type: 'url', required: false }
+    ]
+  },
+  subscription: {
+    name: "subscription",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'site', type: 'url', required: false },
+      { key: 'price', type: 'integer', required: false },
+      { key: 'nextdate', type: 'string', size: 100, required: false }
+    ]
+  }
+};
+
 // POST /api/create-table
 export async function POST(request) {
   try {
     const { tableName } = await request.json();
-    
-    // Only support creating commonaccount table programmatically
-    if (tableName !== "commonaccount") {
+
+    // Check if table schema is defined
+    const schema = TABLE_SCHEMAS[tableName];
+    if (!schema) {
       return NextResponse.json(
-        { success: false, error: `${tableName} must be created manually in Appwrite Console` },
+        { success: false, error: `Unknown table: ${tableName}` },
         { status: 400 }
       );
     }
@@ -38,20 +110,20 @@ export async function POST(request) {
 
     // Check if collection exists
     try {
-      await databases.getCollection(databaseId, "commonaccount");
+      await databases.getCollection(databaseId, tableName);
       return NextResponse.json(
-        { success: false, error: "commonaccount table already exists" },
+        { success: false, error: `${tableName} table already exists` },
         { status: 400 }
       );
     } catch (err) {
       if (err.code !== 404) throw err;
     }
 
-    // Create collection
-    await databases.createCollection(
+    // Create collection (let Appwrite generate ID)
+    const collection = await databases.createCollection(
       databaseId,
-      "commonaccount",
-      "commonaccount",
+      sdk.ID.unique(),
+      tableName,
       [
         sdk.Permission.read(sdk.Role.any()),
         sdk.Permission.create(sdk.Role.any()),
@@ -60,32 +132,38 @@ export async function POST(request) {
       ]
     );
 
-    // Create attributes
-    const attributes = [
-      { key: 'name', size: 100, required: true },
-    ];
+    const collectionId = collection.$id;
 
-    // Add site01 ~ site37
-    for (let i = 1; i <= 37; i++) {
-      const key = `site${i.toString().padStart(2, '0')}`;
-      attributes.push({ key, size: 100, required: false });
-    }
-
-    // Add note01 ~ note37
-    for (let i = 1; i <= 37; i++) {
-      const key = `note${i.toString().padStart(2, '0')}`;
-      attributes.push({ key, size: 100, required: false });
-    }
-
-    for (const attr of attributes) {
+    // Create attributes based on type
+    for (const attr of schema.attributes) {
       try {
-        await databases.createStringAttribute(
-          databaseId,
-          "commonaccount",
-          attr.key,
-          attr.size,
-          attr.required
-        );
+        switch (attr.type) {
+          case 'string':
+            await databases.createStringAttribute(
+              databaseId,
+              collectionId,
+              attr.key,
+              attr.size,
+              attr.required
+            );
+            break;
+          case 'integer':
+            await databases.createIntegerAttribute(
+              databaseId,
+              collectionId,
+              attr.key,
+              attr.required
+            );
+            break;
+          case 'url':
+            await databases.createUrlAttribute(
+              databaseId,
+              collectionId,
+              attr.key,
+              attr.required
+            );
+            break;
+        }
         // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 200));
       } catch (err) {
@@ -95,7 +173,11 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: "commonaccount table created with 75 columns" });
+    return NextResponse.json({
+      success: true,
+      message: `${tableName} table created with ${schema.attributes.length} columns`,
+      collectionId
+    });
 
   } catch (err) {
     console.error("POST /api/create-table error:", err);

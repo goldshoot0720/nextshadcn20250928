@@ -43,10 +43,6 @@ export default function SettingsManagement() {
   }, []);
 
   const handleCreateTable = async (tableName: string) => {
-    if (tableName !== "commonaccount") {
-      alert(`請在 Appwrite Console 手動建立 ${tableName} Table`);
-      return;
-    }
     setCreating(tableName);
     try {
       const res = await fetch("/api/create-table", {
@@ -56,7 +52,7 @@ export default function SettingsManagement() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`${tableName} Table 建立成功!`);
+        alert(`${tableName} Table 建立成功! (ID: ${data.collectionId})`);
         fetchStats();
       } else {
         alert(`建立失敗: ${data.error}`);
