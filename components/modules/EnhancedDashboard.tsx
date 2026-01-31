@@ -81,7 +81,7 @@ export default function EnhancedDashboard({ onNavigate }: EnhancedDashboardProps
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <PageTitle title="儀表板" description="鋒兄Next資訊管理 - 數據匯總與分析" />
+      <PageTitle title="儀表板" description="鋒兄資訊管理系統 - 數據匯總與分析" />
 
       {/* 主要統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

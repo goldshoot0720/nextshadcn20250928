@@ -119,8 +119,8 @@ function Logo({ compact = false }: { compact?: boolean }) {
         <span className={cn("text-white font-bold", compact ? "text-sm" : "text-base")}>鋒</span>
       </div>
       <div>
-        <h1 className={cn("font-bold text-gray-800 dark:text-gray-100", compact ? "text-xl" : "text-xl")}>鋒兄Next資訊管理</h1>
-        {!compact && <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄Next資訊管理系統</p>}
+        <h1 className={cn("font-bold text-gray-800 dark:text-gray-100", compact ? "text-xl" : "text-xl")}>鋒兄資訊管理系統</h1>
+        {!compact && <p className="text-sm text-gray-500 dark:text-gray-400">鋒兄資訊管理系統</p>}
       </div>
     </div>
   );

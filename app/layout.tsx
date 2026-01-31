@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "鋒兄Next資訊管理",
-  description: "鋒兄Next資訊管理系統，幫助您輕鬆管理食品庫存和訂閱服務，避免浪費並控制支出。",
+  title: "鋒兄資訊管理系統",
+  description: "鋒兄資訊管理系統，幫助您輕鬆管理食品庫存和訂閱服務，避免浪費並控制支出。",
   keywords: "食品管理, 訂閱管理, 庫存管理, 過期提醒, 支出控制, Next.js",
   authors: [{ name: "鋒兄塗哥公關資訊" }],
   manifest: "/manifest.json",
@@ -31,7 +31,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="鋒兄Next資訊管理" />
+        <meta name="apple-mobile-web-app-title" content="鋒兄資訊管理系統" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="format-detection" content="telephone=no" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
