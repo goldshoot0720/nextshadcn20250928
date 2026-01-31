@@ -247,6 +247,7 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
     ref: image?.ref || '',
     category: image?.category || '',
     hash: image?.hash || '',
+    isCover: image?.isCover || false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -542,6 +543,20 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
               placeholder="上傳檔案後自動生成"
               className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isCover}
+                onChange={(e) => setFormData({ ...formData, isCover: e.target.checked })}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                設為封面圖
+              </span>
+            </label>
           </div>
 
           <div className="flex gap-3 pt-4">
