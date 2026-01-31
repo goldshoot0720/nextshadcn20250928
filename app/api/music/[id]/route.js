@@ -4,11 +4,11 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
-  const apiKey = process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+function createAppwrite(searchParams) {
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -27,7 +27,8 @@ function createAppwrite() {
 // GET /api/music/[id] - Get music by ID
 export async function GET(request, { params }) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const { id } = params;
     
     // Get collection ID by name
@@ -51,7 +52,8 @@ export async function GET(request, { params }) {
 // PUT /api/music/[id] - Update music
 export async function PUT(request, { params }) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const { id } = params;
     const body = await request.json();
     
@@ -92,7 +94,8 @@ export async function PUT(request, { params }) {
 // DELETE /api/music/[id] - Delete music
 export async function DELETE(request, { params }) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const { id } = params;
     
     // Get collection ID by name

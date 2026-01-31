@@ -25,6 +25,13 @@ function createAppwrite(searchParams) {
   return { databases, databaseId };
 }
 
+async function getCollectionId(databases, databaseId, name) {
+  const allCollections = await databases.listCollections(databaseId);
+  const col = allCollections.collections.find(c => c.name === name);
+  if (!col) throw new Error(`Collection ${name} not found`);
+  return col.$id;
+}
+
 // GET /api/music - List all music
 export async function GET(request) {
   try {
@@ -32,14 +39,17 @@ export async function GET(request) {
     const { databases, databaseId } = createAppwrite(searchParams);
     
     // Get collection ID by name
-    const allCollections = await databases.listCollections(databaseId);
-    const musicCollection = allCollections.collections.find(col => col.name === 'music');
-    
-    if (!musicCollection) {
-      return NextResponse.json({ error: "Table music 不存在，請至「鋒兄設定」中初始化。" }, { status: 404 });
+    let collectionId;
+    try {
+      collectionId = await getCollectionId(databases, databaseId, "music");
+    } catch (collectionErr) {
+      console.error("Collection not found:", collectionErr.message);
+      return NextResponse.json(
+        { error: "Table music 不存在，請至「鋒兄設定」中初始化。" }, 
+        { status: 404 }
+      );
     }
     
-    const collectionId = musicCollection.$id;
     const response = await databases.listDocuments(databaseId, collectionId);
     
     return NextResponse.json(response.documents);
@@ -57,14 +67,16 @@ export async function POST(request) {
     const body = await request.json();
     
     // Get collection ID by name
-    const allCollections = await databases.listCollections(databaseId);
-    const musicCollection = allCollections.collections.find(col => col.name === 'music');
-    
-    if (!musicCollection) {
-      return NextResponse.json({ error: "Table music 不存在，請至「鋒兄設定」中初始化。" }, { status: 404 });
+    let collectionId;
+    try {
+      collectionId = await getCollectionId(databases, databaseId, "music");
+    } catch (collectionErr) {
+      console.error("Collection not found:", collectionErr.message);
+      return NextResponse.json(
+        { error: "Table music 不存在，請至「鋒兄設定」中初始化。" }, 
+        { status: 404 }
+      );
     }
-    
-    const collectionId = musicCollection.$id;
     
     const document = await databases.createDocument(
       databaseId,
