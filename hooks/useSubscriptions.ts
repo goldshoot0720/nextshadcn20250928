@@ -33,20 +33,40 @@ export function useSubscriptions() {
   const loadSubscriptions = useCallback(async (forceRefresh = false) => {
     const storedRefreshKey = getRefreshKey();
     const accountSwitched = typeof window !== 'undefined' ? localStorage.getItem('appwrite_account_switched') : null;
+    
+    console.log('[useSubscriptions] loadSubscriptions 被呼叫', {
+      forceRefresh,
+      storedRefreshKey,
+      accountSwitched,
+      cacheTimestamp,
+      hasCachedData: !!cachedSubscriptions
+    });
       
     // 如果切換了帳號，清除快取並強制重新載入
     if (accountSwitched && cacheTimestamp < parseInt(accountSwitched)) {
+      console.log('[useSubscriptions] 偵測到帳號切換，清除快取');
       cachedSubscriptions = null;
+      cacheTimestamp = 0;
+      forceRefresh = true;
+    }
+      
+    // 如果有 refresh key ，也要強制重新載入
+    if (storedRefreshKey && cacheTimestamp < parseInt(storedRefreshKey)) {
+      console.log('[useSubscriptions] 偵測到 refresh key 更新，清除快取');
+      cachedSubscriptions = null;
+      cacheTimestamp = 0;
       forceRefresh = true;
     }
       
     // 如果有快取且沒有 CRUD 操作，直接使用快取
-    if (!forceRefresh && cachedSubscriptions && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
+    if (!forceRefresh && cachedSubscriptions) {
+      console.log('[useSubscriptions] 使用快变資料');
       setSubscriptions(cachedSubscriptions);
       setLoading(false);
       return cachedSubscriptions;
     }
 
+    console.log('[useSubscriptions] 從 API 載入資料');
     setLoading(true);
     setError(null);
     try {

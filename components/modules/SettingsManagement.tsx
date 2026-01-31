@@ -81,15 +81,14 @@ export default function SettingsManagement() {
     clearAllCaches();
     
     setConfigSaved(true);
-    setTimeout(() => setConfigSaved(false), 2000);
     
-    // 重新載入資料庫統計
-    setLoading(true);
+    // 顯示提示並自動重新整理頁面
+    alert('✅ Appwrite 帳號設定已儲存！\n所有快取已清除。\n\n頁面將自動重新載入以套用新設定。');
+    
+    // 延遲 500ms 後自動重新整理頁面
     setTimeout(() => {
-      fetchStats();
-    }, 100);
-    
-    alert('✅ Appwrite 帳號設定已儲存！\n所有快取已清除。\n\n請重新整理網頁套用新設定。');
+      window.location.reload();
+    }, 500);
   };
 
   const handleCopyEnvTemplate = () => {
