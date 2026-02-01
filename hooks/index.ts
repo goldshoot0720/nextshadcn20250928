@@ -9,3 +9,4 @@ export { useBanks } from "./useBanks";
 export { useDashboardStats } from "./useDashboardStats";
 export { useVideoCache } from "./useVideoCache";
 export { useApi, useCrud, fetchApi } from "./useApi";
+export { useCommonDocument, type CommonDocumentData } from "./useCommonDocument";
