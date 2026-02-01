@@ -168,6 +168,20 @@ async function countOrphanedFiles(appwriteConfig) {
     console.log('\n步驟 2: 掃描資料庫引用...');
     const referencedIds = await getAllReferencedFileIds(databases, databaseId);
     console.log(`✅ 資料庫已引用 ${referencedIds.size} 個檔案`);
+    
+    // Validate: referenced should not exceed total files
+    if (referencedIds.size > allFiles.length) {
+      console.warn(`⚠️ 異常：引用數 (${referencedIds.size}) > 總檔案數 (${allFiles.length})`);
+      console.warn('可能原因：資料庫中有引用不存在的檔案 ID');
+      
+      // Find IDs that are referenced but don't exist in storage
+      const storageFileIds = new Set(allFiles.map(f => f.$id));
+      const phantomIds = Array.from(referencedIds).filter(id => !storageFileIds.has(id));
+      console.log(`👻 幻影 ID 數量: ${phantomIds.length}`);
+      if (phantomIds.length > 0 && phantomIds.length <= 10) {
+        console.log(`幻影 ID 範例: ${phantomIds.slice(0, 10).join(', ')}`);
+      }
+    }
 
     // Find orphaned files
     console.log('\n步驟 3: 逐筆比對檔案...');
