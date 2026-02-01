@@ -15,7 +15,8 @@ export function getFaviconUrl(siteUrl: string): string {
     const domain = url.hostname;
     
     // 使用 Google 的 favicon 服務作為備選方案
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    // sz 參數可以設定大小，但最大支援 128
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
   } catch {
     return '';
   }
@@ -54,7 +55,7 @@ export function getFaviconUrls(siteUrl: string): string[] {
       `${origin}/favicon.ico`,
       `${origin}/favicon.png`,
       `${origin}/apple-touch-icon.png`,
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
     ];
   } catch {
     return [];
