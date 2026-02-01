@@ -54,12 +54,14 @@ export async function POST(request) {
     // 檢查檔案類型
     const validTypes = [
       'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/m4a',
-      'application/pdf', 'text/plain', 
+      'application/pdf', 'text/plain', 'text/markdown',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // xlsx
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+      'application/zip', 'application/x-zip-compressed' // zip
     ];
     if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ error: '只支援 MP3, WAV, OGG, AAC, FLAC, M4A, PDF, TXT, DOCX, XLSX 格式' }, { status: 400 });
+      return NextResponse.json({ error: '只支援 MP3, WAV, OGG, AAC, FLAC, M4A, PDF, TXT, MD, DOCX, XLSX, PPTX, ZIP 格式' }, { status: 400 });
     }
 
     // 讀取檔案內容
