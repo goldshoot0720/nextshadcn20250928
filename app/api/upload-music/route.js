@@ -58,10 +58,11 @@ export async function POST(request) {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
       'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
-      'application/zip', 'application/x-zip-compressed' // zip
+      'application/zip', 'application/x-zip-compressed', // zip
+      'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska' // video formats
     ];
     if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ error: '只支援 MP3, WAV, OGG, AAC, FLAC, M4A, PDF, TXT, MD, DOCX, XLSX, PPTX, ZIP 格式' }, { status: 400 });
+      return NextResponse.json({ error: '只支援 MP3, WAV, OGG, AAC, FLAC, M4A, PDF, TXT, MD, DOCX, XLSX, PPTX, ZIP, MP4, WEBM, MOV, AVI, MKV 格式' }, { status: 400 });
     }
 
     // 讀取檔案內容

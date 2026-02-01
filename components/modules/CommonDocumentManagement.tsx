@@ -179,7 +179,7 @@ export default function CommonDocumentManagement() {
 
       <SectionHeader
         title="鋒兄文件"
-        subtitle="管理文件收藏，支援 PDF、Word、Excel、PowerPoint、TXT、ZIP"
+        subtitle="管理文件收藏，支援 PDF、Word、Excel、PowerPoint、TXT、MD、ZIP、影片"
         action={
           <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
             <Plus size={16} />
@@ -394,10 +394,10 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
       return;
     }
 
-    const validExtensions = ['.pdf', '.txt', '.md', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar', '.7z'];
+    const validExtensions = ['.pdf', '.txt', '.md', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar', '.7z', '.mp4', '.webm', '.mov', '.avi', '.mkv'];
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!validExtensions.includes(ext)) {
-      alert('只支援 PDF, TXT, MD, Word, Excel, PowerPoint, ZIP 格式');
+      alert('只支援 PDF, TXT, MD, Word, Excel, PowerPoint, ZIP, 影片 格式');
       return;
     }
 
@@ -533,7 +533,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
               <input
                 type="file"
-                accept=".pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z"
+                accept=".pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.mp4,.webm,.mov,.avi,.mkv"
                 onChange={handleFileSelect}
                 className="hidden"
                 id="file-upload"
@@ -544,7 +544,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
                   {selectedFile ? selectedFile.name : '點擊或拖曳上傳文件'}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  支援 PDF, TXT, MD, Word, Excel, PowerPoint, ZIP (最大 50MB)
+                  支援 PDF, TXT, MD, Word, Excel, PowerPoint, ZIP, 影片 (最大 50MB)
                 </p>
               </label>
             </div>
