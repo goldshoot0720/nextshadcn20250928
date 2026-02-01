@@ -62,9 +62,7 @@ interface DashboardStats {
   overdueSubscriptionsList: SubscriptionDetail[];
 }
 
-// 全域快变
-let cachedStats: DashboardStats | null = null;
-let cacheTimestamp: number = 0;
+// 不使用快取，每次都重新載入
 
 export function useDashboardStats() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -93,33 +91,10 @@ export function useDashboardStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getRefreshKey = () => {
-    if (typeof window === 'undefined') return '';
-    const accountSwitched = localStorage.getItem('appwrite_account_switched');
-    if (accountSwitched) return accountSwitched;
-    return localStorage.getItem('dashboard_refresh_key') || '';
-  };
-
-  const setRefreshKeyValue = () => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('dashboard_refresh_key', Date.now().toString());
-  };
-
   useEffect(() => {
     async function fetchStats() {
-      const storedRefreshKey = getRefreshKey();
-      const accountSwitched = typeof window !== 'undefined' ? localStorage.getItem('appwrite_account_switched') : null;
-        
-      if (accountSwitched && cacheTimestamp < parseInt(accountSwitched)) {
-        cachedStats = null;
-      }
-        
-      // 如果有快取且沒有 CRUD 操作，直接使用快变
-      if (cachedStats && (!storedRefreshKey || cacheTimestamp >= parseInt(storedRefreshKey))) {
-        setStats(cachedStats);
-        setLoading(false);
-        return;
-      }
+      // 不使用快取，每次都重新載入
+      const cacheParam = `?t=${Date.now()}`;
 
       setError(null);
       try {
@@ -137,10 +112,6 @@ export function useDashboardStats() {
           { name: 'subscription', api: '/api/subscription', label: 'Table subscription' },
           { name: 'video', api: '/api/video', label: 'Table video' },
         ];
-
-        // 使用快取，但在 CRUD 操作後會透過 refreshKey 重新取得
-        const refreshKey = getRefreshKey();
-        const cacheParam = refreshKey ? `?t=${refreshKey}` : '';
 
         // 並行檢查所有表
         const checkPromises = tablesToCheck.map(async (table) => {
@@ -369,10 +340,6 @@ export function useDashboardStats() {
           overdueSubscriptionsList,
         };
               
-        // 更新快取
-        cachedStats = newStats;
-        cacheTimestamp = Date.now();
-              
         setStats(newStats);
       } catch (error) {
         console.error("獲取統計數據失敗:", error);
@@ -385,10 +352,5 @@ export function useDashboardStats() {
     fetchStats();
   }, []);
 
-  // 提供一個函數供 CRUD 操作後呼叫，強制重新取得數據
-  const refresh = () => {
-    setRefreshKeyValue();
-  };
-
-  return { stats, loading, error, refresh };
+  return { stats, loading, error };
 }

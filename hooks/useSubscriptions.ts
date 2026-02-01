@@ -36,14 +36,11 @@ export function useSubscriptions() {
   // 新增訂閱
   const createSubscription = useCallback(async (formData: SubscriptionFormData): Promise<Subscription | null> => {
     try {
-      const res = await fetch(API_ENDPOINTS.SUBSCRIPTION, {
+      const newSub = await fetchApi<Subscription>(API_ENDPOINTS.SUBSCRIPTION, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("新增失敗");
-      
-      const newSub: Subscription = await res.json();
       // 重新載入以確保資料同步
       await loadSubscriptions();
       return newSub;
@@ -56,14 +53,11 @@ export function useSubscriptions() {
   // 更新訂閱
   const updateSubscription = useCallback(async (id: string, formData: SubscriptionFormData): Promise<Subscription | null> => {
     try {
-      const res = await fetch(`${API_ENDPOINTS.SUBSCRIPTION}/${id}`, {
+      const updatedSub = await fetchApi<Subscription>(`${API_ENDPOINTS.SUBSCRIPTION}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("更新失敗");
-      
-      const updatedSub: Subscription = await res.json();
       // 重新載入以確保資料同步
       await loadSubscriptions();
       return updatedSub;
@@ -76,9 +70,7 @@ export function useSubscriptions() {
   // 刪除訂閱
   const deleteSubscription = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_ENDPOINTS.SUBSCRIPTION}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("刪除失敗");
-      
+      await fetchApi(`${API_ENDPOINTS.SUBSCRIPTION}/${id}`, { method: "DELETE" });
       // 重新載入以確保資料同步
       await loadSubscriptions();
       return true;
@@ -98,6 +90,8 @@ export function useSubscriptions() {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
 
     // 計算總金額（換算為TWD）
     const totalTWD = Array.isArray(subscriptions) 
@@ -119,10 +113,36 @@ export function useSubscriptions() {
         }).length
       : 0;
 
+    // 計算本月月費（本月到期的訂閱總費用）
+    const totalMonthlyFee = Array.isArray(subscriptions)
+      ? subscriptions.reduce((sum, s) => {
+          if (!s.nextdate) return sum;
+          const nextDate = new Date(s.nextdate);
+          if (nextDate.getFullYear() === currentYear && nextDate.getMonth() === currentMonth) {
+            return sum + convertToTWD(s.price || 0, s.currency);
+          }
+          return sum;
+        }, 0)
+      : 0;
+
+    // 計算下月月費（下月到期的訂閱總費用）
+    const nextMonthFee = Array.isArray(subscriptions)
+      ? subscriptions.reduce((sum, s) => {
+          if (!s.nextdate) return sum;
+          const nextDate = new Date(s.nextdate);
+          if (nextDate.getFullYear() === nextMonthYear && nextDate.getMonth() === nextMonth) {
+            return sum + convertToTWD(s.price || 0, s.currency);
+          }
+          return sum;
+        }, 0)
+      : 0;
+
     return {
       total: Array.isArray(subscriptions) ? subscriptions.length : 0,
       totalTWD,
       expiringSoon,
+      totalMonthlyFee,
+      nextMonthFee,
     };
   })();
 

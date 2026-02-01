@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload, Eye } from "lucide-react";
+import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
@@ -14,6 +14,33 @@ import { useImages, ImageData } from "@/hooks";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders } from "@/lib/utils";
+
+// Helper function to add Appwrite config to URL
+function addAppwriteConfigToUrl(url: string): string {
+  if (typeof window === 'undefined') return url;
+  
+  const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
+  const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
+  const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID');
+  const apiKey = localStorage.getItem('APPWRITE_API_KEY');
+  const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID');
+  
+  if (!endpoint && !projectId && !databaseId) {
+    return url;
+  }
+  
+  const separator = url.includes('?') ? '&' : '?';
+  const params = new URLSearchParams();
+  
+  if (endpoint) params.set('_endpoint', endpoint);
+  if (projectId) params.set('_project', projectId);
+  if (databaseId) params.set('_database', databaseId);
+  if (apiKey) params.set('_key', apiKey);
+  if (bucketId) params.set('_bucket', bucketId);
+  
+  const paramString = params.toString();
+  return paramString ? `${url}${separator}${paramString}` : url;
+}
 
 export default function ImageGallery() {
   const { images, loading, error, loadImages } = useImages();
@@ -63,14 +90,14 @@ export default function ImageGallery() {
 
       <ImageStats images={images} />
 
-      <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={loadImages} />
+      <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={() => loadImages(true)} />
       
       {selectedImage && (
         <ImagePreviewModal image={selectedImage} onClose={() => setSelectedImage(null)} />
       )}
 
       {showForm && (
-        <ImageFormModal image={editingImage} existingImages={images} onClose={handleCloseForm} onSuccess={loadImages} />
+        <ImageFormModal image={editingImage} existingImages={images} onClose={handleCloseForm} onSuccess={() => loadImages(true)} />
       )}
     </div>
   );
@@ -107,7 +134,6 @@ function ImageGrid({ images, loading, onSelectImage, onEdit, onRefresh }: { imag
 // 單張圖片卡片
 function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; onSelect: () => void; onEdit: () => void; onRefresh: () => void }) {
   const [deleting, setDeleting] = useState(false);
-  const [showCover, setShowCover] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -115,7 +141,8 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
 
     setDeleting(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.IMAGE}/${image.$id}`, {
+      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.IMAGE}/${image.$id}`);
+      const response = await fetch(url, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('刪除失敗');
@@ -132,15 +159,9 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
       {/* 圖片預覽區 */}
       <div 
         className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" 
-        onClick={() => {
-          if (showCover) {
-            onSelect();
-          } else {
-            setShowCover(true);
-          }
-        }}
+        onClick={onSelect}
       >
-        {showCover && image.file ? (
+        {image.file ? (
           <img 
             src={image.file} 
             alt={image.name} 
@@ -148,16 +169,11 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
             loading="lazy" 
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 text-center group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 text-center">
             <div className="bg-white/80 dark:bg-gray-800/80 p-3 rounded-full shadow-sm">
-              <Eye className="text-blue-500 w-6 h-6" />
+              <ImageIcon className="text-gray-400 w-6 h-6" />
             </div>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">點擊顯示圖片</span>
-          </div>
-        )}
-        {image.cover && (
-          <div className="absolute top-2 right-2 bg-yellow-100/90 backdrop-blur-sm text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm z-10">
-            COVER
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">無圖片</span>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -255,7 +271,7 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
     ref: image?.ref || '',
     category: image?.category || '',
     hash: image?.hash || '',
-    cover: image?.cover || false,
+    cover: false, // 一律為 false
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -399,7 +415,9 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
         finalFormData.hash = `no_file_${Date.now()}`;
       }
 
-      const url = image ? `${API_ENDPOINTS.IMAGE}/${image.$id}` : API_ENDPOINTS.IMAGE;
+      const url = image 
+        ? addAppwriteConfigToUrl(`${API_ENDPOINTS.IMAGE}/${image.$id}`) 
+        : addAppwriteConfigToUrl(API_ENDPOINTS.IMAGE);
       const method = image ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -561,20 +579,6 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
               placeholder="上傳檔案後自動生成"
               className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
             />
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.cover}
-                onChange={(e) => setFormData({ ...formData, cover: e.target.checked })}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                設為封面圖 (Cover)
-              </span>
-            </label>
           </div>
 
           <div className="flex gap-3 pt-4">

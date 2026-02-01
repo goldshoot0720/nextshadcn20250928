@@ -4,11 +4,13 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
-  const apiKey = process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+function createAppwrite(searchParams) {
+  // 從 URL 參數讀取配置（優先），否則使用 .env
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+  const bucketId = searchParams?.get('_bucket') || process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -20,15 +22,25 @@ function createAppwrite() {
     .setKey(apiKey);
 
   const databases = new sdk.Databases(client);
+  const storage = new sdk.Storage(client);
 
-  return { databases, databaseId };
+  return { databases, storage, databaseId, bucketId };
+}
+
+// Extract file ID from Appwrite storage URL
+function extractFileIdFromUrl(fileUrl) {
+  if (!fileUrl) return null;
+  // URL format: .../storage/buckets/{bucketId}/files/{fileId}/view?...
+  const match = fileUrl.match(/\/files\/([^\/]+)\/view/);
+  return match ? match[1] : null;
 }
 
 // GET /api/video/[id] - Get video by ID
 export async function GET(request, { params }) {
   try {
-    const { databases, databaseId } = createAppwrite();
-    const { id } = params;
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    const { id } = await params;
     
     // Get collection ID by name
     const allCollections = await databases.listCollections(databaseId);
@@ -51,8 +63,9 @@ export async function GET(request, { params }) {
 // PUT /api/video/[id] - Update video
 export async function PUT(request, { params }) {
   try {
-    const { databases, databaseId } = createAppwrite();
-    const { id } = params;
+    const { searchParams } = new URL(request.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
+    const { id } = await params;
     const body = await request.json();
     
     // Get collection ID by name
@@ -90,8 +103,9 @@ export async function PUT(request, { params }) {
 // DELETE /api/video/[id] - Delete video
 export async function DELETE(request, { params }) {
   try {
-    const { databases, databaseId } = createAppwrite();
-    const { id } = params;
+    const { searchParams } = new URL(request.url);
+    const { databases, storage, databaseId, bucketId } = createAppwrite(searchParams);
+    const { id } = await params;
     
     // Get collection ID by name
     const allCollections = await databases.listCollections(databaseId);
@@ -102,6 +116,37 @@ export async function DELETE(request, { params }) {
     }
     
     const collectionId = videoCollection.$id;
+    
+    // First, get the document to retrieve file URLs
+    const doc = await databases.getDocument(databaseId, collectionId, id);
+    
+    // Delete video file from storage if exists
+    if (doc.file && bucketId) {
+      const fileId = extractFileIdFromUrl(doc.file);
+      if (fileId) {
+        try {
+          await storage.deleteFile(bucketId, fileId);
+          console.log(`Deleted video file: ${fileId}`);
+        } catch (fileErr) {
+          console.warn(`Failed to delete video file ${fileId}:`, fileErr.message);
+        }
+      }
+    }
+    
+    // Delete cover image from storage if exists
+    if (doc.cover && bucketId) {
+      const coverId = extractFileIdFromUrl(doc.cover);
+      if (coverId) {
+        try {
+          await storage.deleteFile(bucketId, coverId);
+          console.log(`Deleted cover image: ${coverId}`);
+        } catch (coverErr) {
+          console.warn(`Failed to delete cover image ${coverId}:`, coverErr.message);
+        }
+      }
+    }
+    
+    // Delete the document
     await databases.deleteDocument(databaseId, collectionId, id);
     
     return NextResponse.json({ success: true });

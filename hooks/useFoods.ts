@@ -75,14 +75,11 @@ export function useFoods() {
   // 新增食品
   const createFood = useCallback(async (formData: FoodFormData): Promise<Food | null> => {
     try {
-      const res = await fetch(API_ENDPOINTS.FOOD, {
+      const newFood = await fetchApi<Food>(API_ENDPOINTS.FOOD, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("新增失敗");
       
-      const newFood: Food = await res.json();
       setFoods((prev) => {
         const updated = [...prev, newFood];
         return updated.sort(
@@ -101,14 +98,11 @@ export function useFoods() {
   // 更新食品
   const updateFood = useCallback(async (id: string, formData: FoodFormData): Promise<Food | null> => {
     try {
-      const res = await fetch(`${API_ENDPOINTS.FOOD}/${id}`, {
+      const updatedFood = await fetchApi<Food>(`${API_ENDPOINTS.FOOD}/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("更新失敗");
       
-      const updatedFood: Food = await res.json();
       setFoods((prev) => {
         const updated = prev.map((f) => (f.$id === id ? updatedFood : f));
         return updated.sort(
@@ -127,8 +121,7 @@ export function useFoods() {
   // 刪除食品
   const deleteFood = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_ENDPOINTS.FOOD}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("刪除失敗");
+      await fetchApi(`${API_ENDPOINTS.FOOD}/${id}`, { method: "DELETE" });
       
       setFoods((prev) => prev.filter((f) => f.$id !== id));
       cachedFoods = null;

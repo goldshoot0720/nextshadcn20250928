@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { SubscriptionFormData, Subscription } from "@/types";
 import { FaviconImage } from "@/components/ui/favicon-image";
 import { formatDate, formatDaysRemaining, formatCurrency, formatCurrencyWithExchange, convertToTWD } from "@/lib/formatters";
 
-const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "", note: "", account: "", currency: "TWD" };
+const INITIAL_FORM: SubscriptionFormData = { name: "", site: "", price: 0, nextdate: "", note: "", account: "", currency: "TWD", continue: true };
 
 export default function SubscriptionManagement() {
   const { subscriptions, loading, error, stats, createSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
@@ -29,6 +29,18 @@ export default function SubscriptionManagement() {
   const [canAskNotification, setCanAskNotification] = useState(false);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
+
+  // 取得已存在的不重複服務名稱
+  const existingNames = useMemo(() => {
+    const names = subscriptions.map(s => s.name).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [subscriptions]);
+
+  // 取得已存在的不重複網站 URL
+  const existingSites = useMemo(() => {
+    const sites = subscriptions.map(s => s.site).filter(Boolean) as string[];
+    return Array.from(new Set(sites)).sort();
+  }, [subscriptions]);
 
   const truncateName = (name: string, id: string) => {
     const isExpanded = expandedNames.has(id);
@@ -178,7 +190,8 @@ export default function SubscriptionManagement() {
       nextdate: sub.nextdate ? formatDate(sub.nextdate) : "",
       note: sub.note || "",
       account: sub.account || "",
-      currency: sub.currency || "TWD"
+      currency: sub.currency || "TWD",
+      continue: sub.continue !== false
     });
     setEditingId(sub.$id);
     setIsFormOpen(true);
@@ -274,8 +287,64 @@ export default function SubscriptionManagement() {
         <FormCard title={editingId ? "編輯訂閱" : "新增訂閱"} accentColor="from-green-500 to-green-600">
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormGrid>
-              <Input placeholder="服務名稱" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl" />
-              <Input placeholder="網站 URL" type="url" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} className="h-12 rounded-xl" />
+              {/* 服務名稱：可輸入或從下拉選單選擇 */}
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="服務名稱" 
+                  value={form.name} 
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                  required 
+                  className="h-12 rounded-xl flex-1" 
+                />
+                {existingNames.length > 0 && (
+                  <Select 
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value) {
+                        setForm({ ...form, name: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                      <ChevronDown className="h-4 w-4" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingNames.map((name) => (
+                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              {/* 網站 URL：可輸入或從下拉選單選擇 */}
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="網站 URL" 
+                  type="url" 
+                  value={form.site || ""} 
+                  onChange={(e) => setForm({ ...form, site: e.target.value })} 
+                  className="h-12 rounded-xl flex-1" 
+                />
+                {existingSites.length > 0 && (
+                  <Select 
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value) {
+                        setForm({ ...form, site: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                      <ChevronDown className="h-4 w-4" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingSites.map((site) => (
+                        <SelectItem key={site} value={site}>{site}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
               <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
               <Select value={form.currency || "TWD"} onValueChange={(value) => setForm({ ...form, currency: value })}>
                 <SelectTrigger className="h-12 rounded-xl">
@@ -290,8 +359,17 @@ export default function SubscriptionManagement() {
                   <SelectItem value="HKD">港幣 (HKD)</SelectItem>
                 </SelectContent>
               </Select>
-              <Input placeholder="下次付款日期" type="date" value={form.nextdate} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} className="h-12 rounded-xl" />
+              <Input placeholder="下次付款日期" type="date" value={form.nextdate || ""} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} className="h-12 rounded-xl" />
               <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
+              <label className="flex items-center gap-2 h-12 px-3 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                <input 
+                  type="checkbox" 
+                  checked={form.continue !== false} 
+                  onChange={(e) => setForm({ ...form, continue: e.target.checked })} 
+                  className="w-5 h-5 rounded"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">續訂</span>
+              </label>
             </FormGrid>
             <Textarea 
               placeholder="備註" 
@@ -315,6 +393,7 @@ export default function SubscriptionManagement() {
                 </Button>
               )}
               {editingId && <Button type="button" variant="outline" onClick={resetForm} className="h-12 px-6 rounded-xl">取消編輯</Button>}
+              {!editingId && <Button type="button" variant="outline" onClick={resetForm} className="h-12 px-6 rounded-xl">取消</Button>}
               {editingId && <Button type="button" variant="destructive" onClick={handleDeleteFromForm} className="h-12 px-6 rounded-xl">刪除</Button>}
             </FormActions>
           </form>
@@ -343,6 +422,7 @@ export default function SubscriptionManagement() {
                     <TableHead className="font-semibold">服務名稱</TableHead>
                     <TableHead className="font-semibold">下次付款日期</TableHead>
                     <TableHead className="font-semibold">月費</TableHead>
+                    <TableHead className="font-semibold">續訂</TableHead>
                     <TableHead className="font-semibold">操作</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -394,6 +474,13 @@ export default function SubscriptionManagement() {
                         </TableCell>
                         <TableCell><span className="font-semibold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span></TableCell>
                         <TableCell>
+                          {sub.continue !== false ? (
+                            <span className="text-green-600 dark:text-green-400">✓ 續訂</span>
+                          ) : (
+                            <span className="text-red-500 dark:text-red-400">✗ 不續</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <div className="flex gap-2">
                             <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="rounded-xl">編輯</Button>
                           </div>
@@ -440,7 +527,14 @@ export default function SubscriptionManagement() {
                               )}
                             </div>
                           </div>
-                          <span className="font-bold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="font-bold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span>
+                            {sub.continue !== false ? (
+                              <span className="text-xs text-green-600 dark:text-green-400">✓ 續訂</span>
+                            ) : (
+                              <span className="text-xs text-red-500 dark:text-red-400">✗ 不續</span>
+                            )}
+                          </div>
                         </div>
                         <div className="space-y-2">
                           {formattedDate && (

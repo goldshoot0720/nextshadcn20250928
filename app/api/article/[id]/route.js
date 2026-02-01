@@ -11,11 +11,12 @@ async function getCollectionId(databases, databaseId, name) {
   return col.$id;
 }
 
-function createAppwrite() {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
-  const apiKey = process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+function createAppwrite(searchParams) {
+  // 從 URL 參數讀取配置（優先），否則使用 .env
+  const endpoint = searchParams?.get('_endpoint') || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = searchParams?.get('_project') || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const databaseId = searchParams?.get('_database') || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+  const apiKey = searchParams?.get('_key') || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
 
   if (!endpoint || !projectId || !databaseId || !apiKey) {
     throw new Error("Appwrite configuration is missing");
@@ -34,7 +35,8 @@ function createAppwrite() {
 // 更新文章
 export async function PUT(req, context) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const collectionId = await getCollectionId(databases, databaseId, "article");
     
     const { params } = context;
@@ -60,7 +62,8 @@ export async function PUT(req, context) {
 // 刪除文章
 export async function DELETE(req, context) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const collectionId = await getCollectionId(databases, databaseId, "article");
     
     const { params } = context;

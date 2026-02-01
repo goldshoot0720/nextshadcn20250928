@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,25 +15,120 @@ import { useFoods, getFoodExpiryInfo } from "@/hooks/useFoods";
 import { FoodFormData, Food } from "@/types";
 import { formatDate, formatDaysRemaining } from "@/lib/formatters";
 
-const INITIAL_FORM: FoodFormData = { name: "", amount: 0, todate: "", photo: "" };
+const INITIAL_FORM: FoodFormData = { name: "", amount: 0, todate: "", photo: "", price: 0, shop: "", photohash: "" };
 
 export default function FoodManagement() {
   const { foods, loading, error, createFood, updateFood, deleteFood, updateAmount } = useFoods();
   const [form, setForm] = useState<FoodFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  useEffect(() => {
+    // Clean up object URLs on unmount
+    return () => {
+      if (photoPreviewUrl && photoPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreviewUrl);
+      }
+    };
+  }, [photoPreviewUrl]);
+
+  const getAppwriteHeaders = () => {
+    if (typeof window === 'undefined') return {};
+    const endpoint = localStorage.getItem('appwrite_endpoint');
+    const project = localStorage.getItem('appwrite_project');
+    const database = localStorage.getItem('appwrite_database');
+    const apiKey = localStorage.getItem('appwrite_api_key');
+    const bucket = localStorage.getItem('appwrite_bucket');
+    return {
+      ...(endpoint && { 'X-Appwrite-Endpoint': endpoint }),
+      ...(project && { 'X-Appwrite-Project': project }),
+      ...(database && { 'X-Appwrite-Database': database }),
+      ...(apiKey && { 'X-Appwrite-API-Key': apiKey }),
+      ...(bucket && { 'X-Appwrite-Bucket-ID': bucket }),
+    };
+  };
+
+  const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      alert(`檔案大小超過限制（${Math.round(file.size / 1024 / 1024)}MB > 50MB）`);
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('只支援 JPG, PNG, GIF, WEBP 格式的圖片');
+      return;
+    }
+
+    // Store file for later upload, create preview URL
+    setSelectedPhotoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPhotoPreviewUrl(objectUrl);
+    // Clear the URL input when file is selected
+    setForm({ ...form, photo: "" });
+  };
+
+  const uploadPhotoToAppwrite = async (file: File): Promise<string> => {
+    setPhotoUploading(true);
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: getAppwriteHeaders(),
+        body: formDataUpload,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '圖片上傳失敗');
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      throw error;
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     try {
+      let finalPhoto = form.photo;
+
+      // If a file is selected, upload it to Appwrite
+      if (selectedPhotoFile) {
+        finalPhoto = await uploadPhotoToAppwrite(selectedPhotoFile);
+      }
+
+      const formData = {
+        ...form,
+        photo: finalPhoto,
+        price: form.price || 0,
+        shop: form.shop || '',
+        photohash: form.photohash || '',
+      };
+
       if (editingId) {
-        await updateFood(editingId, form);
+        await updateFood(editingId, formData);
       } else {
-        await createFood(form);
+        await createFood(formData);
       }
       resetForm();
-    } catch {
-      alert("操作失敗，請稍後再試");
+    } catch (err) {
+      alert("操作失敗：" + (err instanceof Error ? err.message : "請稍後再試"));
     }
   };
 
@@ -58,6 +153,9 @@ export default function FoodManagement() {
     setForm(INITIAL_FORM);
     setEditingId(null);
     setIsFormOpen(false);
+    // Reset photo-related states
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl("");
   };
 
   if (loading) return <FullPageLoading text="載入食品資料中..." />;
@@ -97,6 +195,10 @@ export default function FoodManagement() {
           form={form}
           setForm={setForm}
           editingId={editingId}
+          photoPreviewUrl={photoPreviewUrl}
+          selectedPhotoFile={selectedPhotoFile}
+          photoUploading={photoUploading}
+          handlePhotoFileSelect={handlePhotoFileSelect}
           onSubmit={handleSubmit}
           onCancel={resetForm}
         />
@@ -125,11 +227,25 @@ interface FoodFormProps {
   form: FoodFormData;
   setForm: (form: FoodFormData) => void;
   editingId: string | null;
+  photoPreviewUrl: string;
+  selectedPhotoFile: File | null;
+  photoUploading: boolean;
+  handlePhotoFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }
 
-function FoodForm({ form, setForm, editingId, onSubmit, onCancel }: FoodFormProps) {
+function FoodForm({ 
+  form, 
+  setForm, 
+  editingId, 
+  photoPreviewUrl, 
+  selectedPhotoFile, 
+  photoUploading, 
+  handlePhotoFileSelect, 
+  onSubmit, 
+  onCancel 
+}: FoodFormProps) {
   return (
     <FormCard title={editingId ? "編輯食品" : "新增食品"} accentColor="from-blue-500 to-blue-600">
       <form onSubmit={onSubmit} className="space-y-4">
@@ -159,19 +275,77 @@ function FoodForm({ form, setForm, editingId, onSubmit, onCancel }: FoodFormProp
             className="h-12 rounded-xl"
           />
           <Input
-            placeholder="圖片 URL"
-            value={form.photo}
-            onChange={(e) => setForm({ ...form, photo: e.target.value })}
+            placeholder="價格"
+            type="number"
+            min="0"
+            value={form.price || ''}
+            onChange={(e) => setForm({ ...form, price: e.target.value ? parseInt(e.target.value) : 0 })}
             className="h-12 rounded-xl"
           />
+          <Input
+            placeholder="商店/地點"
+            value={form.shop || ''}
+            onChange={(e) => setForm({ ...form, shop: e.target.value })}
+            className="h-12 rounded-xl"
+          />
+          <div className="col-span-2">
+            <label className="block text-sm font-medium mb-2">圖片</label>
+            <div className="space-y-3">
+              {/* URL 輸入 */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">圖片網址</label>
+                <Input
+                  type="url"
+                  value={form.photo}
+                  onChange={(e) => {
+                    setForm({ ...form, photo: e.target.value });
+                    // We don't need to set photo preview here since it's passed as prop
+                    // setSelectedPhotoFile(null) equivalent is handled by parent
+                  }}
+                  placeholder="https://..."
+                />
+              </div>
+
+              {/* 或者上傳檔案 */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">或上傳圖片檔案（上限 50MB）</label>
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handlePhotoFileSelect}
+                />
+                {selectedPhotoFile && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    已選擇: {selectedPhotoFile.name} ({Math.round(selectedPhotoFile.size / 1024)}KB)
+                  </p>
+                )}
+              </div>
+
+              {/* 預覽 */}
+              {photoPreviewUrl && (
+                <div className="mt-2">
+                  <img
+                    src={photoPreviewUrl}
+                    alt="圖片預覽"
+                    className="w-32 h-32 object-cover rounded border"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </FormGrid>
         <FormActions>
-          <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-medium shadow-lg shadow-blue-500/25">
-            {editingId ? "更新食品" : "新增食品"}
+          <Button type="submit" disabled={photoUploading} className="h-12 px-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-medium shadow-lg shadow-blue-500/25">
+            {photoUploading ? "上傳中..." : editingId ? "更新食品" : "新增食品"}
           </Button>
           {editingId && (
-            <Button type="button" variant="outline" onClick={onCancel} className="h-12 px-6 rounded-xl">
+            <Button type="button" variant="outline" onClick={onCancel} className="h-12 px-6 rounded-xl" disabled={photoUploading}>
               取消編輯
+            </Button>
+          )}
+          {!editingId && (
+            <Button type="button" variant="outline" onClick={onCancel} className="h-12 px-6 rounded-xl" disabled={photoUploading}>
+              取消
             </Button>
           )}
         </FormActions>

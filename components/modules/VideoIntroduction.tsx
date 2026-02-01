@@ -18,6 +18,33 @@ import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders } from "@/lib/utils";
 
+// Helper function to add Appwrite config to URL
+function addAppwriteConfigToUrl(url: string): string {
+  if (typeof window === 'undefined') return url;
+  
+  const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
+  const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
+  const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID');
+  const apiKey = localStorage.getItem('APPWRITE_API_KEY');
+  const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID');
+  
+  if (!endpoint && !projectId && !databaseId) {
+    return url;
+  }
+  
+  const separator = url.includes('?') ? '&' : '?';
+  const params = new URLSearchParams();
+  
+  if (endpoint) params.set('_endpoint', endpoint);
+  if (projectId) params.set('_project', projectId);
+  if (databaseId) params.set('_database', databaseId);
+  if (apiKey) params.set('_key', apiKey);
+  if (bucketId) params.set('_bucket', bucketId);
+  
+  const paramString = params.toString();
+  return paramString ? `${url}${separator}${paramString}` : url;
+}
+
 
 
 export default function VideoIntroduction() {
@@ -55,15 +82,24 @@ export default function VideoIntroduction() {
   };
 
   const handleDelete = async (video: VideoData) => {
-    if (!confirm(`確定要刪除影片「${video.name}」嗎？`)) return;
+    const confirmText = `DELETE ${video.name}`;
+    const userInput = prompt(`確定要刪除影片「${video.name}」嗎？\n\n請輸入以下文字以確認刪除：\n${confirmText}`);
+    
+    if (userInput !== confirmText) {
+      if (userInput !== null) {
+        alert('輸入不正確，刪除已取消');
+      }
+      return;
+    }
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.VIDEO}/${video.$id}`, {
+      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.VIDEO}/${video.$id}`);
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('刪除失敗');
-      loadVideos();
+      loadVideos(true);
     } catch (error) {
       alert(error instanceof Error ? error.message : '刪除失敗');
     }
@@ -72,7 +108,7 @@ export default function VideoIntroduction() {
   const handleFormSuccess = () => {
     setShowFormModal(false);
     setEditingVideo(null);
-    loadVideos();
+    loadVideos(true);
   };
 
   const playVideo = useCallback(async (video: VideoData) => {
@@ -481,10 +517,10 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (5MB = 5 * 1024 * 1024 bytes)
-    const maxSize = 5 * 1024 * 1024;
+    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('封面圖大小不能超過 5MB');
+      alert('封面圖大小不能超過 50MB');
       return;
     }
 
@@ -583,10 +619,12 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
         finalFormData.cover = url;
       }
 
-      const url = video ? `${API_ENDPOINTS.VIDEO}/${video.$id}` : API_ENDPOINTS.VIDEO;
+      const apiUrl = video 
+        ? addAppwriteConfigToUrl(`${API_ENDPOINTS.VIDEO}/${video.$id}`) 
+        : addAppwriteConfigToUrl(API_ENDPOINTS.VIDEO);
       const method = video ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await fetch(apiUrl, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalFormData),
@@ -765,7 +803,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 5MB)'}
+                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB)'}
                     </span>
                   </div>
                   <input

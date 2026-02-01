@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -14,6 +14,33 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders } from "@/lib/utils";
+
+// Helper function to add Appwrite config to URL
+function addAppwriteConfigToUrl(url: string): string {
+  if (typeof window === 'undefined') return url;
+  
+  const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
+  const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
+  const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID');
+  const apiKey = localStorage.getItem('APPWRITE_API_KEY');
+  const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID');
+  
+  if (!endpoint && !projectId && !databaseId) {
+    return url;
+  }
+  
+  const separator = url.includes('?') ? '&' : '?';
+  const params = new URLSearchParams();
+  
+  if (endpoint) params.set('_endpoint', endpoint);
+  if (projectId) params.set('_project', projectId);
+  if (databaseId) params.set('_database', databaseId);
+  if (apiKey) params.set('_key', apiKey);
+  if (bucketId) params.set('_bucket', bucketId);
+  
+  const paramString = params.toString();
+  return paramString ? `${url}${separator}${paramString}` : url;
+}
 
 export default function MusicManagement() {
   const { music, loading, error, stats, loadMusic } = useMusic();
@@ -32,15 +59,24 @@ export default function MusicManagement() {
   };
 
   const handleDelete = async (musicItem: MusicData) => {
-    if (!confirm(`確定要刪除音樂「${musicItem.name}」嗎？`)) return;
+    const confirmText = `DELETE ${musicItem.name}`;
+    const userInput = prompt(`確定要刪除音樂「${musicItem.name}」嗎？\n\n請輸入以下文字以確認刪除：\n${confirmText}`);
+    
+    if (userInput !== confirmText) {
+      if (userInput !== null) {
+        alert('輸入不正確，刪除已取消');
+      }
+      return;
+    }
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.MUSIC}/${musicItem.$id}`, {
+      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.MUSIC}/${musicItem.$id}`);
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('刪除失敗');
-      loadMusic();
+      loadMusic(true);
     } catch (error) {
       alert(error instanceof Error ? error.message : '刪除失敗');
     }
@@ -49,7 +85,7 @@ export default function MusicManagement() {
   const handleFormSuccess = () => {
     setShowFormModal(false);
     setEditingMusic(null);
-    loadMusic();
+    loadMusic(true);
   };
 
   const togglePlay = (id: string) => {
@@ -97,7 +133,7 @@ export default function MusicManagement() {
           description="點擊上方「新增音樂」按鈕新增第一首音樂"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="flex flex-wrap gap-4 lg:gap-6">
           {music.map((musicItem) => (
             <MusicCard
               key={musicItem.$id}
@@ -137,78 +173,122 @@ interface MusicCardProps {
 }
 
 function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // 點擊封面播放/暫停
+  const handleCoverClick = () => {
+    if (!music.file) return;
+    
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+    }
+    onPlay();
+  };
+
+  // 當 isPlaying 狀態變化時同步音訊
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
+
   return (
-    <DataCard className="overflow-hidden hover:shadow-md transition-all duration-200 group">
-      {/* 封面 */}
-      <div className="relative aspect-square bg-gradient-to-br from-purple-500 to-pink-600 cursor-pointer" onClick={onPlay}>
-        <div className="absolute inset-0 flex items-center justify-center group-hover:from-purple-600 group-hover:to-pink-700 transition-all duration-300">
-          {music.cover ? (
-            <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
-          ) : (
-            <MusicIcon className="text-white group-hover:scale-110 transition-transform duration-300 w-16 h-16" />
-          )}
-        </div>
+    <DataCard className="overflow-hidden hover:shadow-md transition-all duration-200 group w-fit">
+      <div className="flex flex-col md:flex-row">
+        {/* 左側：封面和資訊 */}
+        <div className="md:w-64 flex-shrink-0">
+          {/* 封面 */}
+          <div className="relative aspect-square bg-gradient-to-br from-purple-500 to-pink-600 cursor-pointer" onClick={handleCoverClick}>
+            <div className="absolute inset-0 flex items-center justify-center group-hover:from-purple-600 group-hover:to-pink-700 transition-all duration-300">
+              {music.cover ? (
+                <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
+              ) : (
+                <MusicIcon className="text-white group-hover:scale-110 transition-transform duration-300 w-16 h-16" />
+              )}
+            </div>
 
-        {/* 播放按鈕 */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-          {isPlaying ? (
-            <Pause className="text-white w-12 h-12" />
-          ) : (
-            <Play className="text-white w-12 h-12" />
-          )}
-        </div>
+            {/* 播放按鈕 */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+              {isPlaying ? (
+                <Pause className="text-white w-12 h-12" />
+              ) : (
+                <Play className="text-white w-12 h-12" />
+              )}
+            </div>
 
-        {/* 編輯和刪除按鈕 */}
-        <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
-          >
-            <Edit className="w-4 h-4 text-blue-600" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
-          >
-            <Trash2 className="w-4 h-4 text-red-600" />
-          </button>
-        </div>
+            {/* 編輯和刪除按鈕 */}
+            <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
+              >
+                <Edit className="w-4 h-4 text-blue-600" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
+              >
+                <Trash2 className="w-4 h-4 text-red-600" />
+              </button>
+            </div>
 
-        {/* 語言標籤 */}
-        {music.language && (
-          <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-medium">
-            {music.language}
+            {/* 語言標籤 */}
+            {music.language && (
+              <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-medium">
+                {music.language}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* 資訊 */}
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-1">{music.name}</h3>
-        {music.note && <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">{music.note}</p>}
+          {/* 資訊 */}
+          <div className="p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-1">{music.name}</h3>
+            {music.note && <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">{music.note}</p>}
 
-        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {formatLocalDate(music.$createdAt)}
-          </span>
-          {music.category && <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{music.category}</span>}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {formatLocalDate(music.$createdAt)}
+              </span>
+              {music.category && <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{music.category}</span>}
+            </div>
+
+            {music.file && (
+              <audio 
+                ref={audioRef}
+                src={music.file} 
+                controls 
+                className="w-full" 
+                onEnded={onPlay}
+                onPlay={() => !isPlaying && onPlay()}
+                onPause={() => isPlaying && onPlay()}
+              />
+            )}
+          </div>
         </div>
 
+        {/* 右側：完整歌詞 */}
         {music.lyrics && (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-400 max-h-24 overflow-y-auto">
-            <p className="line-clamp-3">{music.lyrics}</p>
+          <div className="p-4 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700">
+            <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2 text-sm">歌詞</h4>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-sm text-gray-600 dark:text-gray-400 max-h-80 overflow-y-auto">
+              <p className="whitespace-pre leading-relaxed">{music.lyrics}</p>
+            </div>
           </div>
-        )}
-
-        {music.file && (
-          <audio src={music.file} controls className="w-full mt-3" />
         )}
       </div>
     </DataCard>
@@ -453,10 +533,12 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         finalFormData.cover = url;
       }
 
-      const url = music ? `${API_ENDPOINTS.MUSIC}/${music.$id}` : API_ENDPOINTS.MUSIC;
+      const apiUrl = music 
+        ? addAppwriteConfigToUrl(`${API_ENDPOINTS.MUSIC}/${music.$id}`) 
+        : addAppwriteConfigToUrl(API_ENDPOINTS.MUSIC);
       const method = music ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await fetch(apiUrl, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalFormData),

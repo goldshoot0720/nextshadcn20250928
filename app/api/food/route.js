@@ -66,19 +66,24 @@ export async function POST(req) {
     const body = await req.json();
     const { name, amount, todate, photo, price, shop, photohash } = body;
 
+    // Build document data, only include defined values
+    const docData = {
+      name: name || '',
+      amount: amount ? parseInt(amount, 10) : 0,
+      todate: todate || '',
+      price: price ? parseInt(price, 10) : 0,
+    };
+    
+    // Only add optional fields if they have values
+    if (photo) docData.photo = photo;
+    if (shop) docData.shop = shop;
+    if (photohash) docData.photohash = photohash;
+
     const response = await databases.createDocument(
       databaseId,
       collectionId,
       sdk.ID.unique(),
-      {
-        name,
-        amount: amount ? parseInt(amount, 10) : 0,
-        todate,
-        photo,
-        price: price ? parseInt(price, 10) : 0,
-        shop,
-        photohash
-      }
+      docData
     );
 
     return NextResponse.json(response);

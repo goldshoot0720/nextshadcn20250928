@@ -7,6 +7,9 @@ export interface Food {
   amount: number;
   todate: string;
   photo: string;
+  price?: number;
+  shop?: string;
+  photohash?: string;
 }
 
 export interface FoodFormData {
@@ -14,6 +17,9 @@ export interface FoodFormData {
   amount: number;
   todate: string;
   photo: string;
+  price?: number;
+  shop?: string;
+  photohash?: string;
 }
 
 export interface FoodDetail {
@@ -33,6 +39,7 @@ export interface Subscription {
   note?: string;
   account?: string;
   currency?: string;
+  continue?: boolean;
 }
 
 export interface SubscriptionFormData {
@@ -43,6 +50,7 @@ export interface SubscriptionFormData {
   note?: string;
   account?: string;
   currency?: string;
+  continue?: boolean;
 }
 
 export interface SubscriptionDetail {

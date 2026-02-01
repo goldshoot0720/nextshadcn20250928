@@ -69,7 +69,8 @@ export async function GET(request) {
 // 新增文章
 export async function POST(req) {
   try {
-    const { databases, databaseId } = createAppwrite();
+    const { searchParams } = new URL(req.url);
+    const { databases, databaseId } = createAppwrite(searchParams);
     const collectionId = await getCollectionId(databases, databaseId, "article");
     
     const body = await req.json();
