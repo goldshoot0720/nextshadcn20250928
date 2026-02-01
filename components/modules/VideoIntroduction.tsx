@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar, Search } from "lucide-react";
 import SimpleVideoPlayer from "@/components/ui/simple-video-player";
+import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { useVideoCache } from "@/hooks/useVideoCache";
 import { useVideos, VideoData } from "@/hooks/useVideos";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -11,6 +12,7 @@ import { SimpleStatCard, StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { VideoItem } from "@/types";
@@ -283,9 +285,11 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
               <X className="w-5 h-5" />
             </button>
           </div>
-          <SimpleVideoPlayer
+          <PlyrPlayer
+            type="video"
             src={videoRef.current?.src || video.file || ''}
-            title={video.name}
+            poster={video.cover}
+            className="w-full"
           />
         </div>
         {video.note && (
@@ -310,15 +314,48 @@ interface VideoManagementCardProps {
 }
 
 function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onDownload, onDeleteCache }: VideoManagementCardProps) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    // 如果沒有封面圖，從影片生成縮圖
+    if (!video.cover && video.file) {
+      const videoElement = document.createElement('video');
+      videoElement.src = video.file;
+      videoElement.crossOrigin = 'anonymous';
+      videoElement.currentTime = 1;
+
+      videoElement.addEventListener('seeked', () => {
+        try {
+          const canvas = canvasRef.current || document.createElement('canvas');
+          canvas.width = videoElement.videoWidth;
+          canvas.height = videoElement.videoHeight;
+          
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setThumbnailUrl(dataUrl);
+          }
+        } catch (error) {
+          console.error('Thumbnail generation error:', error);
+        }
+      });
+
+      videoElement.load();
+    }
+  }, [video.cover, video.file]);
+
   return (
     <DataCard className="overflow-hidden hover:shadow-md transition-all duration-200 group">
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
       {/* 縮圖 */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" onClick={onPlay}>
-        {typeof video.cover === 'string' && video.cover ? (
+        {(video.cover || thumbnailUrl) ? (
           <img 
-            src={video.cover} 
+            src={video.cover || thumbnailUrl || ''} 
             alt={video.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300" />
@@ -328,6 +365,15 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
         <div className="absolute inset-0 flex items-center justify-center">
           <Play className="text-white group-hover:scale-110 transition-transform duration-300 w-12 h-12 drop-shadow-lg" />
         </div>
+        
+        {/* 分類標籤 */}
+        {video.category && (
+          <div className="absolute top-2 left-2">
+            <span className="px-2 py-1 text-xs font-medium bg-indigo-500/90 text-white rounded-md backdrop-blur-sm">
+              {video.category}
+            </span>
+          </div>
+        )}
         
         <div className="absolute top-2 right-2 flex gap-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
           {typeof video.cover === 'string' && video.cover && (
@@ -437,6 +483,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
   const [coverPreviewLoading, setCoverPreviewLoading] = useState(false);
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
 
   // 獲取所有已存在的分類
   const existingCategories = Array.from(new Set(existingVideos.map(v => v.category).filter(Boolean)));
@@ -454,6 +501,52 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
       // 如果計算失敗，使用備用方案
       return `fallback_${file.name}_${file.size}_${file.lastModified}`;
     }
+  };
+
+  // 從影片第 1 秒生成縮圖
+  const generateThumbnailFromVideo = (videoUrl: string, videoFileName?: string) => {
+    const video = document.createElement('video');
+    video.src = videoUrl;
+    video.crossOrigin = 'anonymous';
+    video.currentTime = 1; // 設定到第 1 秒
+
+    video.addEventListener('seeked', () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // 轉換為 Blob
+          canvas.toBlob((blob) => {
+            if (blob) {
+              // 使用影片名稱生成縮圖檔名
+              const baseFileName = videoFileName || 'video';
+              const nameWithoutExt = baseFileName.substring(0, baseFileName.lastIndexOf('.')) || baseFileName;
+              const thumbnailName = `${nameWithoutExt}-thumbnail.jpg`;
+              
+              const file = new File([blob], thumbnailName, { type: 'image/jpeg' });
+              setSelectedCoverFile(file);
+              const thumbnailUrl = URL.createObjectURL(blob);
+              setCoverPreviewUrl(thumbnailUrl);
+            }
+          }, 'image/jpeg', 0.9);
+        }
+      } catch (error) {
+        console.error('Thumbnail generation error:', error);
+      } finally {
+        URL.revokeObjectURL(videoUrl);
+      }
+    });
+
+    video.addEventListener('error', (e) => {
+      console.error('Video load error:', e);
+    });
+
+    video.load();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -487,6 +580,14 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     
     // 計算檔案 hash
     const hash = await calculateFileHash(file);
+    setFileHash(hash);
+
+    // 如果沒有封面圖，從影片第 1 秒生成縮圖
+    if (!formData.cover && !selectedCoverFile) {
+      generateThumbnailFromVideo(objectUrl, file.name);
+    }
+
+    // 檢查是否與現有影片重複
     setFileHash(hash);
     setFormData({ ...formData, hash });
     
@@ -684,21 +785,29 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              影片名稱 <span className="text-red-500">*</span>
+              影片名稱 / Video Name <span className="text-red-500">*</span>
             </label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="請輸入影片名稱"
+              placeholder="請輸入影片名稱 / Video Name"
               required
+              className="h-12 rounded-xl"
             />
+            <div className="px-1 h-4">
+              {formData.name ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+              ) : (
+                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入名稱 / Please enter name</span>
+              )}
+            </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              影片 URL 或上傳檔案
+              影片檔案 / Video File (URL or Upload)
             </label>
             <div className="space-y-3">
               <Input
@@ -706,14 +815,15 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
                 onChange={(e) => setFormData({ ...formData, file: e.target.value })}
                 placeholder="https://example.com/video.mp4"
                 disabled={submitting}
+                className="h-12 rounded-xl"
               />
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">或 / OR</span>
                 <label className="flex-1">
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳影片 (最大 50MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳影片 (最大 50MB) / Upload (Max 50MB)'}
                     </span>
                   </div>
                   <input
@@ -724,6 +834,13 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
                     className="hidden"
                   />
                 </label>
+              </div>
+              <div className="px-1 h-4">
+                {formData.file || selectedFile ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已備妥 / Ready</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請提供 URL 或上傳檔案 / (Optional) Please provide URL or upload</span>
+                )}
               </div>
               {previewUrl && (
                 <div className="mt-2">
@@ -761,45 +878,102 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
             </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              備註
+              備註 / Note
             </label>
             <Textarea
               value={formData.note}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              placeholder="影片備註說明"
+              placeholder="影片備註說明 / Video Note"
               rows={3}
+              className="rounded-xl"
             />
+            <div className="px-1 h-4">
+              {formData.note ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入備註 / (Optional) Please enter note</span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                分類
+                分類 / Category
               </label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="影片分類"
-                list="video-categories"
-              />
-              <datalist id="video-categories">
-                {existingCategories.map(cat => (
-                  <option key={cat} value={cat} />
-                ))}
-              </datalist>
+              {useCategorySelect && existingCategories.length > 0 ? (
+                <div className="space-y-2">
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setUseCategorySelect(false);
+                        setFormData({ ...formData, category: '' });
+                      } else {
+                        setFormData({ ...formData, category: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="選擇分類 / Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                      <SelectItem value="__custom__">自行輸入... / Custom input...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="輸入新分類 / Enter new category"
+                    className="h-12 rounded-xl"
+                  />
+                  {existingCategories.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUseCategorySelect(true)}
+                      className="text-xs h-7"
+                    >
+                      從現有分類中選擇 / Select from existing
+                    </Button>
+                  )}
+                </div>
+              )}
+              <div className="px-1 h-4">
+                {formData.category ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入分類 / (Optional) Please enter category</span>
+                )}
+              </div>
             </div>
 
-            <div>
+            <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                參考
+                參考 / Reference
               </label>
               <Input
                 value={formData.ref}
                 onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
-                placeholder="參考資訊"
+                placeholder="參考資訊 / Reference Info"
+                className="h-12 rounded-xl"
               />
+              <div className="px-1 h-4">
+                {formData.ref ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入參考 / (Optional) Please enter reference</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -897,9 +1071,10 @@ function VideoPlayer({ video, videoRef }: { video: VideoItem; videoRef: React.Re
   return (
     <DataCard className="overflow-hidden">
       <div className="p-2 sm:p-4">
-        <SimpleVideoPlayer
+        <PlyrPlayer
+          type="video"
           src={videoRef.current?.src || video.url || `/videos/${video.filename}`}
-          title={video.title}
+          className="w-full"
         />
       </div>
       <div className="p-4 pt-0">
@@ -941,7 +1116,7 @@ function VideoCard({ video, cacheStatus, onPlay, onDownload, onDeleteCache }: Vi
           <img 
             src={video.cover} 
             alt={video.title} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300">

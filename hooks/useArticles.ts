@@ -80,10 +80,13 @@ export function useArticles() {
       
       // 只添加非空的 file 欄位
       if (formData.file1 && formData.file1.trim()) dataToSend.file1 = formData.file1;
+      if (formData.file1name && formData.file1name.trim()) dataToSend.file1name = formData.file1name;
       if (formData.file1type && formData.file1type.trim()) dataToSend.file1type = formData.file1type;
       if (formData.file2 && formData.file2.trim()) dataToSend.file2 = formData.file2;
+      if (formData.file2name && formData.file2name.trim()) dataToSend.file2name = formData.file2name;
       if (formData.file2type && formData.file2type.trim()) dataToSend.file2type = formData.file2type;
       if (formData.file3 && formData.file3.trim()) dataToSend.file3 = formData.file3;
+      if (formData.file3name && formData.file3name.trim()) dataToSend.file3name = formData.file3name;
       if (formData.file3type && formData.file3type.trim()) dataToSend.file3type = formData.file3type;
       
       const res = await fetchApi<Article>(API_ENDPOINTS.ARTICLE, {
@@ -127,10 +130,13 @@ export function useArticles() {
       
       // 只添加非空的 file 欄位
       if (formData.file1 && formData.file1.trim()) dataToSend.file1 = formData.file1;
+      if (formData.file1name && formData.file1name.trim()) dataToSend.file1name = formData.file1name;
       if (formData.file1type && formData.file1type.trim()) dataToSend.file1type = formData.file1type;
       if (formData.file2 && formData.file2.trim()) dataToSend.file2 = formData.file2;
+      if (formData.file2name && formData.file2name.trim()) dataToSend.file2name = formData.file2name;
       if (formData.file2type && formData.file2type.trim()) dataToSend.file2type = formData.file2type;
       if (formData.file3 && formData.file3.trim()) dataToSend.file3 = formData.file3;
+      if (formData.file3name && formData.file3name.trim()) dataToSend.file3name = formData.file3name;
       if (formData.file3type && formData.file3type.trim()) dataToSend.file3type = formData.file3type;
       
       const res = await fetchApi<Article>(`${API_ENDPOINTS.ARTICLE}/${id}`, {

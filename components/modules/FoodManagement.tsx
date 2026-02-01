@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Minus, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +27,18 @@ export default function FoodManagement() {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
   const [photoUploading, setPhotoUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // 取得已存在的不重複商店
+  const existingShops = useMemo(() => {
+    const shops = foods.map(f => f.shop).filter(Boolean) as string[];
+    return Array.from(new Set(shops)).sort();
+  }, [foods]);
+
+  // 取得已存在的不重複食品名稱
+  const existingNames = useMemo(() => {
+    const names = foods.map(f => f.name).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [foods]);
 
   // 搜尋過濾
   const filteredFoods = useMemo(() => {
@@ -218,6 +231,8 @@ export default function FoodManagement() {
           selectedPhotoFile={selectedPhotoFile}
           photoUploading={photoUploading}
           handlePhotoFileSelect={handlePhotoFileSelect}
+          existingShops={existingShops}
+          existingNames={existingNames}
           onSubmit={handleSubmit}
           onCancel={resetForm}
         />
@@ -271,6 +286,8 @@ interface FoodFormProps {
   selectedPhotoFile: File | null;
   photoUploading: boolean;
   handlePhotoFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  existingShops: string[];
+  existingNames: string[];
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }
@@ -283,6 +300,8 @@ function FoodForm({
   selectedPhotoFile, 
   photoUploading, 
   handlePhotoFileSelect, 
+  existingShops,
+  existingNames,
   onSubmit, 
   onCancel 
 }: FoodFormProps) {
@@ -290,44 +309,198 @@ function FoodForm({
     <FormCard title={editingId ? "編輯食品" : "新增食品"} accentColor="from-blue-500 to-blue-600">
       <form onSubmit={onSubmit} className="space-y-4">
         <FormGrid>
-          <Input
-            placeholder="食品名稱"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            className="h-12 rounded-xl"
-          />
-          <Input
-            placeholder="數量"
-            type="number"
-            min="0"
-            value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: parseInt(e.target.value) || 0 })}
-            required
-            className="h-12 rounded-xl"
-          />
-          <Input
-            placeholder="有效期限"
-            type="date"
-            value={form.todate}
-            onChange={(e) => setForm({ ...form, todate: e.target.value })}
-            required
-            className="h-12 rounded-xl"
-          />
-          <Input
-            placeholder="價格"
-            type="number"
-            min="0"
-            value={form.price || ''}
-            onChange={(e) => setForm({ ...form, price: e.target.value ? parseInt(e.target.value) : 0 })}
-            className="h-12 rounded-xl"
-          />
-          <Input
-            placeholder="商店/地點"
-            value={form.shop || ''}
-            onChange={(e) => setForm({ ...form, shop: e.target.value })}
-            className="h-12 rounded-xl"
-          />
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <div className="flex-1 space-y-1">
+                <Input
+                  placeholder="食品名稱 / Food Name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  required
+                  className="h-12 rounded-xl w-full"
+                />
+                <div className="px-1 h-4">
+                  {form.name ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                  ) : (
+                    <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入名稱 / Please enter name</span>
+                  )}
+                </div>
+              </div>
+              {existingNames.length > 0 && (
+                <Select value="" onValueChange={(val) => val && setForm({ ...form, name: val })}>
+                  <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                    <ChevronDown className="h-4 w-4" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {existingNames.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex gap-1 items-center">
+              <Input
+                placeholder="數量 / Quantity"
+                type="number"
+                min="0"
+                value={form.amount || ""}
+                onChange={(e) => setForm({ ...form, amount: e.target.value === "" ? 0 : parseInt(e.target.value) || 0 })}
+                className="h-12 rounded-xl flex-1"
+              />
+              {(form.amount || 0) > 0 && (
+                <div className="flex flex-col gap-0.5">
+                  <button 
+                    type="button"
+                    onClick={() => setForm({ ...form, amount: (form.amount || 0) + 1 })}
+                    className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 rounded transition-colors"
+                    title="+1"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setForm({ ...form, amount: Math.max(0, (form.amount || 0) - 1) })}
+                    className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                    title="-1"
+                  >
+                    <Minus size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="px-1 h-4">
+              {(form.amount || 0) > 0 ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - / Can use + or -</span>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入數量 / (Optional) Please enter quantity</span>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex gap-1 items-center">
+              <Input
+                placeholder="有效期限 / Expiry Date"
+                type="date"
+                value={form.todate}
+                onChange={(e) => setForm({ ...form, todate: e.target.value })}
+                className="h-12 rounded-xl flex-1"
+              />
+              {form.todate && (
+                <div className="flex flex-col gap-0.5">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const d = new Date(form.todate);
+                      d.setDate(d.getDate() + 7);
+                      setForm({ ...form, todate: d.toISOString().split('T')[0] });
+                    }}
+                    className="p-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded transition-colors"
+                    title="+7天"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const d = new Date(form.todate);
+                      d.setDate(d.getDate() - 7);
+                      setForm({ ...form, todate: d.toISOString().split('T')[0] });
+                    }}
+                    className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                    title="-7天"
+                  >
+                    <Minus size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+                <div className="px-1 h-4">
+                  {form.todate ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - (7天) / Can use + or - (7 Days)</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇日期 / (Optional) Please select a date</span>
+                  )}
+                </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex gap-1 items-center">
+              <Input
+                placeholder="價格 / Price"
+                type="number"
+                min="0"
+                value={form.price || ''}
+                onChange={(e) => setForm({ ...form, price: e.target.value ? parseInt(e.target.value) : 0 })}
+                className="h-12 rounded-xl flex-1"
+              />
+              {(form.price || 0) > 0 && (
+                <div className="flex flex-col gap-0.5">
+                  <button 
+                    type="button"
+                    onClick={() => setForm({ ...form, price: (form.price || 0) + 10 })}
+                    className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 rounded transition-colors"
+                    title="+10"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setForm({ ...form, price: Math.max(0, (form.price || 0) - 10) })}
+                    className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                    title="-10"
+                  >
+                    <Minus size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="px-1 h-4">
+              {(form.price || 0) > 0 ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - / Can use + or -</span>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入金額 / (Optional) Please enter amount</span>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <div className="flex-1 space-y-1">
+                <Input
+                  placeholder="商店/地點 / Shop/Location"
+                  value={form.shop || ''}
+                  onChange={(e) => setForm({ ...form, shop: e.target.value })}
+                  className="h-12 rounded-xl w-full"
+                />
+                <div className="px-1 h-4">
+                  {form.shop ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入商店 / (Optional) Please enter shop</span>
+                  )}
+                </div>
+              </div>
+              {existingShops.length > 0 && (
+                <Select 
+                  value="" 
+                  onValueChange={(value) => {
+                    if (value) {
+                      setForm({ ...form, shop: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                    <ChevronDown className="h-4 w-4" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {existingShops.map((shop) => (
+                      <SelectItem key={shop} value={shop}>{shop}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">圖片</label>
             <div className="space-y-3">
@@ -367,7 +540,7 @@ function FoodForm({
                   <img
                     src={photoPreviewUrl}
                     alt="圖片預覽"
-                    className="w-32 h-32 object-cover rounded border"
+                    className="w-32 h-32 object-contain rounded border"
                   />
                 </div>
               )}

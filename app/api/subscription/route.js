@@ -82,10 +82,10 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // 強制 price 為整數
+    // 強制 price 為數字
     const payload = {
       name,
-      price: parseInt(price, 10),
+      price: Number(price),
     };
 
     // 只有在提供值時才添加可選欄位
@@ -93,7 +93,7 @@ export async function POST(req) {
     if (site) payload.site = site;
     if (note) payload.note = note;
     if (account) payload.account = account;
-    if (currency) payload.currency = currency;
+    if (currency) payload.currency = currency || "TWD";
     if (continueValue !== undefined) payload.continue = continueValue;
 
     const res = await databases.createDocument(

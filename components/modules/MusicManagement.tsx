@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search } from "lucide-react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
@@ -9,8 +9,10 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders } from "@/lib/utils";
@@ -204,6 +206,7 @@ interface MusicCardProps {
 
 function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [isLooping, setIsLooping] = useState(false);
 
   // 點擊封面播放/暫停
   const handleCoverClick = () => {
@@ -239,7 +242,7 @@ function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProp
           <div className="relative aspect-square bg-gradient-to-br from-purple-500 to-pink-600 cursor-pointer" onClick={handleCoverClick}>
             <div className="absolute inset-0 flex items-center justify-center group-hover:from-purple-600 group-hover:to-pink-700 transition-all duration-300">
               {music.cover ? (
-                <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
+                <img src={music.cover} alt={music.name} className="w-full h-full object-contain" />
               ) : (
                 <MusicIcon className="text-white group-hover:scale-110 transition-transform duration-300 w-16 h-16" />
               )}
@@ -276,6 +279,15 @@ function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProp
               </button>
             </div>
 
+            {/* 分類標籤 */}
+            {music.category && (
+              <div className="absolute top-2 right-2">
+                <span className="px-2 py-1 text-xs font-medium bg-purple-500/90 text-white rounded-md backdrop-blur-sm">
+                  {music.category}
+                </span>
+              </div>
+            )}
+
             {/* 語言標籤 */}
             {music.language && (
               <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-medium">
@@ -298,15 +310,25 @@ function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProp
             </div>
 
             {music.file && (
-              <audio 
-                ref={audioRef}
-                src={music.file} 
-                controls 
-                className="w-full" 
-                onEnded={onPlay}
-                onPlay={() => !isPlaying && onPlay()}
-                onPause={() => isPlaying && onPlay()}
-              />
+              <div className="space-y-2">
+                <PlyrPlayer 
+                  type="audio"
+                  src={music.file}
+                  loop={isLooping}
+                  className="w-full"
+                />
+                <button
+                  onClick={() => setIsLooping(!isLooping)}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                    isLooping 
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  <Repeat className="w-3 h-3" />
+                  <span>{isLooping ? '重複播放' : '單次播放'}</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -351,6 +373,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const [coverPreviewLoading, setCoverPreviewLoading] = useState(false);
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
 
   // 獲取所有已存在的分類
   const existingCategories = Array.from(new Set(existingMusic.map(m => m.category).filter(Boolean)));
@@ -598,21 +621,29 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              音樂名稱 <span className="text-red-500">*</span>
+              音樂名稱 / Music Name <span className="text-red-500">*</span>
             </label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="請輸入音樂名稱"
+              placeholder="請輸入音樂名稱 / Music Name"
               required
+              className="h-12 rounded-xl"
             />
+            <div className="px-1 h-4">
+              {formData.name ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+              ) : (
+                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入名稱 / Please enter name</span>
+              )}
+            </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              音樂檔案 URL 或上傳檔案
+              音樂檔案 / Music File (URL or Upload)
             </label>
             <div className="space-y-3">
               <Input
@@ -620,14 +651,15 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                 onChange={(e) => setFormData({ ...formData, file: e.target.value })}
                 placeholder="https://example.com/audio.mp3"
                 disabled={submitting}
+                className="h-12 rounded-xl"
               />
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">或</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">或 / OR</span>
                 <label className="flex-1">
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 50MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 50MB) / Upload (Max 50MB)'}
                     </span>
                   </div>
                   <input
@@ -638,6 +670,13 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                     className="hidden"
                   />
                 </label>
+              </div>
+              <div className="px-1 h-4">
+                {formData.file || selectedFile ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已備妥 / Ready</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請提供 URL 或上傳檔案 / (Optional) Please provide URL or upload</span>
+                )}
               </div>
               {previewUrl && (
                 <div className="mt-2">
@@ -675,45 +714,111 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
             </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              歌詞
+              歌詞 / Lyrics
             </label>
             <Textarea
               value={formData.lyrics}
               onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
-              placeholder="輸入歌詞內容"
+              placeholder="輸入歌詞內容 / Lyrics Content"
               rows={6}
+              className="rounded-xl"
             />
+            <div className="px-1 h-4">
+              {formData.lyrics ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入歌詞 / (Optional) Please enter lyrics</span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                語言
+                語言 / Language
               </label>
-              <Input
+              <Select
                 value={formData.language}
-                onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                placeholder="例如: 中文, English, 日本語"
-              />
+                onValueChange={(value) => setFormData({ ...formData, language: value })}
+              >
+                <SelectTrigger className="h-12 rounded-xl">
+                  <SelectValue placeholder="選擇語言 / Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="中文">中文</SelectItem>
+                  <SelectItem value="英語">英語</SelectItem>
+                  <SelectItem value="日語">日語</SelectItem>
+                  <SelectItem value="粵語">粵語</SelectItem>
+                  <SelectItem value="韓語">韓語</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="px-1 h-4">
+                {formData.language ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已選擇 / Selected</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇語言 / (Optional) Please select language</span>
+                )}
+              </div>
             </div>
 
-            <div>
+            <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                分類
+                分類 / Category
               </label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="音樂分類"
-                list="music-categories"
-              />
-              <datalist id="music-categories">
-                {existingCategories.map(cat => (
-                  <option key={cat} value={cat} />
-                ))}
-              </datalist>
+              {useCategorySelect && existingCategories.length > 0 ? (
+                <div className="space-y-2">
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setUseCategorySelect(false);
+                        setFormData({ ...formData, category: '' });
+                      } else {
+                        setFormData({ ...formData, category: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="選擇分類 / Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                      <SelectItem value="__custom__">自行輸入... / Custom input...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="輸入新分類 / Enter new category"
+                    className="h-12 rounded-xl"
+                  />
+                  {existingCategories.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUseCategorySelect(true)}
+                      className="text-xs h-7"
+                    >
+                      從現有分類中選擇 / Select from existing
+                    </Button>
+                  )}
+                </div>
+              )}
+              <div className="px-1 h-4">
+                {formData.category ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入分類 / (Optional) Please enter category</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -776,28 +881,44 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
             </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              備註
+              備註 / Note
             </label>
             <Textarea
               value={formData.note}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              placeholder="音樂備註說明"
+              placeholder="音樂備註說明 / Music Note"
               rows={3}
+              className="rounded-xl"
             />
+            <div className="px-1 h-4">
+              {formData.note ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入備註 / (Optional) Please enter note</span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                參考
+                參考 / Reference
               </label>
               <Input
                 value={formData.ref}
                 onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
-                placeholder="參考資訊"
+                placeholder="參考資訊 / Reference Info"
+                className="h-12 rounded-xl"
               />
+              <div className="px-1 h-4">
+                {formData.ref ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入參考 / (Optional) Please enter reference</span>
+                )}
+              </div>
             </div>
 
             <div>

@@ -136,10 +136,13 @@ export interface Article {
   url2?: string;
   url3?: string;
   file1?: string;
+  file1name?: string;
   file1type?: string;
   file2?: string;
+  file2name?: string;
   file2type?: string;
   file3?: string;
+  file3name?: string;
   file3type?: string;
   $createdAt: string;
   $updatedAt: string;
@@ -153,10 +156,13 @@ export interface ArticleFormData {
   url2?: string;
   url3?: string;
   file1?: string;
+  file1name?: string;
   file1type?: string;
   file2?: string;
+  file2name?: string;
   file2type?: string;
   file3?: string;
+  file3name?: string;
   file3type?: string;
 }
 

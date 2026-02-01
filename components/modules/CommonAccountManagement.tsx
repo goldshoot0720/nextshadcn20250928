@@ -327,35 +327,51 @@ export default function CommonAccountManagement() {
 
                   return (
                     <div key={idx} className="space-y-2 pb-2 border-b border-gray-50 dark:border-gray-800/50 last:border-0">
-                      <div className="flex gap-2 items-center">
-                        <span className="w-8 h-10 flex items-center justify-center text-xs text-gray-400 font-mono shrink-0">{idx}</span>
-                        <Input
-                          placeholder={`網站名稱/${idx}`}
-                          value={(form as any)[siteKey] || ""}
-                          onChange={(e) => setForm({ ...form, [siteKey]: e.target.value } as any)}
-                          className="rounded-xl flex-1"
-                          maxLength={100}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleNote(idx)}
-                          className={`shrink-0 rounded-xl h-10 w-10 ${isExpanded ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
-                          title="顯示/隱藏備註"
-                        >
-                          <NoteIcon size={18} />
-                        </Button>
+                      <div className="space-y-1">
+                        <div className="flex gap-2 items-center">
+                          <span className="w-8 h-10 flex items-center justify-center text-xs text-gray-400 font-mono shrink-0">{idx}</span>
+                          <Input
+                            placeholder={`網站名稱 / Site Name (${idx})`}
+                            value={(form as any)[siteKey] || ""}
+                            onChange={(e) => setForm({ ...form, [siteKey]: e.target.value } as any)}
+                            className="rounded-xl flex-1 h-12"
+                            maxLength={100}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleNote(idx)}
+                            className={`shrink-0 rounded-xl h-12 w-12 ${isExpanded ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+                            title="顯示/隱藏備註"
+                          >
+                            <NoteIcon size={18} />
+                          </Button>
+                        </div>
+                        <div className="pl-10 px-1 h-4">
+                          {(form as any)[siteKey] ? (
+                            <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                          ) : (
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入名稱 / (Optional) Please enter name</span>
+                          )}
+                        </div>
                       </div>
                       {isExpanded && (
-                        <div className="pl-10 pr-2 pb-2">
+                        <div className="pl-10 pr-2 pb-2 space-y-1">
                           <Textarea
-                            placeholder={`備註內容 (上限100個字)`}
+                            placeholder={`備註內容 / Note Content (Max 100 chars)`}
                             value={(form as any)[noteKey] || ""}
                             onChange={(e) => setForm({ ...form, [noteKey]: e.target.value } as any)}
                             className="rounded-xl border-purple-100 dark:border-purple-900/30 min-h-[80px] resize-y py-2 text-sm shadow-inner"
                             maxLength={100}
                           />
+                          <div className="px-1 h-4">
+                            {(form as any)[noteKey] ? (
+                              <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                            ) : (
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入備註 / (Optional) Please enter note</span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

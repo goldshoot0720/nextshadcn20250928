@@ -13,7 +13,9 @@ import { StatCard } from "@/components/ui/stat-card";
 import { useArticles } from "@/hooks/useArticles";
 import { ArticleFormData, Article } from "@/types";
 import { formatDate } from "@/lib/formatters";
-import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlyrPlayer } from "@/components/ui/plyr-player";
+import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp, Search, Plus, Minus } from "lucide-react";
 
 const INITIAL_FORM: ArticleFormData = {
   title: "",
@@ -23,10 +25,13 @@ const INITIAL_FORM: ArticleFormData = {
   url2: "",
   url3: "",
   file1: "",
+  file1name: "",
   file1type: "",
   file2: "",
+  file2name: "",
   file2type: "",
   file3: "",
+  file3name: "",
   file3type: "",
 };
 
@@ -36,6 +41,7 @@ export default function NotesManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ArticleFormData>(INITIAL_FORM);
   const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
+  const [previewFiles, setPreviewFiles] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isFormCollapsed, setIsFormCollapsed] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,12 +51,20 @@ export default function NotesManagement() {
   const [selectedFile2, setSelectedFile2] = useState<File | null>(null);
   const [selectedFile3, setSelectedFile3] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   
   // Edit mode file upload states
   const [editSelectedFile1, setEditSelectedFile1] = useState<File | null>(null);
   const [editSelectedFile2, setEditSelectedFile2] = useState<File | null>(null);
   const [editSelectedFile3, setEditSelectedFile3] = useState<File | null>(null);
   const [editUploadingFile, setEditUploadingFile] = useState<number | null>(null);
+  const [editUploadProgress, setEditUploadProgress] = useState<number>(0);
+
+  // 取得已存在的不重複標題用於下拉選單
+  const existingTitles = useMemo(() => {
+    const titles = articles.map(a => a.title).filter(Boolean);
+    return Array.from(new Set(titles)).sort();
+  }, [articles]);
 
   // 搜尋過濾
   const filteredArticles = useMemo(() => {
@@ -66,46 +80,76 @@ export default function NotesManagement() {
   const handleFileSelect = (fileNumber: 1 | 2 | 3, file: File | null) => {
     if (!file) return;
     
-    // Determine file type
+    // Determine file type by MIME type and extension
+    const fileName = file.name.toLowerCase();
+    const ext = fileName.substring(fileName.lastIndexOf('.'));
     let fileType = 'other';
-    if (file.type.startsWith('image/')) fileType = 'image';
-    else if (file.type.startsWith('video/')) fileType = 'video';
-    else if (file.type.startsWith('audio/')) fileType = 'audio';
+    
+    if (file.type.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+      fileType = 'jpg';
+    } else if (file.type.startsWith('video/') || ['.mp4', '.webm', '.mov', '.avi'].includes(ext)) {
+      fileType = 'mp4';
+    } else if (file.type.startsWith('audio/') || ['.mp3', '.wav', '.ogg', '.m4a'].includes(ext)) {
+      fileType = 'mp3';
+    } else if (file.type === 'application/pdf' || ext === '.pdf') {
+      fileType = 'pdf';
+    } else if (file.type === 'text/plain' || ext === '.txt') {
+      fileType = 'txt';
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === '.docx') {
+      fileType = 'docx';
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || ext === '.xlsx') {
+      fileType = 'xlsx';
+    }
     
     if (fileNumber === 1) {
       setSelectedFile1(file);
-      setForm({ ...form, [`file${fileNumber}type`]: fileType });
+      setForm({ ...form, file1name: file.name, [`file${fileNumber}type`]: fileType });
     } else if (fileNumber === 2) {
       setSelectedFile2(file);
-      setForm({ ...form, [`file${fileNumber}type`]: fileType });
+      setForm({ ...form, file2name: file.name, [`file${fileNumber}type`]: fileType });
     } else {
       setSelectedFile3(file);
-      setForm({ ...form, [`file${fileNumber}type`]: fileType });
+      setForm({ ...form, file3name: file.name, [`file${fileNumber}type`]: fileType });
     }
   };
 
   const handleEditFileSelect = (fileNumber: 1 | 2 | 3, file: File | null) => {
     if (!file) return;
     
-    // Determine file type
+    // Determine file type by MIME type and extension
+    const fileName = file.name.toLowerCase();
+    const ext = fileName.substring(fileName.lastIndexOf('.'));
     let fileType = 'other';
-    if (file.type.startsWith('image/')) fileType = 'image';
-    else if (file.type.startsWith('video/')) fileType = 'video';
-    else if (file.type.startsWith('audio/')) fileType = 'audio';
+    
+    if (file.type.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+      fileType = 'jpg';
+    } else if (file.type.startsWith('video/') || ['.mp4', '.webm', '.mov', '.avi'].includes(ext)) {
+      fileType = 'mp4';
+    } else if (file.type.startsWith('audio/') || ['.mp3', '.wav', '.ogg', '.m4a'].includes(ext)) {
+      fileType = 'mp3';
+    } else if (file.type === 'application/pdf' || ext === '.pdf') {
+      fileType = 'pdf';
+    } else if (file.type === 'text/plain' || ext === '.txt') {
+      fileType = 'txt';
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === '.docx') {
+      fileType = 'docx';
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || ext === '.xlsx') {
+      fileType = 'xlsx';
+    }
     
     if (fileNumber === 1) {
       setEditSelectedFile1(file);
-      setEditForm({ ...editForm, [`file${fileNumber}type`]: fileType });
+      setEditForm({ ...editForm, file1name: file.name, [`file${fileNumber}type`]: fileType });
     } else if (fileNumber === 2) {
       setEditSelectedFile2(file);
-      setEditForm({ ...editForm, [`file${fileNumber}type`]: fileType });
+      setEditForm({ ...editForm, file2name: file.name, [`file${fileNumber}type`]: fileType });
     } else {
       setEditSelectedFile3(file);
-      setEditForm({ ...editForm, [`file${fileNumber}type`]: fileType });
+      setEditForm({ ...editForm, file3name: file.name, [`file${fileNumber}type`]: fileType });
     }
   };
 
-  const uploadFile = async (file: File, endpoint: string): Promise<string> => {
+  const uploadFile = async (file: File, endpoint: string, isEdit: boolean = false): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -119,17 +163,41 @@ export default function NotesManagement() {
       _bucket: config.bucketId || '',
     });
 
-    const response = await fetch(`${endpoint}?${params}`, {
-      method: 'POST',
-      body: formData,
-    });
+    // Simulate upload progress
+    const progressInterval = setInterval(() => {
+      if (isEdit) {
+        setEditUploadProgress(prev => Math.min(prev + 10, 90));
+      } else {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }
+    }, 200);
 
-    if (!response.ok) {
-      throw new Error('上傳失敗');
+    try {
+      const response = await fetch(`${endpoint}?${params}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      clearInterval(progressInterval);
+      
+      if (!response.ok) {
+        throw new Error('上傳失敗');
+      }
+
+      const data = await response.json();
+      
+      // Complete progress
+      if (isEdit) {
+        setEditUploadProgress(100);
+      } else {
+        setUploadProgress(100);
+      }
+      
+      return data.url;
+    } catch (error) {
+      clearInterval(progressInterval);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,32 +208,38 @@ export default function NotesManagement() {
       // Upload files if selected
       if (selectedFile1) {
         setUploadingFile(1);
-        const endpoint = form.file1type === 'image' ? '/api/upload-image' : 
-                        form.file1type === 'video' ? '/api/upload-video' : 
-                        '/api/upload-music';
-        formDataToSubmit.file1 = await uploadFile(selectedFile1, endpoint);
+        setUploadProgress(0);
+        const endpoint = ['jpg', 'image'].includes(form.file1type || '') ? '/api/upload-image' : 
+                        ['mp4', 'video'].includes(form.file1type || '') ? '/api/upload-video' : 
+                        '/api/upload-music'; // Use music endpoint for audio and documents
+        formDataToSubmit.file1 = await uploadFile(selectedFile1, endpoint, false);
       }
       if (selectedFile2) {
         setUploadingFile(2);
-        const endpoint = form.file2type === 'image' ? '/api/upload-image' : 
-                        form.file2type === 'video' ? '/api/upload-video' : 
-                        '/api/upload-music';
-        formDataToSubmit.file2 = await uploadFile(selectedFile2, endpoint);
+        setUploadProgress(0);
+        const endpoint = ['jpg', 'image'].includes(form.file2type || '') ? '/api/upload-image' : 
+                        ['mp4', 'video'].includes(form.file2type || '') ? '/api/upload-video' : 
+                        '/api/upload-music'; // Use music endpoint for audio and documents
+        formDataToSubmit.file2 = await uploadFile(selectedFile2, endpoint, false);
       }
       if (selectedFile3) {
         setUploadingFile(3);
-        const endpoint = form.file3type === 'image' ? '/api/upload-image' : 
-                        form.file3type === 'video' ? '/api/upload-video' : 
-                        '/api/upload-music';
-        formDataToSubmit.file3 = await uploadFile(selectedFile3, endpoint);
+        setUploadProgress(0);
+        const endpoint = ['jpg', 'image'].includes(form.file3type || '') ? '/api/upload-image' : 
+                        ['mp4', 'video'].includes(form.file3type || '') ? '/api/upload-video' : 
+                        '/api/upload-music'; // Use music endpoint for audio and documents
+        formDataToSubmit.file3 = await uploadFile(selectedFile3, endpoint, false);
       }
 
       setUploadingFile(null);
+      setUploadProgress(0);
       await createArticle(formDataToSubmit);
       resetForm();
       setIsFormCollapsed(true);
-    } catch {
+    } catch (error) {
       setUploadingFile(null);
+      setUploadProgress(0);
+      console.error("新增筆記失敗:", error);
       alert("操作失敗，請稍後再試");
     }
   };
@@ -179,34 +253,40 @@ export default function NotesManagement() {
       // Upload new files if selected
       if (editSelectedFile1) {
         setEditUploadingFile(1);
-        const endpoint = editForm.file1type === 'image' ? '/api/upload-image' : 
-                        editForm.file1type === 'video' ? '/api/upload-video' : 
+        setEditUploadProgress(0);
+        const endpoint = ['jpg', 'image'].includes(editForm.file1type || '') ? '/api/upload-image' : 
+                        ['mp4', 'video'].includes(editForm.file1type || '') ? '/api/upload-video' : 
                         '/api/upload-music';
-        formDataToSubmit.file1 = await uploadFile(editSelectedFile1, endpoint);
+        formDataToSubmit.file1 = await uploadFile(editSelectedFile1, endpoint, true);
       }
       if (editSelectedFile2) {
         setEditUploadingFile(2);
-        const endpoint = editForm.file2type === 'image' ? '/api/upload-image' : 
-                        editForm.file2type === 'video' ? '/api/upload-video' : 
+        setEditUploadProgress(0);
+        const endpoint = ['jpg', 'image'].includes(editForm.file2type || '') ? '/api/upload-image' : 
+                        ['mp4', 'video'].includes(editForm.file2type || '') ? '/api/upload-video' : 
                         '/api/upload-music';
-        formDataToSubmit.file2 = await uploadFile(editSelectedFile2, endpoint);
+        formDataToSubmit.file2 = await uploadFile(editSelectedFile2, endpoint, true);
       }
       if (editSelectedFile3) {
         setEditUploadingFile(3);
-        const endpoint = editForm.file3type === 'image' ? '/api/upload-image' : 
-                        editForm.file3type === 'video' ? '/api/upload-video' : 
+        setEditUploadProgress(0);
+        const endpoint = ['jpg', 'image'].includes(editForm.file3type || '') ? '/api/upload-image' : 
+                        ['mp4', 'video'].includes(editForm.file3type || '') ? '/api/upload-video' : 
                         '/api/upload-music';
-        formDataToSubmit.file3 = await uploadFile(editSelectedFile3, endpoint);
+        formDataToSubmit.file3 = await uploadFile(editSelectedFile3, endpoint, true);
       }
 
       setEditUploadingFile(null);
+      setEditUploadProgress(0);
       await updateArticle(editingId, formDataToSubmit);
       setEditingId(null);
       setEditSelectedFile1(null);
       setEditSelectedFile2(null);
       setEditSelectedFile3(null);
-    } catch {
+    } catch (error) {
       setEditUploadingFile(null);
+      setEditUploadProgress(0);
+      console.error("編輯筆記失敗:", error);
       alert("更新失敗，請稍後再試");
     }
   };
@@ -229,10 +309,13 @@ export default function NotesManagement() {
       url2: article.url2 || "",
       url3: article.url3 || "",
       file1: article.file1 || "",
+      file1name: article.file1name || "",
       file1type: article.file1type || "",
       file2: article.file2 || "",
+      file2name: article.file2name || "",
       file2type: article.file2type || "",
       file3: article.file3 || "",
+      file3name: article.file3name || "",
       file3type: article.file3type || "",
     });
     setEditingId(article.$id);
@@ -261,6 +344,18 @@ export default function NotesManagement() {
         newSet.delete(id);
       } else {
         newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const togglePreview = (fileKey: string) => {
+    setPreviewFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fileKey)) {
+        newSet.delete(fileKey);
+      } else {
+        newSet.add(fileKey);
       }
       return newSet;
     });
@@ -317,95 +412,218 @@ export default function NotesManagement() {
         {!isFormCollapsed && (
           <form onSubmit={handleSubmit} className="space-y-4">
           <FormGrid>
-            <Input
-              placeholder="筆記標題"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-              className="h-12 rounded-xl col-span-2"
-            />
-            <Input
-              placeholder="日期"
-              type="date"
-              value={form.newDate}
-              onChange={(e) => setForm({ ...form, newDate: e.target.value })}
-              required
-              className="h-12 rounded-xl"
-            />
+            <div className="space-y-1 col-span-2">
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <Input
+                    placeholder="筆記標題 / Note Title"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    required
+                    className="h-12 rounded-xl w-full"
+                  />
+                  <div className="px-1 h-4">
+                    {form.title ? (
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                    ) : (
+                      <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入標題 / Please enter title</span>
+                    )}
+                  </div>
+                </div>
+                {existingTitles.length > 0 && (
+                  <Select value="" onValueChange={(val) => val && setForm({ ...form, title: val })}>
+                    <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                      <ChevronDown className="h-4 w-4" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingTitles.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex gap-1 items-center">
+                <Input
+                  placeholder="日期 / Date"
+                  type="date"
+                  value={form.newDate}
+                  onChange={(e) => setForm({ ...form, newDate: e.target.value })}
+                  className="h-12 rounded-xl flex-1"
+                />
+                {form.newDate && (
+                  <div className="flex flex-col gap-0.5">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const d = new Date(form.newDate);
+                        d.setDate(d.getDate() + 7);
+                        setForm({ ...form, newDate: d.toISOString().split('T')[0] });
+                      }}
+                      className="p-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded transition-colors"
+                      title="+7天"
+                    >
+                      <Plus size={14} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const d = new Date(form.newDate);
+                        d.setDate(d.getDate() - 7);
+                        setForm({ ...form, newDate: d.toISOString().split('T')[0] });
+                      }}
+                      className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                      title="-7天"
+                    >
+                      <Minus size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="px-1 h-4">
+                {form.newDate ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - (7天) / Can use + or - (7 Days)</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇日期 / (Optional) Please select a date</span>
+                )}
+              </div>
+            </div>
           </FormGrid>
           
-          <Textarea
-            placeholder="筆記內容 (上限 1000 字)"
-            value={form.content}
-            onChange={(e) => setForm({ ...form, content: e.target.value })}
-            required
-            className="min-h-[200px] rounded-xl"
-            maxLength={1000}
-          />
+          <div className="space-y-1">
+            <Textarea
+              placeholder="筆記內容 (上限 1000 字) / Note Content (Max 1000 chars)"
+              value={form.content}
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
+              className="min-h-[200px] rounded-xl w-full"
+              maxLength={1000}
+            />
+            <div className="px-1 h-4">
+              {form.content ? (
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入內容 / (Optional) Please enter content</span>
+              )}
+            </div>
+          </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">相關連結（選填）</label>
-            <div className="space-y-2">
-              <Input
-                placeholder="URL 1"
-                type="url"
-                value={form.url1}
-                onChange={(e) => setForm({ ...form, url1: e.target.value })}
-                className="h-12 rounded-xl"
-              />
-              <Input
-                placeholder="URL 2"
-                type="url"
-                value={form.url2}
-                onChange={(e) => setForm({ ...form, url2: e.target.value })}
-                className="h-12 rounded-xl"
-              />
-              <Input
-                placeholder="URL 3"
-                type="url"
-                value={form.url3}
-                onChange={(e) => setForm({ ...form, url3: e.target.value })}
-                className="h-12 rounded-xl"
-              />
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">相關連結（選填） / Related Links (Optional)</label>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Input
+                  placeholder="URL 1"
+                  type="url"
+                  value={form.url1}
+                  onChange={(e) => setForm({ ...form, url1: e.target.value })}
+                  className="h-12 rounded-xl w-full"
+                />
+                <div className="px-1 h-4">
+                  {form.url1 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入 URL / (Optional) Please enter URL</span>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Input
+                  placeholder="URL 2"
+                  type="url"
+                  value={form.url2}
+                  onChange={(e) => setForm({ ...form, url2: e.target.value })}
+                  className="h-12 rounded-xl w-full"
+                />
+                <div className="px-1 h-4">
+                  {form.url2 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入 URL / (Optional) Please enter URL</span>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Input
+                  placeholder="URL 3"
+                  type="url"
+                  value={form.url3}
+                  onChange={(e) => setForm({ ...form, url3: e.target.value })}
+                  className="h-12 rounded-xl w-full"
+                />
+                <div className="px-1 h-4">
+                  {form.url3 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                  ) : (
+                    <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入 URL / Please enter URL</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">上傳檔案（選填）</label>
-            <div className="space-y-2">
-              <div>
+            <div className="space-y-3">
+              <div className="space-y-1">
                 <Input
                   type="file"
-                  accept="image/*,video/*,audio/*"
+                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
                   onChange={(e) => handleFileSelect(1, e.target.files?.[0] || null)}
                   disabled={uploadingFile !== null}
                   className="h-12 rounded-xl"
                 />
                 {selectedFile1 && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">已選擇: {selectedFile1.name}</p>}
+                <Input
+                  placeholder="檔案名稱 / File name (選填)"
+                  value={form.file1name || ""}
+                  onChange={(e) => setForm({ ...form, file1name: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
               </div>
-              <div>
+              <div className="space-y-1">
                 <Input
                   type="file"
-                  accept="image/*,video/*,audio/*"
+                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
                   onChange={(e) => handleFileSelect(2, e.target.files?.[0] || null)}
                   disabled={uploadingFile !== null}
                   className="h-12 rounded-xl"
                 />
                 {selectedFile2 && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">已選擇: {selectedFile2.name}</p>}
+                <Input
+                  placeholder="檔案名稱 / File name (選填)"
+                  value={form.file2name || ""}
+                  onChange={(e) => setForm({ ...form, file2name: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
               </div>
-              <div>
+              <div className="space-y-1">
                 <Input
                   type="file"
-                  accept="image/*,video/*,audio/*"
+                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
                   onChange={(e) => handleFileSelect(3, e.target.files?.[0] || null)}
                   disabled={uploadingFile !== null}
                   className="h-12 rounded-xl"
                 />
                 {selectedFile3 && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">已選擇: {selectedFile3.name}</p>}
+                <Input
+                  placeholder="檔案名稱 / File name (選填)"
+                  value={form.file3name || ""}
+                  onChange={(e) => setForm({ ...form, file3name: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
               </div>
             </div>
             {uploadingFile && (
-              <p className="text-sm text-purple-600 dark:text-purple-400">正在上傳檔案 {uploadingFile}...</p>
+              <div className="space-y-2">
+                <p className="text-sm text-purple-600 dark:text-purple-400">正在上傳檔案 {uploadingFile}...</p>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                  <div 
+                    className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{uploadProgress}%</p>
+              </div>
             )}
           </div>
 
@@ -475,7 +693,6 @@ export default function NotesManagement() {
                         placeholder="筆記內容 (上限 1000 字)"
                         value={editForm.content}
                         onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                        required
                         className="min-h-[150px] rounded-lg text-sm"
                         maxLength={1000}
                       />
@@ -488,11 +705,11 @@ export default function NotesManagement() {
 
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-gray-700 dark:text-gray-300">上傳新檔案（選填）</label>
-                        <div className="space-y-2">
-                          <div>
+                        <div className="space-y-3">
+                          <div className="space-y-1">
                             <Input
                               type="file"
-                              accept="image/*,video/*,audio/*"
+                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
                               onChange={(e) => handleEditFileSelect(1, e.target.files?.[0] || null)}
                               disabled={editUploadingFile !== null}
                               className="h-9 rounded-lg text-xs"
@@ -502,11 +719,17 @@ export default function NotesManagement() {
                             ) : editForm.file1 ? (
                               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">現有: {editForm.file1type === 'image' ? '🖼️' : editForm.file1type === 'video' ? '🎥' : editForm.file1type === 'audio' ? '🎵' : '📄'} 檔案 1</p>
                             ) : null}
+                            <Input
+                              placeholder="檔案名稱 / File name (選填)"
+                              value={editForm.file1name || ""}
+                              onChange={(e) => setEditForm({ ...editForm, file1name: e.target.value })}
+                              className="h-8 rounded-lg text-xs"
+                            />
                           </div>
-                          <div>
+                          <div className="space-y-1">
                             <Input
                               type="file"
-                              accept="image/*,video/*,audio/*"
+                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
                               onChange={(e) => handleEditFileSelect(2, e.target.files?.[0] || null)}
                               disabled={editUploadingFile !== null}
                               className="h-9 rounded-lg text-xs"
@@ -516,11 +739,17 @@ export default function NotesManagement() {
                             ) : editForm.file2 ? (
                               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">現有: {editForm.file2type === 'image' ? '🖼️' : editForm.file2type === 'video' ? '🎥' : editForm.file2type === 'audio' ? '🎵' : '📄'} 檔案 2</p>
                             ) : null}
+                            <Input
+                              placeholder="檔案名稱 / File name (選填)"
+                              value={editForm.file2name || ""}
+                              onChange={(e) => setEditForm({ ...editForm, file2name: e.target.value })}
+                              className="h-8 rounded-lg text-xs"
+                            />
                           </div>
-                          <div>
+                          <div className="space-y-1">
                             <Input
                               type="file"
-                              accept="image/*,video/*,audio/*"
+                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
                               onChange={(e) => handleEditFileSelect(3, e.target.files?.[0] || null)}
                               disabled={editUploadingFile !== null}
                               className="h-9 rounded-lg text-xs"
@@ -530,10 +759,25 @@ export default function NotesManagement() {
                             ) : editForm.file3 ? (
                               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">現有: {editForm.file3type === 'image' ? '🖼️' : editForm.file3type === 'video' ? '🎥' : editForm.file3type === 'audio' ? '🎵' : '📄'} 檔案 3</p>
                             ) : null}
+                            <Input
+                              placeholder="檔案名稱 / File name (選填)"
+                              value={editForm.file3name || ""}
+                              onChange={(e) => setEditForm({ ...editForm, file3name: e.target.value })}
+                              className="h-8 rounded-lg text-xs"
+                            />
                           </div>
                         </div>
                         {editUploadingFile && (
-                          <p className="text-xs text-purple-600 dark:text-purple-400">正在上傳檔案 {editUploadingFile}...</p>
+                          <div className="space-y-1">
+                            <p className="text-xs text-purple-600 dark:text-purple-400">正在上傳檔案 {editUploadingFile}...</p>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                                style={{ width: `${editUploadProgress}%` }}
+                              ></div>
+                            </div>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400">{editUploadProgress}%</p>
+                          </div>
                         )}
                       </div>
 
@@ -614,26 +858,115 @@ export default function NotesManagement() {
                       )}
 
                       {(article.file1 || article.file2 || article.file3) && (
-                        <div className="space-y-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             <File size={16} />
                             <span>附件</span>
                           </div>
+                          <div className="flex gap-4 flex-wrap items-start">
                           {article.file1 && (
-                            <a href={article.file1} target="_blank" rel="noreferrer" className="block text-sm text-green-600 dark:text-green-400 hover:underline truncate">
-                              {article.file1type === 'image' ? '🖼️' : article.file1type === 'video' ? '🎥' : article.file1type === 'audio' ? '🎵' : '📄'} 檔案 1
-                            </a>
+                            <div className="space-y-1 flex-shrink-0">
+                              <div className="flex items-center gap-2">
+                                <a href={article.file1} target="_blank" rel="noreferrer" className="text-sm text-green-600 dark:text-green-400 hover:underline">
+                                  {article.file1type === 'jpg' ? '🖼️' : article.file1type === 'mp4' ? '🎥' : article.file1type === 'mp3' ? '🎵' : article.file1type === 'pdf' ? '📄' : article.file1type === 'txt' ? '📄' : article.file1type === 'docx' ? '📄' : article.file1type === 'xlsx' ? '📊' : '📄'} {article.file1name || '檔案 1'}
+                                </a>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => togglePreview(`${article.$id}-file1`)}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  {previewFiles.has(`${article.$id}-file1`) ? '收起' : '預覽'}
+                                </Button>
+                              </div>
+                              {previewFiles.has(`${article.$id}-file1`) && (
+                                <>
+                                  {article.file1type === 'jpg' && (
+                                    <img src={article.file1} alt={article.file1name || '檔案 1'} className="max-w-[150px] rounded-lg border border-gray-300 dark:border-gray-600" />
+                                  )}
+                                  {article.file1type === 'mp4' && (
+                                    <PlyrPlayer type="video" src={article.file1} className="max-w-[300px] rounded-lg" />
+                                  )}
+                                  {article.file1type === 'mp3' && (
+                                    <PlyrPlayer type="audio" src={article.file1} className="max-w-[300px]" />
+                                  )}
+                                  {article.file1type === 'pdf' && (
+                                    <iframe src={article.file1} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file1name || '檔案 1'}></iframe>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           )}
                           {article.file2 && (
-                            <a href={article.file2} target="_blank" rel="noreferrer" className="block text-sm text-green-600 dark:text-green-400 hover:underline truncate">
-                              {article.file2type === 'image' ? '🖼️' : article.file2type === 'video' ? '🎥' : article.file2type === 'audio' ? '🎵' : '📄'} 檔案 2
-                            </a>
+                            <div className="space-y-1 flex-shrink-0">
+                              <div className="flex items-center gap-2">
+                                <a href={article.file2} target="_blank" rel="noreferrer" className="text-sm text-green-600 dark:text-green-400 hover:underline">
+                                  {article.file2type === 'jpg' ? '🖼️' : article.file2type === 'mp4' ? '🎥' : article.file2type === 'mp3' ? '🎵' : article.file2type === 'pdf' ? '📄' : article.file2type === 'txt' ? '📄' : article.file2type === 'docx' ? '📄' : article.file2type === 'xlsx' ? '📊' : '📄'} {article.file2name || '檔案 2'}
+                                </a>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => togglePreview(`${article.$id}-file2`)}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  {previewFiles.has(`${article.$id}-file2`) ? '收起' : '預覽'}
+                                </Button>
+                              </div>
+                              {previewFiles.has(`${article.$id}-file2`) && (
+                                <>
+                                  {article.file2type === 'jpg' && (
+                                    <img src={article.file2} alt={article.file2name || '檔案 2'} className="max-w-[150px] rounded-lg border border-gray-300 dark:border-gray-600" />
+                                  )}
+                                  {article.file2type === 'mp4' && (
+                                    <PlyrPlayer type="video" src={article.file2} className="max-w-[300px] rounded-lg" />
+                                  )}
+                                  {article.file2type === 'mp3' && (
+                                    <PlyrPlayer type="audio" src={article.file2} className="max-w-[300px]" />
+                                  )}
+                                  {article.file2type === 'pdf' && (
+                                    <iframe src={article.file2} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file2name || '檔案 2'}></iframe>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           )}
                           {article.file3 && (
-                            <a href={article.file3} target="_blank" rel="noreferrer" className="block text-sm text-green-600 dark:text-green-400 hover:underline truncate">
-                              {article.file3type === 'image' ? '🖼️' : article.file3type === 'video' ? '🎥' : article.file3type === 'audio' ? '🎵' : '📄'} 檔案 3
-                            </a>
+                            <div className="space-y-1 flex-shrink-0">
+                              <div className="flex items-center gap-2">
+                                <a href={article.file3} target="_blank" rel="noreferrer" className="text-sm text-green-600 dark:text-green-400 hover:underline">
+                                  {article.file3type === 'jpg' ? '🖼️' : article.file3type === 'mp4' ? '🎥' : article.file3type === 'mp3' ? '🎵' : article.file3type === 'pdf' ? '📄' : article.file3type === 'txt' ? '📄' : article.file3type === 'docx' ? '📄' : article.file3type === 'xlsx' ? '📊' : '📄'} {article.file3name || '檔案 3'}
+                                </a>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => togglePreview(`${article.$id}-file3`)}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  {previewFiles.has(`${article.$id}-file3`) ? '收起' : '預覽'}
+                                </Button>
+                              </div>
+                              {previewFiles.has(`${article.$id}-file3`) && (
+                                <>
+                                  {article.file3type === 'jpg' && (
+                                    <img src={article.file3} alt={article.file3name || '檔案 3'} className="max-w-[150px] rounded-lg border border-gray-300 dark:border-gray-600" />
+                                  )}
+                                  {article.file3type === 'mp4' && (
+                                    <PlyrPlayer type="video" src={article.file3} className="max-w-[300px] rounded-lg" />
+                                  )}
+                                  {article.file3type === 'mp3' && (
+                                    <PlyrPlayer type="audio" src={article.file3} className="max-w-[300px]" />
+                                  )}
+                                  {article.file3type === 'pdf' && (
+                                    <iframe src={article.file3} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file3name || '檔案 3'}></iframe>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           )}
+                          </div>
                         </div>
                       )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload, Search } from "lucide-react";
+import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload, Search, ChevronDown } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useImages, ImageData } from "@/hooks";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
@@ -194,7 +195,7 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
           <img 
             src={image.file} 
             alt={image.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
             loading="lazy" 
           />
         ) : (
@@ -206,6 +207,15 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* 分類標籤 */}
+        {image.category && (
+          <div className="absolute top-2 left-2">
+            <span className="px-2 py-1 text-xs font-medium bg-blue-500/90 text-white rounded-md backdrop-blur-sm">
+              {image.category}
+            </span>
+          </div>
+        )}
       </div>
       
       {/* 資訊區 */}
@@ -250,24 +260,29 @@ function ImageCard({ image, onSelect, onEdit, onRefresh }: { image: ImageData; o
 function ImagePreviewModal({ image, onClose }: { image: ImageData; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" onClick={onClose}>
-      <div className="relative w-full h-full max-w-7xl flex flex-col">
-        {/* 圖片 */}
+      <div className="relative w-full h-full max-w-7xl max-h-screen flex flex-col">
+        {/* 頂部控制欄 */}
+        <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10">
+          <button onClick={onClose} className="p-2.5 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/95 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        {/* 圖片 - 置中顯示 */}
         <div className="flex-1 flex items-center justify-center p-12 sm:p-16">
           {image.file ? (
-            <img src={image.file} alt={image.name} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+            <img 
+              src={image.file} 
+              alt={image.name} 
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" 
+              onClick={(e) => e.stopPropagation()} 
+            />
           ) : (
             <div className="text-white text-center">
               <ImageIcon className="mx-auto mb-4 w-24 h-24" />
               <p>沒有圖片 URL</p>
             </div>
           )}
-        </div>
-        
-        {/* 頂部控制欄 */}
-        <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
-          <button onClick={onClose} className="p-2.5 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/95 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
         </div>
         
         {/* 底部資訊欄 */}
@@ -310,6 +325,7 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [fileHash, setFileHash] = useState<string>(''); // 儲存檔案 hash
   const [duplicateWarning, setDuplicateWarning] = useState<string>(''); // 重複警告
+  const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
 
   // 獲取所有已存在的分類
   const existingCategories = Array.from(new Set(existingImages.map(img => img.category).filter(Boolean)));
@@ -573,17 +589,50 @@ function ImageFormModal({ image, existingImages, onClose, onSuccess }: { image: 
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 分類
               </label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="圖片分類"
-                list="image-categories"
-              />
-              <datalist id="image-categories">
-                {existingCategories.map(cat => (
-                  <option key={cat} value={cat} />
-                ))}
-              </datalist>
+              {useCategorySelect && existingCategories.length > 0 ? (
+                <div className="space-y-2">
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setUseCategorySelect(false);
+                        setFormData({ ...formData, category: '' });
+                      } else {
+                        setFormData({ ...formData, category: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇分類" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                      <SelectItem value="__custom__">自行輸入...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="輸入新分類"
+                  />
+                  {existingCategories.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUseCategorySelect(true)}
+                      className="text-xs h-7"
+                    >
+                      從現有分類中選擇
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

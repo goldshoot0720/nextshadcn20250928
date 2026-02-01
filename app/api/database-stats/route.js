@@ -30,15 +30,20 @@ const TABLE_DEFINITIONS = {
   article: [
     { key: 'title', type: 'string', size: 100 },
     { key: 'content', type: 'string', size: 1000 },
+    { key: 'category', type: 'string', size: 100 },
+    { key: 'ref', type: 'string', size: 100 },
     { key: 'newDate', type: 'datetime' },
     { key: 'url1', type: 'string', size: 2000 },  // Appwrite stores URL as string
     { key: 'url2', type: 'string', size: 2000 },
     { key: 'url3', type: 'string', size: 2000 },
     { key: 'file1', type: 'string', size: 150 },
-    { key: 'file2', type: 'string', size: 150 },
-    { key: 'file3', type: 'string', size: 150 },
+    { key: 'file1name', type: 'string', size: 100 },
     { key: 'file1type', type: 'string', size: 20 },
+    { key: 'file2', type: 'string', size: 150 },
+    { key: 'file2name', type: 'string', size: 100 },
     { key: 'file2type', type: 'string', size: 20 },
+    { key: 'file3', type: 'string', size: 150 },
+    { key: 'file3name', type: 'string', size: 100 },
     { key: 'file3type', type: 'string', size: 20 }
   ],
   bank: [

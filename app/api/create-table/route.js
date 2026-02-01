@@ -43,15 +43,20 @@ const TABLE_SCHEMAS = {
     attributes: [
       { key: 'title', type: 'string', size: 100, required: false },
       { key: 'content', type: 'string', size: 1000, required: false },
+      { key: 'category', type: 'string', size: 100, required: false },
+      { key: 'ref', type: 'string', size: 100, required: false },
       { key: 'newDate', type: 'datetime', required: false },
       { key: 'url1', type: 'url', required: false },
       { key: 'url2', type: 'url', required: false },
       { key: 'url3', type: 'url', required: false },
       { key: 'file1', type: 'string', size: 150, required: false },
-      { key: 'file2', type: 'string', size: 150, required: false },
-      { key: 'file3', type: 'string', size: 150, required: false },
+      { key: 'file1name', type: 'string', size: 100, required: false },
       { key: 'file1type', type: 'string', size: 20, required: false },
+      { key: 'file2', type: 'string', size: 150, required: false },
+      { key: 'file2name', type: 'string', size: 100, required: false },
       { key: 'file2type', type: 'string', size: 20, required: false },
+      { key: 'file3', type: 'string', size: 150, required: false },
+      { key: 'file3name', type: 'string', size: 100, required: false },
       { key: 'file3type', type: 'string', size: 20, required: false }
     ]
   },

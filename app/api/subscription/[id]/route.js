@@ -45,21 +45,20 @@ export async function PUT(req, context) {
 
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
-    // 確保 price 是整數
+    // 確保 price 是數字
     const { name, site, price, nextdate, note, account, currency } = body;
     const continueValue = body.continue;
     const bodyData = {
       name,
-      price: price ? parseInt(price, 10) : 0,
+      price: price !== undefined && price !== null ? Number(price) : 0,
     };
 
     // 只有在提供值時才添加可選欄位
-    // 日期欄位：空字串轉為 null（Appwrite datetime 不接受空字串）
     if (nextdate !== undefined) bodyData.nextdate = nextdate || null;
-    if (site !== undefined) bodyData.site = site || "";
+    if (site !== undefined) bodyData.site = site || null;
     if (note !== undefined) bodyData.note = note || "";
     if (account !== undefined) bodyData.account = account || "";
-    if (currency !== undefined) bodyData.currency = currency || "";
+    if (currency !== undefined) bodyData.currency = currency || "TWD";
     if (continueValue !== undefined) bodyData.continue = continueValue;
 
     const res = await databases.updateDocument(

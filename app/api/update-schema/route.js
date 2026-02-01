@@ -14,10 +14,13 @@ const TABLE_SCHEMAS = {
     { key: 'url2', type: 'url' },
     { key: 'url3', type: 'url' },
     { key: 'file1', type: 'string', size: 150 },
-    { key: 'file2', type: 'string', size: 150 },
-    { key: 'file3', type: 'string', size: 150 },
+    { key: 'file1name', type: 'string', size: 100 },
     { key: 'file1type', type: 'string', size: 20 },
+    { key: 'file2', type: 'string', size: 150 },
+    { key: 'file2name', type: 'string', size: 100 },
     { key: 'file2type', type: 'string', size: 20 },
+    { key: 'file3', type: 'string', size: 150 },
+    { key: 'file3name', type: 'string', size: 100 },
     { key: 'file3type', type: 'string', size: 20 }
   ],
   // Add other schemas as needed

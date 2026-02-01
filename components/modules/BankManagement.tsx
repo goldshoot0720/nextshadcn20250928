@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Building2, 
   Plus, 
+  Minus,
   ChevronDown, 
   ChevronUp, 
   Link as LinkIcon, 
@@ -47,6 +49,32 @@ export default function BankManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // 取得已存在的不重複資料用於下拉選單
+  const existingNames = useMemo(() => {
+    const names = banks.map(b => b.name).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [banks]);
+
+  const existingSites = useMemo(() => {
+    const sites = banks.map(b => b.site).filter(Boolean) as string[];
+    return Array.from(new Set(sites)).sort();
+  }, [banks]);
+
+  const existingAddresses = useMemo(() => {
+    const addresses = banks.map(b => b.address).filter(Boolean) as string[];
+    return Array.from(new Set(addresses)).sort();
+  }, [banks]);
+
+  const existingCards = useMemo(() => {
+    const cards = banks.map(b => b.card).filter(Boolean) as string[];
+    return Array.from(new Set(cards)).sort();
+  }, [banks]);
+
+  const existingAccounts = useMemo(() => {
+    const accounts = banks.map(b => b.account).filter(Boolean) as string[];
+    return Array.from(new Set(accounts)).sort();
+  }, [banks]);
 
   // 搜尋過濾
   const filteredBanks = useMemo(() => {
@@ -149,41 +177,240 @@ export default function BankManagement() {
         <FormCard title={editingId ? "編輯銀行資料" : "新增銀行資料"} accentColor="from-blue-500 to-blue-600">
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormGrid>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">銀行名稱</label>
-                <Input placeholder="例如: 台北富邦" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">銀行名稱 / Bank Name</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 space-y-1">
+                    <Input placeholder="例如: 台北富邦 / e.g. Taipei Fubon" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-12 rounded-xl w-full" />
+                    <div className="px-1 h-4">
+                      {form.name ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入名稱 / Please enter name</span>
+                      )}
+                    </div>
+                  </div>
+                  {existingNames.length > 0 && (
+                    <Select value="" onValueChange={(val) => val && setForm({ ...form, name: val })}>
+                      <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                        <ChevronDown className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingNames.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">存款金額</label>
-                <Input type="number" placeholder="0" value={form.deposit} onChange={(e) => setForm({ ...form, deposit: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">存款金額 / Deposit Amount</label>
+                <div className="flex gap-1 items-center">
+                  <Input type="number" placeholder="0" value={form.deposit || ""} onChange={(e) => setForm({ ...form, deposit: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl flex-1" />
+                  {(form.deposit || 0) > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      <button 
+                        type="button"
+                        onClick={() => setForm({ ...form, deposit: (form.deposit || 0) + 1000 })}
+                        className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 rounded transition-colors"
+                        title="+1000"
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setForm({ ...form, deposit: Math.max(0, (form.deposit || 0) - 1000) })}
+                        className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                        title="-1000"
+                      >
+                        <Minus size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="px-1 h-4">
+                  {(form.deposit || 0) > 0 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - / Can use + or -</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入金額 / (Optional) Please enter amount</span>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">官方網站 URL</label>
-                <Input type="url" placeholder="https://..." value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">官方網站 URL / Official Website URL</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 space-y-1">
+                    <Input type="url" placeholder="https://..." value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })} className="h-12 rounded-xl w-full" />
+                    <div className="px-1 h-4">
+                      {form.site ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入 URL / (Optional) Please enter URL</span>
+                      )}
+                    </div>
+                  </div>
+                  {existingSites.length > 0 && (
+                    <Select value="" onValueChange={(val) => val && setForm({ ...form, site: val })}>
+                      <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                        <ChevronDown className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingSites.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">分行地址</label>
-                <Input placeholder="分行名稱或地址" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">分行地址 / Branch Address</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 space-y-1">
+                    <Input placeholder="分行名稱或地址 / Branch name or address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="h-12 rounded-xl w-full" />
+                    <div className="px-1 h-4">
+                      {form.address ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入地址 / (Optional) Please enter address</span>
+                      )}
+                    </div>
+                  </div>
+                  {existingAddresses.length > 0 && (
+                    <Select value="" onValueChange={(val) => val && setForm({ ...form, address: val })}>
+                      <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                        <ChevronDown className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingAddresses.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">提款額度</label>
-                <Input type="number" placeholder="0" value={form.withdrawals} onChange={(e) => setForm({ ...form, withdrawals: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">提款額度 / Withdrawal Limit</label>
+                <div className="flex gap-1 items-center">
+                  <Input type="number" placeholder="0" value={form.withdrawals || ""} onChange={(e) => setForm({ ...form, withdrawals: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl flex-1" />
+                  {(form.withdrawals || 0) > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      <button 
+                        type="button"
+                        onClick={() => setForm({ ...form, withdrawals: (form.withdrawals || 0) + 1000 })}
+                        className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 rounded transition-colors"
+                        title="+1000"
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setForm({ ...form, withdrawals: Math.max(0, (form.withdrawals || 0) - 1000) })}
+                        className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                        title="-1000"
+                      >
+                        <Minus size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="px-1 h-4">
+                  {(form.withdrawals || 0) > 0 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - / Can use + or -</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入金額 / (Optional) Please enter amount</span>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">轉帳額度</label>
-                <Input type="number" placeholder="0" value={form.transfer} onChange={(e) => setForm({ ...form, transfer: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">轉帳額度 / Transfer Limit</label>
+                <div className="flex gap-1 items-center">
+                  <Input type="number" placeholder="0" value={form.transfer || ""} onChange={(e) => setForm({ ...form, transfer: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl flex-1" />
+                  {(form.transfer || 0) > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      <button 
+                        type="button"
+                        onClick={() => setForm({ ...form, transfer: (form.transfer || 0) + 1000 })}
+                        className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 rounded transition-colors"
+                        title="+1000"
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setForm({ ...form, transfer: Math.max(0, (form.transfer || 0) - 1000) })}
+                        className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                        title="-1000"
+                      >
+                        <Minus size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="px-1 h-4">
+                  {(form.transfer || 0) > 0 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - / Can use + or -</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入金額 / (Optional) Please enter amount</span>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">優惠活動 URL</label>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">優惠活動 URL / Activity URL</label>
                 <Input type="url" placeholder="https://..." value={form.activity} onChange={(e) => setForm({ ...form, activity: e.target.value })} className="h-12 rounded-xl" />
+                <div className="px-1 h-4">
+                  {form.activity ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入 URL / (Optional) Please enter URL</span>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">卡片資訊</label>
-                <Input placeholder="卡片類型或後四碼" value={form.card} onChange={(e) => setForm({ ...form, card: e.target.value })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">卡片資訊 / Card Info</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 space-y-1">
+                    <Input placeholder="卡片類型或後四碼 / Card type or last 4 digits" value={form.card} onChange={(e) => setForm({ ...form, card: e.target.value })} className="h-12 rounded-xl w-full" />
+                    <div className="px-1 h-4">
+                      {form.card ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入卡片資訊 / (Optional) Please enter card info</span>
+                      )}
+                    </div>
+                  </div>
+                  {existingCards.length > 0 && (
+                    <Select value="" onValueChange={(val) => val && setForm({ ...form, card: val })}>
+                      <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                        <ChevronDown className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingCards.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">帳號/用戶名</label>
-                <Input placeholder="網銀帳號或登入 ID" value={form.account} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">帳號/用戶名 / Account/Username</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 space-y-1">
+                    <Input placeholder="網銀帳號或登入 ID / Online banking or login ID" value={form.account} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl w-full" />
+                    <div className="px-1 h-4">
+                      {form.account ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入帳號 / (Optional) Please enter account</span>
+                      )}
+                    </div>
+                  </div>
+                  {existingAccounts.length > 0 && (
+                    <Select value="" onValueChange={(val) => val && setForm({ ...form, account: val })}>
+                      <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                        <ChevronDown className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingAccounts.map(acc => <SelectItem key={acc} value={acc}>{acc}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
             </FormGrid>
             <FormActions>

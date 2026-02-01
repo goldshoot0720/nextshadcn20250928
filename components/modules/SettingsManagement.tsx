@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus, X, CheckCircle2, Key } from "lucide-react";
 import { Button, DataCard, SectionHeader } from "@/components/ui";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,21 @@ export default function SettingsManagement() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkIsUpdate, setBulkIsUpdate] = useState(false);
   const [bulkQueue, setBulkQueue] = useState<string[]>([]);
+  const bulkQueueRef = useRef<string[]>([]);
+  const bulkModeRef = useRef(false);
+  const bulkIsUpdateRef = useRef(false);
+
+  // 計算待處理表格數量
+  const missingTablesCount = useMemo(() => 
+    dbStats?.collections.filter(col => col.error).length || 0,
+    [dbStats]
+  );
+  
+  const mismatchTablesCount = useMemo(() => 
+    dbStats?.collections.filter(col => col.schemaMismatch && !col.error && !recentlyCreated.has(col.name)).length || 0,
+    [dbStats, recentlyCreated]
+  );
+
 
   // 載入 Appwrite 設定
   useEffect(() => {
@@ -124,6 +139,12 @@ export default function SettingsManagement() {
     const queue = [...missingTables];
     const first = queue.shift();
     setBulkQueue(queue);
+    
+    // 同步更新 Ref 以確保 handleCreateTable 回呼能讀取到最新狀態
+    bulkModeRef.current = true;
+    bulkIsUpdateRef.current = false;
+    bulkQueueRef.current = queue;
+
     if (first) handleCreateTable(first, false);
   };
 
@@ -151,6 +172,12 @@ export default function SettingsManagement() {
     const queue = [...mismatchTables];
     const first = queue.shift();
     setBulkQueue(queue);
+    
+    // 同步更新 Ref 以確保 handleCreateTable 回呼能讀取到最新狀態
+    bulkModeRef.current = true;
+    bulkIsUpdateRef.current = true;
+    bulkQueueRef.current = queue;
+
     if (first) handleCreateTable(first, true);
   };
 
@@ -224,7 +251,7 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
 
   const handleCreateTable = async (tableName: string, isUpdate = false) => {
     // 如果是更新操作且不在批次模式中，顯示警告
-    if (isUpdate && !bulkMode) {
+    if (isUpdate && !bulkModeRef.current) {
       const confirmed = confirm(
         `⚠️ 警告：更新 ${tableName} 表結構需要重建表格\n\n` +
         `這個操作將：\n` +
@@ -312,13 +339,14 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
             clearAllCaches(); // 清除所有模組快取
             
             // 如果是在批次模式中，且還有後續表格，處理下一個而不重新整理
-            if (bulkMode && bulkQueue.length > 0) {
-              const nextQueue = [...bulkQueue];
+            if (bulkModeRef.current && bulkQueueRef.current.length > 0) {
+              const nextQueue = [...bulkQueueRef.current];
               const nextTable = nextQueue.shift();
               setBulkQueue(nextQueue);
+              bulkQueueRef.current = nextQueue;
               if (nextTable) {
                 setTimeout(() => {
-                  handleCreateTable(nextTable, bulkIsUpdate); 
+                  handleCreateTable(nextTable, bulkIsUpdateRef.current); 
                 }, 1000);
                 return;
               }
@@ -328,8 +356,9 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
             setTimeout(() => {
               fetchStats(); // 重新載入資料庫統計
               setCreating(null);
-              const wasInBulk = bulkMode; // 保存當前狀態
+              const wasInBulk = bulkModeRef.current; // 保存當前狀態
               setBulkMode(false); // 重設批次模式
+              bulkModeRef.current = false;
               
               // 完成後自動刷新頁面以確保顯示最新狀態
               setTimeout(() => {
@@ -375,6 +404,8 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
   const closeProgressDialog = () => {
     setProgress(null);
     setCreating(null);
+    setBulkMode(false);
+    bulkModeRef.current = false;
   };
 
   return (
@@ -500,23 +531,27 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
                   <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns || 0}</span>
                 </div>
                 <div className="flex gap-2">
-                  <Button 
-                    onClick={handleBulkCreate}
-                    size="sm"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1"
-                    title="一次建立所有不存在的表格"
-                  >
-                    <Plus size={14} /> 一鍵全建立
-                  </Button>
-                  <Button 
-                    onClick={handleBulkRebuild}
-                    size="sm"
-                    variant="outline"
-                    className="text-orange-600 border-orange-200 hover:bg-orange-50 flex items-center gap-1"
-                    title="一次重建所有結構不一致的表格"
-                  >
-                    🔄 一鍵全重建
-                  </Button>
+                  {missingTablesCount > 0 && (
+                    <Button 
+                      onClick={handleBulkCreate}
+                      size="sm"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1"
+                      title="一次建立所有不存在的表格"
+                    >
+                      <Plus size={14} /> 一鍵全建立
+                    </Button>
+                  )}
+                  {mismatchTablesCount > 0 && (
+                    <Button 
+                      onClick={handleBulkRebuild}
+                      size="sm"
+                      variant="outline"
+                      className="text-orange-600 border-orange-200 hover:bg-orange-50 flex items-center gap-1"
+                      title="一次重建所有結構不一致的表格"
+                    >
+                      🔄 一鍵全重建
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="space-y-2 text-sm">

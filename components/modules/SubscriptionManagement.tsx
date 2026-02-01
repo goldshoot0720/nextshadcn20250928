@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Plus, Minus, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +41,12 @@ export default function SubscriptionManagement() {
   const existingSites = useMemo(() => {
     const sites = subscriptions.map(s => s.site).filter(Boolean) as string[];
     return Array.from(new Set(sites)).sort();
+  }, [subscriptions]);
+
+  // 取得已存在的不重複帳號
+  const existingAccounts = useMemo(() => {
+    const accounts = subscriptions.map(s => s.account).filter(Boolean) as string[];
+    return Array.from(new Set(accounts)).sort();
   }, [subscriptions]);
 
   // 搜尋過濾
@@ -175,14 +181,22 @@ export default function SubscriptionManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Prepare form data ensuring price is properly handled
+      const formDataToSend = {
+        ...form,
+        price: form.price !== undefined && form.price !== null ? form.price : 0
+      };
+      
       if (editingId) {
-        await updateSubscription(editingId, form);
+        await updateSubscription(editingId, formDataToSend);
       } else {
-        await createSubscription(form);
+        await createSubscription(formDataToSend);
       }
       resetForm();
-    } catch {
-      alert("操作失敗，請稍後再試");
+    } catch (error) {
+      console.error('Subscription operation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : '操作失敗，請稍後再試';
+      alert(errorMessage);
     }
   };
 
@@ -190,8 +204,10 @@ export default function SubscriptionManagement() {
     if (!confirm("確定刪除？")) return;
     try {
       await deleteSubscription(id);
-    } catch {
-      alert("刪除失敗，請稍後再試");
+    } catch (error) {
+      console.error('Delete subscription failed:', error);
+      const errorMessage = error instanceof Error ? error.message : '刪除失敗，請稍後再試';
+      alert(errorMessage);
     }
   };
 
@@ -199,7 +215,7 @@ export default function SubscriptionManagement() {
     setForm({ 
       name: sub.name,
       site: sub.site,
-      price: sub.price,
+      price: sub.price !== undefined && sub.price !== null && sub.price !== 0 ? sub.price : undefined,
       nextdate: sub.nextdate ? formatDate(sub.nextdate) : "",
       note: sub.note || "",
       account: sub.account || "",
@@ -244,8 +260,10 @@ export default function SubscriptionManagement() {
     try {
       await deleteSubscription(editingId);
       resetForm();
-    } catch {
-      alert("刪除失敗，請稍後再試");
+    } catch (error) {
+      console.error('Delete subscription from form failed:', error);
+      const errorMessage = error instanceof Error ? error.message : '刪除失敗，請稍後再試';
+      alert(errorMessage);
     }
   };
 
@@ -302,13 +320,22 @@ export default function SubscriptionManagement() {
             <FormGrid>
               {/* 服務名稱：可輸入或從下拉選單選擇 */}
               <div className="flex gap-2">
-                <Input 
-                  placeholder="服務名稱" 
-                  value={form.name} 
-                  onChange={(e) => setForm({ ...form, name: e.target.value })} 
-                  required 
-                  className="h-12 rounded-xl flex-1" 
-                />
+                <div className="flex-1 space-y-1">
+                  <Input 
+                    placeholder="服務名稱 / Service Name" 
+                    value={form.name} 
+                    onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                    required 
+                    className="h-12 rounded-xl w-full" 
+                  />
+                  <div className="px-1 h-4">
+                    {form.name ? (
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                    ) : (
+                      <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入名稱 / Please enter name</span>
+                    )}
+                  </div>
+                </div>
                 {existingNames.length > 0 && (
                   <Select 
                     value="" 
@@ -331,13 +358,22 @@ export default function SubscriptionManagement() {
               </div>
               {/* 網站 URL：可輸入或從下拉選單選擇 */}
               <div className="flex gap-2">
-                <Input 
-                  placeholder="網站 URL" 
-                  type="url" 
-                  value={form.site || ""} 
-                  onChange={(e) => setForm({ ...form, site: e.target.value })} 
-                  className="h-12 rounded-xl flex-1" 
-                />
+                <div className="flex-1 space-y-1">
+                  <Input 
+                    placeholder="網站 URL / Website URL" 
+                    type="url" 
+                    value={form.site || ""} 
+                    onChange={(e) => setForm({ ...form, site: e.target.value })} 
+                    className="h-12 rounded-xl w-full" 
+                  />
+                  <div className="px-1 h-4">
+                    {form.site ? (
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入 URL / (Optional) Please enter URL</span>
+                    )}
+                  </div>
+                </div>
                 {existingSites.length > 0 && (
                   <Select 
                     value="" 
@@ -358,7 +394,37 @@ export default function SubscriptionManagement() {
                   </Select>
                 )}
               </div>
-              <Input placeholder="月費金額" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })} required className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <div className="flex gap-1 items-center">
+                  <Input 
+                    placeholder="價錢 / Price" 
+                    type="number" 
+                    min="0" 
+                    step="0.01"
+                    value={form.price ?? ""} 
+                    onChange={(e) => setForm({ ...form, price: e.target.value === "" ? undefined : parseFloat(e.target.value) || 0 })} 
+                    className="h-12 rounded-xl flex-1" 
+                  />
+                  <div className="px-1 h-4">
+                    {(form.price !== undefined && form.price !== null && form.price > 0) ? (
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入價格 / (Optional) Please enter price</span>
+                    )}
+                  </div>
+                </div>
+                <div className="px-1 h-4">
+                  {(form.price || 0) > 0 ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">
+                      可以 + 或 - / Can use + or -
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                      (選填) 請輸入數字 / (Optional) Please enter a number
+                    </span>
+                  )}
+                </div>
+              </div>
               <Select value={form.currency || "TWD"} onValueChange={(value) => setForm({ ...form, currency: value })}>
                 <SelectTrigger className="h-12 rounded-xl">
                   <SelectValue placeholder="選擇幣別" />
@@ -372,8 +438,91 @@ export default function SubscriptionManagement() {
                   <SelectItem value="HKD">港幣 (HKD)</SelectItem>
                 </SelectContent>
               </Select>
-              <Input placeholder="下次付款日期" type="date" value={form.nextdate || ""} onChange={(e) => setForm({ ...form, nextdate: e.target.value })} className="h-12 rounded-xl" />
-              <Input placeholder="帳號" value={form.account || ""} onChange={(e) => setForm({ ...form, account: e.target.value })} className="h-12 rounded-xl" />
+              <div className="space-y-1">
+                <div className="flex gap-1 items-center">
+                  <Input 
+                    placeholder="下次付款日期 / Next Payment Date" 
+                    type="date" 
+                    value={form.nextdate || ""} 
+                    onChange={(e) => setForm({ ...form, nextdate: e.target.value })} 
+                    className="h-12 rounded-xl flex-1" 
+                  />
+                  {form.nextdate && (
+                    <div className="flex flex-col gap-0.5">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (!form.nextdate) return;
+                          const d = new Date(form.nextdate);
+                          d.setDate(d.getDate() + 30);
+                          setForm({ ...form, nextdate: d.toISOString().split('T')[0] });
+                        }}
+                        className="p-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded transition-colors"
+                        title="+30天"
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (!form.nextdate) return;
+                          const d = new Date(form.nextdate);
+                          d.setDate(d.getDate() - 30);
+                          setForm({ ...form, nextdate: d.toISOString().split('T')[0] });
+                        }}
+                        className="p-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 rounded transition-colors"
+                        title="-30天"
+                      >
+                        <Minus size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="px-1 h-4">
+                  {form.nextdate ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">可以 + 或 - (30天) / Can use + or - (30 Days)</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇日期 / (Optional) Please select a date</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <Input 
+                    placeholder="帳號 / Account" 
+                    value={form.account || ""} 
+                    onChange={(e) => setForm({ ...form, account: e.target.value })} 
+                    className="h-12 rounded-xl w-full" 
+                  />
+                  <div className="px-1 h-4">
+                    {form.account ? (
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入帳號 / (Optional) Please enter account</span>
+                    )}
+                  </div>
+                </div>
+                {existingAccounts.length > 0 && (
+                  <Select 
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value) {
+                        setForm({ ...form, account: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                      <ChevronDown className="h-4 w-4" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingAccounts.map((account) => (
+                        <SelectItem key={account} value={account}>{account}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
               <label className="flex items-center gap-2 h-12 px-3 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
                 <input 
                   type="checkbox" 
@@ -384,13 +533,22 @@ export default function SubscriptionManagement() {
                 <span className="text-sm text-gray-700 dark:text-gray-300">續訂</span>
               </label>
             </FormGrid>
-            <Textarea 
-              placeholder="備註" 
-              value={form.note || ""} 
-              onChange={(e) => setForm({ ...form, note: e.target.value })} 
-              className="rounded-xl min-h-[100px] resize-y"
-              rows={3}
-            />
+            <div className="space-y-1">
+              <Textarea 
+                placeholder="備註 / Note" 
+                value={form.note || ""} 
+                onChange={(e) => setForm({ ...form, note: e.target.value })} 
+                className="rounded-xl min-h-[100px] resize-y w-full"
+                rows={3}
+              />
+              <div className="px-1 h-4">
+                {form.note ? (
+                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入備註 / (Optional) Please enter note</span>
+                )}
+              </div>
+            </div>
             <FormActions>
               <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl font-medium shadow-lg shadow-green-500/25">
                 {editingId ? "更新訂閱" : "新增訂閱"}

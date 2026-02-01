@@ -106,7 +106,7 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
               <IntroItem icon={Cloud} label="網頁部署" value="Vercel 雲端空間" color="text-blue-600" />
               <IntroItem icon={Layout} label="前端框架" value="Next.js (基於 React)" color="text-indigo-600" />
               <IntroItem icon={Server} label="後端服務" value="Appwrite (BaaS 解決方案)" color="text-pink-600" />
-              <IntroItem icon={FileVideo} label="多媒體儲存" value="Vercel Blob (圖片/音樂/影片)" color="text-orange-600" />
+              <IntroItem icon={FileVideo} label="多媒體儲存" value="Appwrite Storage (圖片/音樂/影片/文件)" color="text-orange-600" />
             </div>
           </DataCard>
 
@@ -369,8 +369,9 @@ function AlertSection({ stats }: { stats: ReturnType<typeof useDashboardStats>["
 }
 
 // 多媒體儲存統計
-function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number; totalVideos: number; totalMusic: number; imagesSize: number; videosSize: number; musicSize: number; totalSize: number; storageLimit: number; usagePercentage: number }; onNavigate: (id: string) => void }) {
+function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number; totalVideos: number; totalMusic: number; totalDocuments: number; storageImagesCount: number; storageVideosCount: number; storageMusicCount: number; imagesSize: number; videosSize: number; musicSize: number; documentsSize: number; otherSize: number; totalSize: number; totalFiles: number; storageLimit: number; usagePercentage: number }; onNavigate: (id: string) => void }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [includeDbRecords, setIncludeDbRecords] = useState(false);
   
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -404,6 +405,20 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
 
       {isExpanded && (
         <>
+          {/* 選項勾選 */}
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="includeDbRecords"
+              checked={includeDbRecords}
+              onChange={(e) => setIncludeDbRecords(e.target.checked)}
+              className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <label htmlFor="includeDbRecords" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+              包含所有圖片、影片、音樂、文件（鋒兄圖片、鋒兄影片、鋒兄音樂、鋒兄文件）
+            </label>
+          </div>
+
           {/* 儲存總覽 */}
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-2">
@@ -421,27 +436,34 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
           </div>
 
           {/* 分類統計 */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <MediaStatCard 
           icon={Image} 
           title="鋒兄圖片" 
-          count={stats.totalImages} 
+          count={includeDbRecords ? stats.totalImages + stats.storageImagesCount : stats.totalImages} 
           size={formatBytes(stats.imagesSize)} 
           color="blue"
         />
         <MediaStatCard 
           icon={FileVideo} 
           title="鋒兄影片" 
-          count={stats.totalVideos} 
+          count={includeDbRecords ? stats.totalVideos + stats.storageVideosCount : stats.totalVideos} 
           size={formatBytes(stats.videosSize)} 
           color="indigo"
         />
         <MediaStatCard 
           icon={Music} 
           title="鋒兄音樂" 
-          count={stats.totalMusic} 
+          count={includeDbRecords ? stats.totalMusic + stats.storageMusicCount : stats.totalMusic} 
           size={formatBytes(stats.musicSize)} 
           color="purple"
+        />
+        <MediaStatCard 
+          icon={FileText} 
+          title="鋒兄文件" 
+          count={includeDbRecords ? stats.totalDocuments : 0} 
+          size={formatBytes(stats.documentsSize)} 
+          color="green"
         />
       </div>
         </>
@@ -456,6 +478,7 @@ function MediaStatCard({ icon: Icon, title, count, size, color }: { icon: any; t
     blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400' },
     indigo: { bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-600 dark:text-indigo-400' },
     purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400' },
+    green: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400' },
   };
 
   const colors = colorMap[color];

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Calendar, Search } from "lucide-react";
+import { Plus, Calendar, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionHeader, PageTitle } from "@/components/ui/section-header";
 import { FormCard, FormGrid, FormActions } from "@/components/ui/form-card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataCard } from "@/components/ui/data-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
@@ -48,6 +49,11 @@ const INITIAL_FORM: RoutineFormData = {
 export default function RoutineManagement() {
   const { items: routines, loading, error, create, update, remove, fetchAll } = useCrud<Routine>(API_ENDPOINTS.ROUTINE);
   const [form, setForm] = useState<RoutineFormData>(INITIAL_FORM);
+
+  // Extract unique existing names for "Select or Input" pattern
+  const existingNames = useMemo(() => {
+    return Array.from(new Set(routines.map(r => r.name).filter(Boolean))).sort();
+  }, [routines]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
@@ -254,65 +260,130 @@ export default function RoutineManagement() {
             <FormCard title={editingId ? "編輯例行事項" : "新增例行事項"}>
               <form onSubmit={handleSubmit}>
                 <FormGrid>
-                  <div>
+                  <div className="space-y-1">
                     <label className="block text-sm font-medium mb-2">
-                      名稱 <span className="text-red-500">*</span>
+                      名稱 / Name <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="例如：晨跑、閱讀"
-                      maxLength={100}
-                      required
-                    />
+                    <div className="flex gap-1 items-center">
+                      <Input
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        placeholder="名稱 / Name (例如：晨跑、閱讀)"
+                        maxLength={100}
+                        required
+                        className="h-12 rounded-xl flex-1"
+                      />
+                      {existingNames.length > 0 && (
+                        <Select
+                          value=""
+                          onValueChange={(val) => val && setForm({ ...form, name: val })}
+                        >
+                          <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center">
+                            <ChevronDown className="h-4 w-4" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {existingNames.map(name => (
+                              <SelectItem key={name} value={name}>{name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <div className="px-1 h-4">
+                      {form.name ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">請輸入名稱 / Please enter name</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">備註</label>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium mb-2">備註 / Note</label>
                     <Textarea
                       value={form.note}
                       onChange={(e) => setForm({ ...form, note: e.target.value })}
-                      placeholder="額外說明"
+                      placeholder="額外說明 / Additional Description"
                       maxLength={100}
                       rows={3}
+                      className="rounded-xl"
                     />
+                    <div className="px-1 h-4">
+                      {form.note ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入備註 / (Optional) Please enter note</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">最近例行日期之一(最近)</label>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium mb-2">最近例行日期之一 / Last Date 1 (Recent)</label>
                     <Input
                       type="date"
                       value={form.lastdate1}
                       onChange={(e) => setForm({ ...form, lastdate1: e.target.value })}
+                      className="h-12 rounded-xl"
                     />
+                    <div className="px-1 h-4">
+                      {form.lastdate1 ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已選擇 / Selected</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇日期 / (Optional) Please select a date</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">最近例行日期之二(次近)</label>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium mb-2">最近例行日期之二 / Last Date 2</label>
                     <Input
                       type="date"
                       value={form.lastdate2}
                       onChange={(e) => setForm({ ...form, lastdate2: e.target.value })}
+                      className="h-12 rounded-xl"
                     />
+                    <div className="px-1 h-4">
+                      {form.lastdate2 ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已選擇 / Selected</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇日期 / (Optional) Please select a date</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">最近例行日期之三(最遠)</label>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium mb-2">最近例行日期之三 / Last Date 3 (Oldest)</label>
                     <Input
                       type="date"
                       value={form.lastdate3}
                       onChange={(e) => setForm({ ...form, lastdate3: e.target.value })}
+                      className="h-12 rounded-xl"
                     />
+                    <div className="px-1 h-4">
+                      {form.lastdate3 ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已選擇 / Selected</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇日期 / (Optional) Please select a date</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">連結</label>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium mb-2">連結 / Link</label>
                     <Input
                       type="url"
                       value={form.link}
                       onChange={(e) => setForm({ ...form, link: e.target.value })}
                       placeholder="https://..."
+                      className="h-12 rounded-xl"
                     />
+                    <div className="px-1 h-4">
+                      {form.link ? (
+                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入 URL / (Optional) Please enter URL</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="col-span-2">
@@ -354,7 +425,7 @@ export default function RoutineManagement() {
                           <img
                             src={photoPreviewUrl}
                             alt="圖片預覽"
-                            className="w-32 h-32 object-cover rounded border"
+                            className="w-32 h-32 object-contain rounded border"
                           />
                         </div>
                       )}
@@ -427,7 +498,7 @@ export default function RoutineManagement() {
                               <img
                                 src={routine.photo}
                                 alt={routine.name}
-                                className="w-12 h-12 object-cover rounded"
+                                className="w-12 h-12 object-contain rounded"
                               />
                             ) : (
                               <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
@@ -476,7 +547,7 @@ export default function RoutineManagement() {
                           <img
                             src={routine.photo}
                             alt={routine.name}
-                            className="w-16 h-16 object-cover rounded flex-shrink-0"
+                            className="w-16 h-16 object-contain rounded flex-shrink-0"
                           />
                         ) : (
                           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center flex-shrink-0">
