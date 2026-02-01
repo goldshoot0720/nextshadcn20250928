@@ -902,6 +902,9 @@ export default function MusicLyrics() {
         // 根據 language 字段確定音頻文件的語言
         const lang = (music.language || 'zh') as 'zh' | 'en' | 'ja' | 'yue' | 'ko';
         
+        // 確保音頻文件 URL 存在且有效
+        const audioUrl = music.file || '';
+        
         return {
           id: music.$id,
           title: music.name,
@@ -915,8 +918,12 @@ export default function MusicLyrics() {
             ko: parsedLyrics.ko,
           },
           audioFiles: {
-            [lang]: music.file, // 使用 Appwrite Storage URL
-          } as any,
+            zh: audioUrl, // 所有語言都使用同一個音頻文件
+            en: audioUrl,
+            ja: audioUrl,
+            yue: audioUrl,
+            ko: audioUrl,
+          },
           genre: music.category || "台灣民謠",
           year: new Date(music.$createdAt).getFullYear(),
           isFavorite: false,
@@ -926,6 +933,9 @@ export default function MusicLyrics() {
 
       // 合併 Appwrite 數據和示例數據
       setSongs([...convertedSongs, ...SAMPLE_SONGS]);
+      
+      console.log('[MusicLyrics] Loaded songs from Appwrite:', convertedSongs.length);
+      console.log('[MusicLyrics] First song audio URL:', convertedSongs[0]?.audioFiles.zh);
     }
   }, [appwriteMusic]);
 
@@ -1382,27 +1392,37 @@ export default function MusicLyrics() {
 
   // 播放控制
   const togglePlay = useCallback(() => {
-    if (!selectedSong) return;
+    if (!selectedSong) {
+      console.warn('[togglePlay] No song selected');
+      return;
+    }
 
     if (currentAudio) {
       if (isPlaying) {
         currentAudio.pause();
         setIsPlaying(false);
+        console.log('[togglePlay] Paused');
       } else {
         currentAudio.play().catch((error) => {
-          console.warn('Audio playback failed:', error);
+          console.warn('[togglePlay] Audio playback failed:', error);
         });
         setIsPlaying(true);
+        console.log('[togglePlay] Resumed');
       }
     } else {
       const audioFile = getCurrentAudioUrl();
+      console.log('[togglePlay] Audio file URL:', audioFile);
+      console.log('[togglePlay] Current language:', currentLanguage);
+      console.log('[togglePlay] Selected song:', selectedSong.title);
+      console.log('[togglePlay] Audio files:', selectedSong.audioFiles);
+      
       if (audioFile) {
         const audio = new Audio();
         
         // 設置音頻事件監聽器
         audio.addEventListener('loadedmetadata', () => {
           setDuration(audio.duration);
-          console.log(`Audio loaded: ${audio.duration}s`);
+          console.log(`[Audio] Loaded metadata: ${audio.duration}s`);
         });
         
         audio.addEventListener('timeupdate', () => {
@@ -1413,21 +1433,29 @@ export default function MusicLyrics() {
           setIsPlaying(false);
           setCurrentTime(0);
           setCurrentAudio(null);
+          console.log('[Audio] Playback ended');
         });
         
         audio.addEventListener('error', (e) => {
-          console.error('Audio file error:', e);
-          console.warn(`Failed to load: ${audioFile}`);
+          console.error('[Audio] Error event:', e);
+          console.error('[Audio] Error details:', {
+            error: audio.error,
+            code: audio.error?.code,
+            message: audio.error?.message,
+            networkState: audio.networkState,
+            readyState: audio.readyState
+          });
+          console.warn(`[Audio] Failed to load: ${audioFile}`);
           // 如果音頻文件加載失敗，使用模擬播放
           startDemoPlayback();
         });
         
         audio.addEventListener('canplay', () => {
-          console.log('Audio can start playing');
+          console.log('[Audio] Can start playing');
         });
         
         audio.addEventListener('loadstart', () => {
-          console.log('Audio loading started');
+          console.log('[Audio] Loading started');
         });
         
         audio.volume = volume;
@@ -1436,7 +1464,7 @@ export default function MusicLyrics() {
         audioRef.current = audio;
         
         // 嘗試播放真實音頻
-        console.log(`Attempting to play: ${audioFile}`);
+        console.log(`[Audio] Attempting to play: ${audioFile}`);
         audio.load();
         audio.play().then(() => {
           console.log('Audio playback started successfully');
