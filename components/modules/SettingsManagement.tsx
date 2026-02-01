@@ -62,6 +62,12 @@ export default function SettingsManagement() {
   const bulkIsUpdateRef = useRef(false);
   const [storageStats, setStorageStats] = useState<any>(null);
   const [cleaningStorage, setCleaningStorage] = useState(false);
+  const [scanProgress, setScanProgress] = useState<{
+    stage: string;
+    current: number;
+    total: number;
+    message: string;
+  } | null>(null);
 
   // 計算待處理表格數量
   const missingTablesCount = useMemo(() => 
@@ -412,6 +418,8 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
 
   const handleCountOrphanedFiles = async () => {
     setCleaningStorage(true);
+    setScanProgress({ stage: '準備中', current: 0, total: 100, message: '正在連接到 Appwrite...' });
+    
     try {
       const config = getAppwriteConfig();
       const params = new URLSearchParams();
@@ -422,28 +430,42 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
       if (config.apiKey) params.set('_key', config.apiKey);
       params.set('action', 'count');
 
+      // Simulate progress stages
+      setScanProgress({ stage: '步驟 1/3', current: 10, total: 100, message: '獲取 Storage 檔案列表...' });
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setScanProgress({ stage: '步驟 2/3', current: 40, total: 100, message: '掃描資料庫引用...' });
+      
       const response = await fetch(`/api/storage-stats?${params.toString()}`);
+      
+      setScanProgress({ stage: '步驟 3/3', current: 70, total: 100, message: '比對檔案並分類...' });
+      
       const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error || '統計失敗');
       }
 
+      setScanProgress({ stage: '完成', current: 100, total: 100, message: '統計完成！' });
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setStorageStats(data);
       alert(`⚡ 統計結果：\n\n` +
         `💾 儲存空間總檔案：${data.totalFiles} 個\n` +
         `📋 資料庫已引用：${data.referencedFiles} 個\n` +
         `🗑️ 多餘檔案：${data.orphanedFiles} 個\n\n` +
         `分類明細：\n` +
-        `- 圖片：${data.orphanedByType.images || 0} 個\n` +
-        `- 影片：${data.orphanedByType.videos || 0} 個\n` +
-        `- 音樂：${data.orphanedByType.music || 0} 個\n` +
-        `- 文件：${data.orphanedByType.documents || 0} 個\n` +
-        `- 播客：${data.orphanedByType.podcasts || 0} 個`);
+        `- 圖片：${data.orphanedByType?.images || 0} 個\n` +
+        `- 影片：${data.orphanedByType?.videos || 0} 個\n` +
+        `- 音樂：${data.orphanedByType?.music || 0} 個\n` +
+        `- 文件：${data.orphanedByType?.documents || 0} 個\n` +
+        `- 播客：${data.orphanedByType?.podcasts || 0} 個`);
     } catch (error) {
+      setScanProgress({ stage: '錯誤', current: 0, total: 100, message: '統計失敗' });
       alert('❗ 統計失敗：' + (error instanceof Error ? error.message : '未知錯誤'));
     } finally {
       setCleaningStorage(false);
+      setTimeout(() => setScanProgress(null), 1000);
     }
   };
 
@@ -823,6 +845,30 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
             <p className="text-sm text-gray-600 dark:text-gray-400">
               系統會掃描 Appwrite Storage 中的所有檔案，找出資料庫中未引用的多餘檔案（圖片、影片、音樂、文件、播客）。
             </p>
+            
+            {/* 進度条 */}
+            {scanProgress && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {scanProgress.stage}
+                  </span>
+                  <span className="text-xs text-blue-700 dark:text-blue-300">
+                    {scanProgress.current}%
+                  </span>
+                </div>
+                <div className="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${scanProgress.current}%` }}
+                  />
+                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  {scanProgress.message}
+                </p>
+              </div>
+            )}
+            
             {storageStats && (
               <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
