@@ -40,6 +40,9 @@ export function useBanks() {
       if (!sanitizedData.activity || sanitizedData.activity.trim() === '') {
         delete (sanitizedData as any).activity; // 刪除空值以避免驗證錯誤
       }
+      if (!sanitizedData.site || sanitizedData.site.trim() === '') {
+        delete (sanitizedData as any).site; // 刪除空值以避免驗證錯誤
+      }
       
       const newBank = await fetchApi<Bank>(API_ENDPOINTS.BANK, {
         method: "POST",
@@ -61,6 +64,9 @@ export function useBanks() {
       const sanitizedData = { ...formData };
       if (!sanitizedData.activity || sanitizedData.activity.trim() === '') {
         delete (sanitizedData as any).activity; // 刪除空值以避免驗證錯誤
+      }
+      if (!sanitizedData.site || sanitizedData.site.trim() === '') {
+        delete (sanitizedData as any).site; // 刪除空值以避免驗證錯誤
       }
       
       const updatedBank = await fetchApi<Bank>(`${API_ENDPOINTS.BANK}/${id}`, {
