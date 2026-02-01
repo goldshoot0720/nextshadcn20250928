@@ -66,11 +66,16 @@ async function getAllReferencedFileIds(databases, databaseId) {
   };
   
   const fileIdSet = new Set();
+  console.log('  📋 掃描 8 個集合...');
 
   for (const [collectionName, fields] of Object.entries(collectionFields)) {
     try {
       let offset = 0;
       const limit = 100;
+      let collectionTotal = 0;
+      let filesFound = 0;
+
+      console.log(`\n  📂 ${collectionName} (欄位: ${fields.join(', ')})`);
 
       while (true) {
         const response = await databases.listDocuments(databaseId, collectionName, [
@@ -78,11 +83,15 @@ async function getAllReferencedFileIds(databases, databaseId) {
           sdk.Query.offset(offset)
         ]);
 
+        collectionTotal += response.documents.length;
+
         response.documents.forEach(doc => {
           // Extract file IDs from collection-specific fields
           fields.forEach(field => {
             if (doc[field]) {
               fileIdSet.add(doc[field]);
+              filesFound++;
+              console.log(`    ✅ ${doc.$id}.${field} = ${doc[field].substring(0, 20)}...`);
             }
           });
         });
@@ -93,11 +102,14 @@ async function getAllReferencedFileIds(databases, databaseId) {
 
         offset += limit;
       }
+
+      console.log(`    📊 ${collectionName}: ${collectionTotal} 筆資料, ${filesFound} 個檔案引用`);
     } catch (error) {
-      console.error(`Error fetching ${collectionName}:`, error.message);
+      console.error(`    ❌ 錯誤 ${collectionName}:`, error.message);
     }
   }
 
+  console.log(`\n  🎯 總計引用檔案: ${fileIdSet.size} 個`);
   return fileIdSet;
 }
 
@@ -106,16 +118,38 @@ async function countOrphanedFiles(appwriteConfig) {
   try {
     const { storage, databases, bucketId, databaseId } = createAppwrite(appwriteConfig);
 
+    console.log('\n=== 開始 Appwrite Storage 掃描 ===');
+    
     // Get all storage files
+    console.log('\n步驟 1: 獲取所有 Storage 檔案...');
     const allFiles = await getAllStorageFiles(storage, bucketId);
+    console.log(`✅ 找到 ${allFiles.length} 個 Storage 檔案`);
 
     // Get all referenced file IDs
+    console.log('\n步驟 2: 掃描資料庫引用...');
     const referencedIds = await getAllReferencedFileIds(databases, databaseId);
+    console.log(`✅ 資料庫已引用 ${referencedIds.size} 個檔案`);
 
     // Find orphaned files
-    const orphanedFiles = allFiles.filter(file => !referencedIds.has(file.$id));
+    console.log('\n步驟 3: 逐筆比對檔案...');
+    const orphanedFiles = [];
+    const referencedFiles = [];
+    
+    allFiles.forEach((file, index) => {
+      const isReferenced = referencedIds.has(file.$id);
+      const status = isReferenced ? '✅ 已引用' : '❌ 多餘';
+      
+      console.log(`  [${index + 1}/${allFiles.length}] ${status} - ${file.name} (${file.$id})`);
+      
+      if (isReferenced) {
+        referencedFiles.push(file);
+      } else {
+        orphanedFiles.push(file);
+      }
+    });
 
     // Categorize orphaned files by type
+    console.log('\n步驟 4: 分類多餘檔案...');
     const orphanedByType = {
       images: 0,
       videos: 0,
@@ -129,11 +163,14 @@ async function countOrphanedFiles(appwriteConfig) {
       const mimeType = file.mimeType || '';
       if (mimeType.startsWith('image/')) {
         orphanedByType.images++;
+        console.log(`  🖼️ 圖片: ${file.name}`);
       } else if (mimeType.startsWith('video/')) {
         orphanedByType.videos++;
+        console.log(`  🎥 影片: ${file.name}`);
       } else if (mimeType.startsWith('audio/')) {
         orphanedByType.music++;
-        orphanedByType.podcasts++; // Audio files could be music or podcasts
+        orphanedByType.podcasts++;
+        console.log(`  🎵 音訊: ${file.name}`);
       } else if (
         mimeType === 'application/pdf' ||
         mimeType === 'text/plain' ||
@@ -142,10 +179,17 @@ async function countOrphanedFiles(appwriteConfig) {
         mimeType.includes('spreadsheet')
       ) {
         orphanedByType.documents++;
+        console.log(`  📄 文件: ${file.name}`);
       } else {
         orphanedByType.other++;
+        console.log(`  ❓ 其他: ${file.name}`);
       }
     });
+
+    console.log('\n=== 掃描完成 ===');
+    console.log(`總計: ${allFiles.length} 個檔案`);
+    console.log(`已引用: ${referencedFiles.length} 個`);
+    console.log(`多餘: ${orphanedFiles.length} 個`);
 
     return NextResponse.json({
       success: true,
