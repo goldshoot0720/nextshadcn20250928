@@ -4,6 +4,20 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to extract file ID from Appwrite URL or return as-is
+function extractFileId(value) {
+  if (!value) return null;
+  
+  // If it's a URL, extract the file ID
+  if (value.includes('/files/')) {
+    const match = value.match(/\/files\/([^\/\?]+)/);
+    if (match) return match[1];
+  }
+  
+  // Otherwise return as-is (already a file ID)
+  return value;
+}
+
 // Helper function to get collection ID by name
 async function getCollectionId(databases, databaseId, name) {
   try {
@@ -110,9 +124,13 @@ async function getAllReferencedFileIds(databases, databaseId) {
           // Extract file IDs from collection-specific fields
           fields.forEach(field => {
             if (doc[field]) {
-              fileIdSet.add(doc[field]);
-              filesFound++;
-              console.log(`    ✅ ${doc.$id}.${field} = ${doc[field].substring(0, 20)}...`);
+              // Extract file ID from URL or use value as-is
+              const fileId = extractFileId(doc[field]);
+              if (fileId) {
+                fileIdSet.add(fileId);
+                filesFound++;
+                console.log(`    ✅ ${doc.$id}.${field} = ${fileId}`);
+              }
             }
           });
         });
@@ -153,6 +171,9 @@ async function countOrphanedFiles(appwriteConfig) {
 
     // Find orphaned files
     console.log('\n步驟 3: 逐筆比對檔案...');
+    console.log(`  🔍 第一個 Storage 檔案 ID: ${allFiles[0]?.$id}`);
+    console.log(`  🔍 第一個引用 ID: ${Array.from(referencedIds)[0]}`);
+    
     const orphanedFiles = [];
     const referencedFiles = [];
     
