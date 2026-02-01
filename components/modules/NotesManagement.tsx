@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +15,9 @@ import { ArticleFormData, Article } from "@/types";
 import { formatDate } from "@/lib/formatters";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlyrPlayer } from "@/components/ui/plyr-player";
-import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp, Search, Plus, Minus } from "lucide-react";
+import { getProxiedMediaUrl, getAppwriteDownloadUrl } from "@/lib/utils";
+import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp, Search, Plus, Minus, Folder, FileIcon } from "lucide-react";
+import JSZip from "jszip";
 
 const INITIAL_FORM: ArticleFormData = {
   title: "",
@@ -34,6 +36,130 @@ const INITIAL_FORM: ArticleFormData = {
   file3name: "",
   file3type: "",
 };
+
+// TXT 預覽元件 - 支援 UTF-8 編碼
+function TxtPreview({ url, title }: { url: string; title: string }) {
+  const [content, setContent] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTxt = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('無法讀取檔案');
+        const text = await response.text();
+        setContent(text);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '讀取失敗');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTxt();
+  }, [url]);
+
+  if (loading) {
+    return <div className="w-full h-[300px] rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-500">載入中...</div>;
+  }
+
+  if (error) {
+    return <div className="w-full h-[300px] rounded-lg border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500">{error}</div>;
+  }
+
+  return (
+    <pre className="w-full h-[300px] overflow-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-3 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono">
+      {content}
+    </pre>
+  );
+}
+
+// ZIP 預覽元件 - 顯示壓縮檔結構
+interface ZipEntry {
+  name: string;
+  isDir: boolean;
+  size: number;
+}
+
+function ZipPreview({ url, title }: { url: string; title: string }) {
+  const [entries, setEntries] = useState<ZipEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchZip = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('無法讀取檔案');
+        const blob = await response.blob();
+        const zip = await JSZip.loadAsync(blob);
+        
+        const fileEntries: ZipEntry[] = [];
+        zip.forEach((relativePath, file) => {
+          fileEntries.push({
+            name: relativePath,
+            isDir: file.dir,
+            size: (file as any)._data?.uncompressedSize || 0,
+          });
+        });
+        
+        // 排序：資料夾在前，然後按名稱排序
+        fileEntries.sort((a, b) => {
+          if (a.isDir && !b.isDir) return -1;
+          if (!a.isDir && b.isDir) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        
+        setEntries(fileEntries);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '讀取失敗');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchZip();
+  }, [url]);
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  if (loading) {
+    return <div className="w-full h-[300px] rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-500">載入中...</div>;
+  }
+
+  if (error) {
+    return <div className="w-full h-[300px] rounded-lg border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500">{error}</div>;
+  }
+
+  return (
+    <div className="w-full h-[300px] overflow-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-2">
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-1">共 {entries.length} 個項目</div>
+      <div className="space-y-0.5">
+        {entries.map((entry, index) => (
+          <div key={index} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-sm">
+            {entry.isDir ? (
+              <Folder className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+            ) : (
+              <FileIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            )}
+            <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{entry.name}</span>
+            {!entry.isDir && entry.size > 0 && (
+              <span className="text-xs text-gray-400 flex-shrink-0">{formatSize(entry.size)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function NotesManagement() {
   const { articles, loading, error, stats, createArticle, updateArticle, deleteArticle } = useArticles();
@@ -99,6 +225,10 @@ export default function NotesManagement() {
       fileType = 'docx';
     } else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || ext === '.xlsx') {
       fileType = 'xlsx';
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || ext === '.pptx') {
+      fileType = 'pptx';
+    } else if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed' || ext === '.zip') {
+      fileType = 'zip';
     }
     
     if (fileNumber === 1) {
@@ -135,6 +265,10 @@ export default function NotesManagement() {
       fileType = 'docx';
     } else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || ext === '.xlsx') {
       fileType = 'xlsx';
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || ext === '.pptx') {
+      fileType = 'pptx';
+    } else if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed' || ext === '.zip') {
+      fileType = 'zip';
     }
     
     if (fileNumber === 1) {
@@ -567,7 +701,7 @@ export default function NotesManagement() {
               <div className="space-y-1">
                 <Input
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
+                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx,.pptx,.zip"
                   onChange={(e) => handleFileSelect(1, e.target.files?.[0] || null)}
                   disabled={uploadingFile !== null}
                   className="h-12 rounded-xl"
@@ -583,7 +717,7 @@ export default function NotesManagement() {
               <div className="space-y-1">
                 <Input
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
+                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx,.pptx,.zip"
                   onChange={(e) => handleFileSelect(2, e.target.files?.[0] || null)}
                   disabled={uploadingFile !== null}
                   className="h-12 rounded-xl"
@@ -599,7 +733,7 @@ export default function NotesManagement() {
               <div className="space-y-1">
                 <Input
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
+                  accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx,.pptx,.zip"
                   onChange={(e) => handleFileSelect(3, e.target.files?.[0] || null)}
                   disabled={uploadingFile !== null}
                   className="h-12 rounded-xl"
@@ -709,7 +843,7 @@ export default function NotesManagement() {
                           <div className="space-y-1">
                             <Input
                               type="file"
-                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
+                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx,.pptx,.zip"
                               onChange={(e) => handleEditFileSelect(1, e.target.files?.[0] || null)}
                               disabled={editUploadingFile !== null}
                               className="h-9 rounded-lg text-xs"
@@ -729,7 +863,7 @@ export default function NotesManagement() {
                           <div className="space-y-1">
                             <Input
                               type="file"
-                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
+                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx,.pptx,.zip"
                               onChange={(e) => handleEditFileSelect(2, e.target.files?.[0] || null)}
                               disabled={editUploadingFile !== null}
                               className="h-9 rounded-lg text-xs"
@@ -749,7 +883,7 @@ export default function NotesManagement() {
                           <div className="space-y-1">
                             <Input
                               type="file"
-                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"
+                              accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx,.pptx,.zip"
                               onChange={(e) => handleEditFileSelect(3, e.target.files?.[0] || null)}
                               disabled={editUploadingFile !== null}
                               className="h-9 rounded-lg text-xs"
@@ -867,8 +1001,14 @@ export default function NotesManagement() {
                           {article.file1 && (
                             <div className="space-y-1 flex-shrink-0">
                               <div className="flex items-center gap-2">
-                                <a href={article.file1} target="_blank" rel="noreferrer" className="text-sm text-green-600 dark:text-green-400 hover:underline">
-                                  {article.file1type === 'jpg' ? '🖼️' : article.file1type === 'mp4' ? '🎥' : article.file1type === 'mp3' ? '🎵' : article.file1type === 'pdf' ? '📄' : article.file1type === 'txt' ? '📄' : article.file1type === 'docx' ? '📄' : article.file1type === 'xlsx' ? '📊' : '📄'} {article.file1name || '檔案 1'}
+                                <a 
+                                  href={getAppwriteDownloadUrl(article.file1)} 
+                                  download={article.file1name || "download"}
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="text-sm text-green-600 dark:text-green-400 hover:underline"
+                                >
+                                  {article.file1type === 'jpg' ? '🖼️' : article.file1type === 'mp4' ? '🎥' : article.file1type === 'mp3' ? '🎵' : article.file1type === 'pdf' ? '📄' : article.file1type === 'txt' ? '📄' : article.file1type === 'docx' ? '📄' : article.file1type === 'xlsx' ? '📊' : article.file1type === 'pptx' ? '📽️' : article.file1type === 'zip' ? '🗂️' : '📄'} {article.file1name || '檔案 1'}
                                 </a>
                                 <Button
                                   type="button"
@@ -886,13 +1026,22 @@ export default function NotesManagement() {
                                     <img src={article.file1} alt={article.file1name || '檔案 1'} className="max-w-[150px] rounded-lg border border-gray-300 dark:border-gray-600" />
                                   )}
                                   {article.file1type === 'mp4' && (
-                                    <PlyrPlayer type="video" src={article.file1} className="max-w-[300px] rounded-lg" />
+                                    <PlyrPlayer type="video" src={getProxiedMediaUrl(article.file1)} className="max-w-[300px] rounded-lg" />
                                   )}
                                   {article.file1type === 'mp3' && (
-                                    <PlyrPlayer type="audio" src={article.file1} className="max-w-[300px]" />
+                                    <PlyrPlayer type="audio" src={getProxiedMediaUrl(article.file1)} className="max-w-[300px]" />
                                   )}
                                   {article.file1type === 'pdf' && (
                                     <iframe src={article.file1} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file1name || '檔案 1'}></iframe>
+                                  )}
+                                  {article.file1type === 'txt' && (
+                                    <TxtPreview url={article.file1} title={article.file1name || '檔案 1'} />
+                                  )}
+                                  {(article.file1type === 'xlsx' || article.file1type === 'pptx' || article.file1type === 'docx') && (
+                                    <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(article.file1)}`} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file1name || '檔案 1'}></iframe>
+                                  )}
+                                  {article.file1type === 'zip' && (
+                                    <ZipPreview url={article.file1} title={article.file1name || '檔案 1'} />
                                   )}
                                 </>
                               )}
@@ -901,8 +1050,14 @@ export default function NotesManagement() {
                           {article.file2 && (
                             <div className="space-y-1 flex-shrink-0">
                               <div className="flex items-center gap-2">
-                                <a href={article.file2} target="_blank" rel="noreferrer" className="text-sm text-green-600 dark:text-green-400 hover:underline">
-                                  {article.file2type === 'jpg' ? '🖼️' : article.file2type === 'mp4' ? '🎥' : article.file2type === 'mp3' ? '🎵' : article.file2type === 'pdf' ? '📄' : article.file2type === 'txt' ? '📄' : article.file2type === 'docx' ? '📄' : article.file2type === 'xlsx' ? '📊' : '📄'} {article.file2name || '檔案 2'}
+                                <a 
+                                  href={getAppwriteDownloadUrl(article.file2)} 
+                                  download={article.file2name || "download"}
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="text-sm text-green-600 dark:text-green-400 hover:underline"
+                                >
+                                  {article.file2type === 'jpg' ? '🖼️' : article.file2type === 'mp4' ? '🎥' : article.file2type === 'mp3' ? '🎵' : article.file2type === 'pdf' ? '📄' : article.file2type === 'txt' ? '📄' : article.file2type === 'docx' ? '📄' : article.file2type === 'xlsx' ? '📊' : article.file2type === 'pptx' ? '📽️' : article.file2type === 'zip' ? '🗂️' : '📄'} {article.file2name || '檔案 2'}
                                 </a>
                                 <Button
                                   type="button"
@@ -920,13 +1075,22 @@ export default function NotesManagement() {
                                     <img src={article.file2} alt={article.file2name || '檔案 2'} className="max-w-[150px] rounded-lg border border-gray-300 dark:border-gray-600" />
                                   )}
                                   {article.file2type === 'mp4' && (
-                                    <PlyrPlayer type="video" src={article.file2} className="max-w-[300px] rounded-lg" />
+                                    <PlyrPlayer type="video" src={getProxiedMediaUrl(article.file2)} className="max-w-[300px] rounded-lg" />
                                   )}
                                   {article.file2type === 'mp3' && (
-                                    <PlyrPlayer type="audio" src={article.file2} className="max-w-[300px]" />
+                                    <PlyrPlayer type="audio" src={getProxiedMediaUrl(article.file2)} className="max-w-[300px]" />
                                   )}
                                   {article.file2type === 'pdf' && (
                                     <iframe src={article.file2} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file2name || '檔案 2'}></iframe>
+                                  )}
+                                  {article.file2type === 'txt' && (
+                                    <TxtPreview url={article.file2} title={article.file2name || '檔案 2'} />
+                                  )}
+                                  {(article.file2type === 'xlsx' || article.file2type === 'pptx' || article.file2type === 'docx') && (
+                                    <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(article.file2)}`} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file2name || '檔案 2'}></iframe>
+                                  )}
+                                  {article.file2type === 'zip' && (
+                                    <ZipPreview url={article.file2} title={article.file2name || '檔案 2'} />
                                   )}
                                 </>
                               )}
@@ -935,8 +1099,14 @@ export default function NotesManagement() {
                           {article.file3 && (
                             <div className="space-y-1 flex-shrink-0">
                               <div className="flex items-center gap-2">
-                                <a href={article.file3} target="_blank" rel="noreferrer" className="text-sm text-green-600 dark:text-green-400 hover:underline">
-                                  {article.file3type === 'jpg' ? '🖼️' : article.file3type === 'mp4' ? '🎥' : article.file3type === 'mp3' ? '🎵' : article.file3type === 'pdf' ? '📄' : article.file3type === 'txt' ? '📄' : article.file3type === 'docx' ? '📄' : article.file3type === 'xlsx' ? '📊' : '📄'} {article.file3name || '檔案 3'}
+                                <a 
+                                  href={getAppwriteDownloadUrl(article.file3)} 
+                                  download={article.file3name || "download"}
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="text-sm text-green-600 dark:text-green-400 hover:underline"
+                                >
+                                  {article.file3type === 'jpg' ? '🖼️' : article.file3type === 'mp4' ? '🎥' : article.file3type === 'mp3' ? '🎵' : article.file3type === 'pdf' ? '📄' : article.file3type === 'txt' ? '📄' : article.file3type === 'docx' ? '📄' : article.file3type === 'xlsx' ? '📊' : article.file3type === 'pptx' ? '📽️' : article.file3type === 'zip' ? '🗂️' : '📄'} {article.file3name || '檔案 3'}
                                 </a>
                                 <Button
                                   type="button"
@@ -954,13 +1124,22 @@ export default function NotesManagement() {
                                     <img src={article.file3} alt={article.file3name || '檔案 3'} className="max-w-[150px] rounded-lg border border-gray-300 dark:border-gray-600" />
                                   )}
                                   {article.file3type === 'mp4' && (
-                                    <PlyrPlayer type="video" src={article.file3} className="max-w-[300px] rounded-lg" />
+                                    <PlyrPlayer type="video" src={getProxiedMediaUrl(article.file3)} className="max-w-[300px] rounded-lg" />
                                   )}
                                   {article.file3type === 'mp3' && (
-                                    <PlyrPlayer type="audio" src={article.file3} className="max-w-[300px]" />
+                                    <PlyrPlayer type="audio" src={getProxiedMediaUrl(article.file3)} className="max-w-[300px]" />
                                   )}
                                   {article.file3type === 'pdf' && (
                                     <iframe src={article.file3} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file3name || '檔案 3'}></iframe>
+                                  )}
+                                  {article.file3type === 'txt' && (
+                                    <TxtPreview url={article.file3} title={article.file3name || '檔案 3'} />
+                                  )}
+                                  {(article.file3type === 'xlsx' || article.file3type === 'pptx' || article.file3type === 'docx') && (
+                                    <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(article.file3)}`} className="w-full h-[400px] rounded-lg border border-gray-300 dark:border-gray-600" title={article.file3name || '檔案 3'}></iframe>
+                                  )}
+                                  {article.file3type === 'zip' && (
+                                    <ZipPreview url={article.file3} title={article.file3name || '檔案 3'} />
                                   )}
                                 </>
                               )}

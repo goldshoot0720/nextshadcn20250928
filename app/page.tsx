@@ -9,12 +9,14 @@ import VideoIntroduction from "@/components/modules/VideoIntroduction";
 import ImageGallery from "@/components/modules/ImageGallery";
 import AboutUs from "@/components/modules/AboutUs";
 import MusicManagement from "@/components/modules/MusicManagement";
+import PodcastManagement from "@/components/modules/PodcastManagement";
+import CommonDocumentManagement from "@/components/modules/CommonDocumentManagement";
 import NotesManagement from "@/components/modules/NotesManagement";
 import CommonAccountManagement from "@/components/modules/CommonAccountManagement";
 import SettingsManagement from "@/components/modules/SettingsManagement";
 import BankManagement from "@/components/modules/BankManagement";
 import RoutineManagement from "@/components/modules/RoutineManagement";
-import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus, Settings, Image, Building2, CalendarClock } from "lucide-react";
+import { Package, CreditCard, Home, BarChart3, Info, Play, Music, FileText, Star, Link as LinkIcon, FileText as NoteIcon, Plus, Settings, Image, Building2, CalendarClock, FolderOpen, Podcast } from "lucide-react";
 import { MenuItem, CommonAccount } from "@/types";
 import { Input, DataCard, StatCard, Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { FaviconImage } from "@/components/ui/favicon-image";
@@ -32,6 +34,8 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "images", label: "鋒兄圖片", icon: <Image size={18} /> },
   { id: "videos", label: "鋒兄影片", icon: <Play size={18} /> },
   { id: "music", label: "鋒兄音樂", icon: <Music size={18} /> },
+  { id: "documents", label: "鋒兄文件", icon: <FolderOpen size={18} /> },
+  { id: "podcast", label: "鋒兄播客", icon: <Podcast size={18} /> },
   { id: "bank-stats", label: "鋒兄銀行", icon: <Building2 size={18} /> },
   { id: "routine", label: "鋒兄例行", icon: <CalendarClock size={18} /> },
   { id: "settings", label: "鋒兄設定", icon: <Settings size={18} /> },
@@ -64,6 +68,10 @@ export default function DashboardPage() {
         return <NotesManagement />;
       case "music":
         return <MusicManagement />;
+      case "documents":
+        return <CommonDocumentManagement />;
+      case "podcast":
+        return <PodcastManagement />;
       case "common":
         return <CommonAccountManagement />;
       case "bank-stats":

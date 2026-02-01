@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat } from "lucide-react";
-import { useMusic, MusicData } from "@/hooks/useMusic";
+import { Podcast as PodcastIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat } from "lucide-react";
+import { usePodcast, PodcastData } from "@/hooks/usePodcast";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -44,36 +44,44 @@ function addAppwriteConfigToUrl(url: string): string {
   return paramString ? `${url}${separator}${paramString}` : url;
 }
 
-export default function MusicManagement() {
-  const { music, loading, error, stats, loadMusic } = useMusic();
+// Helper function to detect if a file is a video
+function isVideoFile(fileUrlOrName: string): boolean {
+  if (!fileUrlOrName) return false;
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
+  const lowercase = fileUrlOrName.toLowerCase();
+  return videoExtensions.some(ext => lowercase.endsWith(ext) || lowercase.includes(`mime=video/`) || lowercase.includes('video%2F'));
+}
+
+export default function PodcastManagement() {
+  const { podcast, loading, error, stats, loadPodcast } = usePodcast();
   const [showFormModal, setShowFormModal] = useState(false);
-  const [editingMusic, setEditingMusic] = useState<MusicData | null>(null);
+  const [editingPodcast, setEditingPodcast] = useState<PodcastData | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedMusicId, setExpandedMusicId] = useState<string | null>(null);
+  const [expandedPodcastId, setExpandedPodcastId] = useState<string | null>(null);
 
   // 搜尋過濾
-  const filteredMusic = useMemo(() => {
-    if (!searchQuery.trim()) return music;
+  const filteredPodcast = useMemo(() => {
+    if (!searchQuery.trim()) return podcast;
     const query = searchQuery.toLowerCase();
-    return music.filter(item => 
-      item.name?.toLowerCase().includes(query) ||
-      item.lyrics?.toLowerCase().includes(query)
+    return podcast.filter(item => 
+      item.name?.toLowerCase().includes(query)
     );
-  }, [music, searchQuery]);
+  }, [podcast, searchQuery]);
 
   const handleAdd = () => {
-    setEditingMusic(null);
+    setEditingPodcast(null);
     setShowFormModal(true);
   };
 
-  const handleEdit = (musicItem: MusicData) => {
-    setEditingMusic(musicItem);
+  const handleEdit = (podcastItem: PodcastData) => {
+    setEditingPodcast(podcastItem);
     setShowFormModal(true);
   };
 
-  const handleDelete = async (musicItem: MusicData) => {
-    const confirmText = `DELETE ${musicItem.name}`;
-    const userInput = prompt(`確定要刪除音樂「${musicItem.name}」嗎？\n\n請輸入以下文字以確認刪除：\n${confirmText}`);
+  const handleDelete = async (podcastItem: PodcastData) => {
+    const confirmText = `DELETE ${podcastItem.name}`;
+    const userInput = prompt(`確定要刪除播客「${podcastItem.name}」嗎？\n\n請輸入以下文字以確認刪除：\n${confirmText}`);
     
     if (userInput !== confirmText) {
       if (userInput !== null) {
@@ -83,13 +91,13 @@ export default function MusicManagement() {
     }
 
     try {
-      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.MUSIC}/${musicItem.$id}`);
+      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.PODCAST}/${podcastItem.$id}`);
       const response = await fetch(url, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('刪除失敗');
-      loadMusic(true);
+      loadPodcast(true);
     } catch (error) {
       alert(error instanceof Error ? error.message : '刪除失敗');
     }
@@ -97,14 +105,18 @@ export default function MusicManagement() {
 
   const handleFormSuccess = () => {
     setShowFormModal(false);
-    setEditingMusic(null);
-    loadMusic(true);
+    setEditingPodcast(null);
+    loadPodcast(true);
+  };
+
+  const togglePlay = (id: string) => {
+    setPlayingId(playingId === id ? null : id);
   };
 
   if (loading) {
     return (
       <div className="space-y-4 lg:space-y-6">
-        <SectionHeader title="鋒兄音樂" subtitle="音樂管理" />
+        <SectionHeader title="鋒兄播客" subtitle="播客管理" />
         <LoadingSpinner />
       </div>
     );
@@ -119,27 +131,27 @@ export default function MusicManagement() {
       )}
 
       <SectionHeader
-        title="鋒兄音樂"
-        subtitle="管理音樂收藏，支援歌詞和多語言"
+        title="鋒兄播客"
+        subtitle="管理播客收藏"
         action={
           <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
             <Plus size={16} />
-            新增音樂
+            新增播客
           </Button>
         }
       />
 
       {/* 統計卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard title="音樂總數" value={stats.total} icon={MusicIcon} />
+        <StatCard title="播客總數" value={stats.total} icon={PodcastIcon} />
       </div>
 
       {/* 搜尋欄位 */}
-      {music.length > 0 && (
+      {podcast.length > 0 && (
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input
-            placeholder="搜尋音樂名稱、歌詞..."
+            placeholder="搜尋播客名稱..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-12 rounded-xl"
@@ -147,34 +159,36 @@ export default function MusicManagement() {
         </div>
       )}
 
-      {/* 音樂列表 */}
-      {music.length === 0 ? (
+      {/* 播客列表 */}
+      {podcast.length === 0 ? (
         <EmptyState
-          icon={<MusicIcon className="w-12 h-12" />}
-          title="尚無音樂"
-          description="點擊上方「新增音樂」按鈕新增第一首音樂"
+          icon={<PodcastIcon className="w-12 h-12" />}
+          title="尚無播客"
+          description="點擊上方「新增播客」按鈕新增第一首播客"
         />
-      ) : filteredMusic.length === 0 ? (
+      ) : filteredPodcast.length === 0 ? (
         <EmptyState
           icon={<Search className="w-12 h-12" />}
           title="無搜尋結果"
-          description={`找不到「${searchQuery}」相關的音樂`}
+          description={`找不到「${searchQuery}」相關的播客`}
         />
       ) : (
         <div className="space-y-3">
           {/* 操作提示 */}
           <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
-            <MusicIcon className="w-3.5 h-3.5" />
-            <span>點擊封面圖或卡片顯示歌詞</span>
+            <PodcastIcon className="w-3.5 h-3.5" />
+            <span>點擊封面圖或卡片顯示詳情</span>
           </div>
-          {filteredMusic.map((musicItem) => (
-            <MusicCard
-              key={musicItem.$id}
-              music={musicItem}
-              isExpanded={expandedMusicId === musicItem.$id}
-              onToggleExpand={() => setExpandedMusicId(expandedMusicId === musicItem.$id ? null : musicItem.$id)}
-              onEdit={() => handleEdit(musicItem)}
-              onDelete={() => handleDelete(musicItem)}
+          {filteredPodcast.map((podcastItem) => (
+            <PodcastCard
+              key={podcastItem.$id}
+              podcast={podcastItem}
+              isPlaying={playingId === podcastItem.$id}
+              isExpanded={expandedPodcastId === podcastItem.$id}
+              onPlay={() => togglePlay(podcastItem.$id)}
+              onToggleExpand={() => setExpandedPodcastId(expandedPodcastId === podcastItem.$id ? null : podcastItem.$id)}
+              onEdit={() => handleEdit(podcastItem)}
+              onDelete={() => handleDelete(podcastItem)}
             />
           ))}
         </div>
@@ -182,12 +196,12 @@ export default function MusicManagement() {
 
       {/* 表單模態框 */}
       {showFormModal && (
-        <MusicFormModal
-          music={editingMusic}
-          existingMusic={music}
+        <PodcastFormModal
+          podcast={editingPodcast}
+          existingPodcast={podcast}
           onClose={() => {
             setShowFormModal(false);
-            setEditingMusic(null);
+            setEditingPodcast(null);
           }}
           onSuccess={handleFormSuccess}
         />
@@ -196,16 +210,18 @@ export default function MusicManagement() {
   );
 }
 
-// 音樂卡片
+// 播客卡片
 interface MusicCardProps {
-  music: MusicData;
+  podcast: PodcastData;
+  isPlaying: boolean;
   isExpanded: boolean;
+  onPlay: () => void;
   onToggleExpand: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: MusicCardProps) {
+function PodcastCard({ podcast, isPlaying, isExpanded, onPlay, onToggleExpand, onEdit, onDelete }: MusicCardProps) {
   const [isLooping, setIsLooping] = useState(false);
 
   return (
@@ -213,18 +229,18 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
       <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={onToggleExpand}>
         {/* 封面 */}
         <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 group/cover">
-          {music.cover ? (
-            <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
+          {podcast.cover ? (
+            <img src={podcast.cover} alt={podcast.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <MusicIcon className="text-white w-10 h-10 drop-shadow-lg" />
+              <PodcastIcon className="text-white w-10 h-10 drop-shadow-lg" />
             </div>
           )}
           {/* 點擊提示 */}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center">
             <div className="text-center text-white text-[10px] font-medium px-1">
               <ChevronDown className={`w-4 h-4 mx-auto mb-0.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-              <span>歌詞</span>
+              <span>詳情</span>
             </div>
           </div>
         </div>
@@ -233,35 +249,30 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate">{music.name}</h3>
+              <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate">{podcast.name}</h3>
               <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
                 <Calendar className="w-3 h-3" />
-                {formatLocalDate(music.$createdAt)}
+                {formatLocalDate(podcast.$createdAt)}
               </div>
             </div>
             
             {/* 標籤 */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {music.category && (
+              {podcast.category && (
                 <span className="px-2.5 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
-                  {music.category}
-                </span>
-              )}
-              {music.language && (
-                <span className="px-2.5 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
-                  {music.language}
+                  {podcast.category}
                 </span>
               )}
             </div>
           </div>
 
           {/* 播放器或占位 */}
-          {music.file ? (
+          {podcast.file ? (
             <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
                 <PlyrPlayer 
-                  type="audio"
-                  src={getProxiedMediaUrl(music.file)}
+                  type={isVideoFile(podcast.file) ? "video" : "audio"}
+                  src={getProxiedMediaUrl(podcast.file)}
                   loop={isLooping}
                   className="w-full"
                 />
@@ -269,14 +280,14 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
             </div>
           ) : (
             <div className="text-xs text-gray-400 dark:text-gray-500">
-              尚未上傳音樂檔案
+              尚未上傳播客檔案
             </div>
           )}
         </div>
 
         {/* 操作按鈕 */}
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {music.file && (
+          {podcast.file && (
             <button
               onClick={() => setIsLooping(!isLooping)}
               className={`p-2 rounded-lg transition-all duration-200 ${
@@ -312,11 +323,11 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
           {/* 大封面 */}
           <div className="flex justify-center">
             <div className="relative w-full max-w-sm aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 shadow-xl">
-              {music.cover ? (
-                <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
+              {podcast.cover ? (
+                <img src={podcast.cover} alt={podcast.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <MusicIcon className="text-white w-32 h-32 drop-shadow-2xl" />
+                  <PodcastIcon className="text-white w-32 h-32 drop-shadow-2xl" />
                 </div>
               )}
             </div>
@@ -324,50 +335,26 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
 
           {/* 標題和標籤 */}
           <div className="text-center space-y-2">
-            <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{music.name}</h3>
+            <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{podcast.name}</h3>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              {music.category && (
+              {podcast.category && (
                 <span className="px-3 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
-                  {music.category}
-                </span>
-              )}
-              {music.language && (
-                <span className="px-3 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
-                  {music.language}
+                  {podcast.category}
                 </span>
               )}
               <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                 <Calendar className="w-3 h-3" />
-                {formatLocalDate(music.$createdAt)}
+                {formatLocalDate(podcast.$createdAt)}
               </div>
             </div>
           </div>
 
-          {/* 歌詞 */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <MusicIcon className="w-4 h-4" />
-              歌詞
-            </h4>
-            {music.lyrics ? (
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                  {music.lyrics}
-                </p>
-              </div>
-            ) : (
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-8 text-center">
-                <p className="text-sm text-gray-400 dark:text-gray-500">沒有歌詞</p>
-              </div>
-            )}
-          </div>
-
           {/* 備註 */}
-          {music.note && (
+          {podcast.note && (
             <div>
               <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-2">備註</h4>
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                <p className="text-sm text-gray-700 dark:text-gray-300">{music.note}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{podcast.note}</p>
               </div>
             </div>
           )}
@@ -388,18 +375,16 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
   );
 }
 
-// 音樂表單模態框
-function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: MusicData | null; existingMusic: MusicData[]; onClose: () => void; onSuccess: () => void }) {
+// 播客表單模態框
+function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { podcast: PodcastData | null; existingPodcast: PodcastData[]; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
-    name: music?.name || '',
-    file: music?.file || '',
-    lyrics: music?.lyrics || '',
-    note: music?.note || '',
-    ref: music?.ref || '',
-    category: music?.category || '',
-    hash: music?.hash || '',
-    language: music?.language || '',
-    cover: music?.cover || '',
+    name: podcast?.name || '',
+    file: podcast?.file || '',
+    note: podcast?.note || '',
+    ref: podcast?.ref || '',
+    category: podcast?.category || '',
+    hash: podcast?.hash || '',
+    cover: podcast?.cover || '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -417,7 +402,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
 
   // 獲取所有已存在的分類
-  const existingCategories = Array.from(new Set(existingMusic.map(m => m.category).filter(Boolean)));
+  const existingCategories = Array.from(new Set(existingPodcast.map(m => m.category).filter(Boolean)));
 
   // 計算檔案 SHA-256 hash
   const calculateFileHash = async (file: File): Promise<string> => {
@@ -438,17 +423,20 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
-    const maxSize = 50 * 1024 * 1024;
+    // 檢查檔案大小 (100MB = 100 * 1024 * 1024 bytes)
+    const maxSize = 100 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('檔案大小不能超過 50MB');
+      alert('檔案大小不能超過 100MB');
       return;
     }
 
     // 檢查檔案類型
-    const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/m4a'];
+    const validAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a', 'audio/mp4'];
+    const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+    const validTypes = [...validAudioTypes, ...validVideoTypes];
+    
     if (!validTypes.includes(file.type)) {
-      alert('只支援 MP3, WAV, OGG, AAC, FLAC, M4A 格式的音樂');
+      alert('只支援 MP3, WAV, OGG, AAC, FLAC, M4A 格式的音訊，或 MP4, WebM, MOV 格式的影片');
       return;
     }
 
@@ -469,12 +457,12 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     setFormData({ ...formData, hash });
     
     // 檢查是否有重複的 hash
-    const duplicateMusic = existingMusic.find(m => 
-      m.hash === hash && (!music || m.$id !== music.$id)
+    const duplicatePodcast = existingPodcast.find(m => 
+      m.hash === hash && (!podcast || m.$id !== podcast.$id)
     );
     
-    if (duplicateMusic) {
-      setDuplicateWarning(`警告：此音樂與「${duplicateMusic.name}」相同，請勿重複上傳！`);
+    if (duplicatePodcast) {
+      setDuplicateWarning(`警告：此播客與「${duplicatePodcast.name}」相同，請勿重複上傳！`);
     }
     
     // 模擬預覽載入完成
@@ -497,7 +485,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     }, 200);
 
     try {
-      const response = await fetch('/api/upload-music', {
+      const response = await fetch('/api/upload-podcast', {
         method: 'POST',
         headers: getAppwriteHeaders(),
         body: formDataUpload,
@@ -596,13 +584,13 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('請輸入音樂名稱');
+      alert('請輸入播客名稱');
       return;
     }
 
     // 檢查是否有重複
     if (duplicateWarning) {
-      alert('此音樂與既有音樂重複，無法上傳！請選擇其他音樂。');
+      alert('此播客與既有播客重複，無法上傳！請選擇其他播客。');
       return;
     }
 
@@ -616,7 +604,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         finalFormData.file = url;
         // 使用已計算的 hash，如果沒有則使用 fileId
         finalFormData.hash = fileHash || fileId;
-      } else if (!music && !formData.hash) {
+      } else if (!podcast && !formData.hash) {
         // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
         finalFormData.hash = `no_file_${Date.now()}`;
       }
@@ -627,10 +615,10 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         finalFormData.cover = url;
       }
 
-      const apiUrl = music 
-        ? addAppwriteConfigToUrl(`${API_ENDPOINTS.MUSIC}/${music.$id}`) 
-        : addAppwriteConfigToUrl(API_ENDPOINTS.MUSIC);
-      const method = music ? 'PUT' : 'POST';
+      const apiUrl = podcast 
+        ? addAppwriteConfigToUrl(`${API_ENDPOINTS.PODCAST}/${podcast.$id}`) 
+        : addAppwriteConfigToUrl(API_ENDPOINTS.PODCAST);
+      const method = podcast ? 'PUT' : 'POST';
 
       const response = await fetch(apiUrl, {
         method,
@@ -638,7 +626,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         body: JSON.stringify(finalFormData),
       });
 
-      if (!response.ok) throw new Error(music ? '更新失敗' : '新增失敗');
+      if (!response.ok) throw new Error(podcast ? '更新失敗' : '新增失敗');
 
       onSuccess();
       onClose();
@@ -654,7 +642,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            {music ? '編輯音樂' : '新增音樂'}
+            {podcast ? '編輯播客' : '新增播客'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
             <X className="w-5 h-5" />
@@ -664,12 +652,12 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              音樂名稱 / Music Name <span className="text-red-500">*</span>
+              播客名稱 / Podcast Name <span className="text-red-500">*</span>
             </label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="請輸入音樂名稱 / Music Name"
+              placeholder="請輸入播客名稱 / Podcast Name"
               required
               className="h-12 rounded-xl"
             />
@@ -684,7 +672,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
 
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              音樂檔案 / Music File (URL or Upload)
+              播客檔案 / Podcast File (URL or Upload)
             </label>
             <div className="space-y-3">
               <Input
@@ -700,12 +688,12 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 50MB) / Upload (Max 50MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳播客 (最大 100MB) / Upload (Max 100MB)'}
                     </span>
                   </div>
                   <input
                     type="file"
-                    accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/aac,audio/flac,audio/m4a"
+                    accept="audio/*,video/mp4,video/webm,video/quicktime,.m4a"
                     onChange={handleFileSelect}
                     disabled={submitting || previewLoading}
                     className="hidden"
@@ -722,7 +710,11 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
               {previewUrl && (
                 <div className="mt-2">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">預覽：</p>
-                  <audio src={previewUrl} controls className="w-full" />
+                  {isVideoFile(selectedFile?.name || formData.file) ? (
+                    <video src={previewUrl} controls className="w-full rounded-lg" />
+                  ) : (
+                    <audio src={previewUrl} controls className="w-full" />
+                  )}
                 </div>
               )}
               {duplicateWarning && (
@@ -757,57 +749,8 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
 
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              歌詞 / Lyrics
+              分類 / Category
             </label>
-            <Textarea
-              value={formData.lyrics}
-              onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
-              placeholder="輸入歌詞內容 / Lyrics Content"
-              rows={6}
-              className="rounded-xl"
-            />
-            <div className="px-1 h-4">
-              {formData.lyrics ? (
-                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
-              ) : (
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入歌詞 / (Optional) Please enter lyrics</span>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                語言 / Language
-              </label>
-              <Select
-                value={formData.language}
-                onValueChange={(value) => setFormData({ ...formData, language: value })}
-              >
-                <SelectTrigger className="h-12 rounded-xl">
-                  <SelectValue placeholder="選擇語言 / Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="中文">中文</SelectItem>
-                  <SelectItem value="英語">英語</SelectItem>
-                  <SelectItem value="日語">日語</SelectItem>
-                  <SelectItem value="粵語">粵語</SelectItem>
-                  <SelectItem value="韓語">韓語</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="px-1 h-4">
-                {formData.language ? (
-                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已選擇 / Selected</span>
-                ) : (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請選擇語言 / (Optional) Please select language</span>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                分類 / Category
-              </label>
               {useCategorySelect && existingCategories.length > 0 ? (
                 <div className="space-y-2">
                   <Select
@@ -861,7 +804,6 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                 )}
               </div>
             </div>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -929,7 +871,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
             <Textarea
               value={formData.note}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              placeholder="音樂備註說明 / Music Note"
+              placeholder="播客備註說明 / Podcast Note"
               rows={3}
               className="rounded-xl"
             />
@@ -984,7 +926,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
               disabled={submitting || !!duplicateWarning} 
               className="flex-1 bg-purple-500 hover:bg-purple-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? '處理中...' : (music ? '更新' : '新增')}
+              {submitting ? '處理中...' : (podcast ? '更新' : '新增')}
             </Button>
           </div>
         </form>

@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import { useImages } from "./useImages";
 import { useVideos } from "./useVideos";
 import { useMusic } from "./useMusic";
+import { usePodcast } from "./usePodcast";
 
 interface MediaStats {
   totalImages: number; // From database
   totalVideos: number; // From database
   totalMusic: number; // From database
   totalDocuments: number;
+  totalPodcasts: number; // From database
   storageImagesCount: number; // From Appwrite Storage
   storageVideosCount: number; // From Appwrite Storage
   storageMusicCount: number; // From Appwrite Storage
@@ -29,12 +31,14 @@ export function useMediaStats() {
   const { images, loading: imagesLoading, error: imagesError } = useImages();
   const { videos, loading: videosLoading, error: videosError } = useVideos();
   const { music, loading: musicLoading, error: musicError } = useMusic();
+  const { podcast, loading: podcastLoading, error: podcastError } = usePodcast();
 
   const [stats, setStats] = useState<MediaStats>({
     totalImages: 0,
     totalVideos: 0,
     totalMusic: 0,
     totalDocuments: 0,
+    totalPodcasts: 0,
     storageImagesCount: 0,
     storageVideosCount: 0,
     storageMusicCount: 0,
@@ -52,8 +56,8 @@ export function useMediaStats() {
   const [storageLoading, setStorageLoading] = useState(true);
   const [storageError, setStorageError] = useState<string | null>(null);
 
-  const loading = imagesLoading || videosLoading || musicLoading || storageLoading;
-  const error = imagesError || videosError || musicError || storageError;
+  const loading = imagesLoading || videosLoading || musicLoading || podcastLoading || storageLoading;
+  const error = imagesError || videosError || musicError || podcastError || storageError;
 
   useEffect(() => {
     const fetchStorageStats = async () => {
@@ -87,7 +91,8 @@ export function useMediaStats() {
           totalImages: images.length, // From database
           totalVideos: videos.length, // From database
           totalMusic: music.length, // From database
-          totalDocuments: data.stats.documents.count, // From Appwrite Storage
+          totalDocuments: data.stats.documents.count, // From Appwrite Storage (鋒兄文件)
+          totalPodcasts: podcast.length, // From database
           storageImagesCount: data.stats.images.count, // From Appwrite Storage
           storageVideosCount: data.stats.videos.count, // From Appwrite Storage
           storageMusicCount: data.stats.music.count, // From Appwrite Storage
@@ -110,7 +115,7 @@ export function useMediaStats() {
     };
 
     fetchStorageStats();
-  }, [images.length, videos.length, music.length]);
+  }, [images.length, videos.length, music.length, podcast.length]);
 
   return { stats, loading, error };
 }

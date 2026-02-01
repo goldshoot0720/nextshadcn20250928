@@ -23,6 +23,24 @@ const TABLE_SCHEMAS = {
     { key: 'file3name', type: 'string', size: 100 },
     { key: 'file3type', type: 'string', size: 20 }
   ],
+  podcast: [
+    { key: 'name', type: 'string', size: 100 },
+    { key: 'file', type: 'string', size: 150 },
+    { key: 'note', type: 'string', size: 100 },
+    { key: 'ref', type: 'string', size: 100 },
+    { key: 'category', type: 'string', size: 100 },
+    { key: 'hash', type: 'string', size: 300 },
+    { key: 'cover', type: 'string', size: 150 }
+  ],
+  commondocument: [
+    { key: 'name', type: 'string', size: 100 },
+    { key: 'file', type: 'string', size: 150 },
+    { key: 'note', type: 'string', size: 100 },
+    { key: 'ref', type: 'string', size: 100 },
+    { key: 'category', type: 'string', size: 100 },
+    { key: 'hash', type: 'string', size: 300 },
+    { key: 'cover', type: 'string', size: 150 }
+  ],
   // Add other schemas as needed
 };
 

@@ -221,11 +221,32 @@ export default function RoutineManagement() {
 
   const calculateDaysDiff = (date1: string | null, date2: string | null): string => {
     if (!date1 || !date2) return "-";
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    const diffTime = Math.abs(d1.getTime() - d2.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return `${diffDays}天`;
+    let start = new Date(date1);
+    let end = new Date(date2);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "-";
+    
+    if (start > end) [start, end] = [end, start];
+
+    let years = end.getFullYear() - start.getFullYear();
+    let months = end.getMonth() - start.getMonth();
+    let days = end.getDate() - start.getDate();
+
+    if (days < 0) {
+      months--;
+      const lastDayPrevMonth = new Date(end.getFullYear(), end.getMonth(), 0).getDate();
+      days += lastDayPrevMonth;
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    const parts: string[] = [];
+    if (years > 0) parts.push(`${years}年`);
+    if (months > 0) parts.push(`${months}個月`);
+    if (days > 0 || (years === 0 && months === 0)) parts.push(`${days}天`);
+
+    return parts.join(" 又 ");
   };
 
   return (
@@ -480,9 +501,9 @@ export default function RoutineManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>圖片</TableHead>
                         <TableHead>名稱</TableHead>
                         <TableHead>備註</TableHead>
+                        <TableHead>圖片</TableHead>
                         <TableHead>最近例行之一</TableHead>
                         <TableHead>最近例行之二</TableHead>
                         <TableHead>相距天數</TableHead>
@@ -493,6 +514,14 @@ export default function RoutineManagement() {
                     <TableBody>
                       {filteredRoutines.map((routine) => (
                         <TableRow key={routine.$id}>
+                          <TableCell className="font-medium">{routine.name}</TableCell>
+                          <TableCell>
+                            {routine.note && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 bg-gray-50 dark:bg-gray-800/50 p-2 rounded border border-gray-100 dark:border-gray-700 max-w-[250px] max-h-[150px] overflow-y-auto whitespace-pre-wrap break-all shadow-sm">
+                                {routine.note}
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell>
                             {routine.photo ? (
                               <img
@@ -505,10 +534,6 @@ export default function RoutineManagement() {
                                 <Calendar size={20} className="text-gray-400" />
                               </div>
                             )}
-                          </TableCell>
-                          <TableCell className="font-medium">{routine.name}</TableCell>
-                          <TableCell className="text-gray-600 dark:text-gray-400">
-                            {routine.note || "-"}
                           </TableCell>
                           <TableCell>{formatDateTime(routine.lastdate1)}</TableCell>
                           <TableCell>{formatDateTime(routine.lastdate2)}</TableCell>
@@ -556,11 +581,13 @@ export default function RoutineManagement() {
                         )}
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg">{routine.name}</h3>
-                          {routine.note && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{routine.note}</p>
-                          )}
                         </div>
                       </div>
+                      {routine.note && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-pre-wrap break-all max-h-[200px] overflow-y-auto shadow-inner">
+                          {routine.note}
+                        </div>
+                      )}
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-500">最近例行之一:</span>

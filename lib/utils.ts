@@ -59,6 +59,68 @@ export function getAppwriteHeaders() {
   };
 }
 
+/**
+ * 獲取經過代理的媒體 URL，解決 Appwrite 直連無法跳轉時間軸的問題
+ * @param url 原始媒體 URL
+ * @returns 代理後的 URL
+ */
+export function getProxiedMediaUrl(url: string | undefined | null): string {
+  if (!url) return '';
+  
+  // 如果已經是代理 URL，或者是 blob URL，則直接返回
+  if (url.includes('/api/media-proxy') || url.startsWith('blob:')) {
+    return url;
+  }
+
+  // 檢查是否為 Appwrite 的 Storage URL
+  // 支持絕對路徑 (http...) 和相對路徑 (/v1/...)
+  const isAppwriteStorage = url.includes('/storage/buckets/');
+  
+  if (!isAppwriteStorage) {
+    return url;
+  }
+
+  const config = getAppwriteConfig();
+  let absoluteUrl = url;
+
+  // 如果是相對路徑，補全端點
+  if (url.startsWith('/') && config.endpoint) {
+    const baseUrl = config.endpoint.endsWith('/') ? config.endpoint.slice(0, -1) : config.endpoint;
+    // 如果 URL 已經包含 /v1 且 endpoint 也包含 /v1，要避免重複
+    if (url.startsWith('/v1/') && baseUrl.endsWith('/v1')) {
+      absoluteUrl = `${baseUrl.slice(0, -3)}${url}`;
+    } else {
+      absoluteUrl = `${baseUrl}${url}`;
+    }
+  }
+
+  const params = new URLSearchParams();
+  params.set('url', absoluteUrl);
+  
+  // 只有當有 API Key 且不是 'undefined'/'null' 時才添加
+  if (config.apiKey && config.apiKey !== 'undefined' && config.apiKey !== 'null') {
+    params.set('_key', config.apiKey);
+  }
+
+  return `/api/media-proxy?${params.toString()}`;
+}
+
+/**
+ * 獲取 Appwrite 的下載 URL（強制下載而非在瀏覽器預覽）
+ * @param url 原始 URL
+ * @returns 強制下載的 URL
+ */
+export function getAppwriteDownloadUrl(url: string | undefined | null): string {
+  if (!url) return '';
+  
+  // 如果是 Appwrite Storage URL 且包含 /view，將其替換為 /download
+  if (url.includes('/storage/buckets/') && url.includes('/view')) {
+    return url.replace('/view', '/download');
+  }
+  
+  return url;
+}
+
 // 清除所有快取（用於 Appwrite 帳號切換）
 export function clearAllCaches() {
   if (typeof window === 'undefined') return;

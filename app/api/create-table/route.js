@@ -123,6 +123,30 @@ const TABLE_SCHEMAS = {
       { key: 'cover', type: 'string', size: 150, required: false }
     ]
   },
+  podcast: {
+    name: "podcast",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'file', type: 'string', size: 150, required: false },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'ref', type: 'string', size: 100, required: false },
+      { key: 'category', type: 'string', size: 100, required: false },
+      { key: 'hash', type: 'string', size: 300, required: false },
+      { key: 'cover', type: 'string', size: 150, required: false }
+    ]
+  },
+  commondocument: {
+    name: "commondocument",
+    attributes: [
+      { key: 'name', type: 'string', size: 100, required: true },
+      { key: 'file', type: 'string', size: 150, required: false },
+      { key: 'note', type: 'string', size: 100, required: false },
+      { key: 'ref', type: 'string', size: 100, required: false },
+      { key: 'category', type: 'string', size: 100, required: false },
+      { key: 'hash', type: 'string', size: 300, required: false },
+      { key: 'cover', type: 'string', size: 150, required: false }
+    ]
+  },
   routine: {
     name: "routine",
     attributes: [
