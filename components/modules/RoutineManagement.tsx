@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Calendar } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Calendar, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +53,17 @@ export default function RoutineManagement() {
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 搜尋過濾
+  const filteredRoutines = useMemo(() => {
+    if (!searchQuery.trim()) return routines;
+    const query = searchQuery.toLowerCase();
+    return routines.filter(routine => 
+      routine.name?.toLowerCase().includes(query) ||
+      routine.note?.toLowerCase().includes(query)
+    );
+  }, [routines, searchQuery]);
 
   useEffect(() => {
     fetchAll();
@@ -371,6 +382,27 @@ export default function RoutineManagement() {
             />
           ) : (
             <>
+              {/* 搜尋欄位 */}
+              {routines.length > 0 && (
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    placeholder="搜尋名稱、備註..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-12 rounded-xl"
+                  />
+                </div>
+              )}
+
+              {filteredRoutines.length === 0 ? (
+                <EmptyState
+                  icon={<Search size={48} />}
+                  title="無搜尋結果"
+                  description={`找不到「${searchQuery}」相關的例行事項`}
+                />
+              ) : (
+                <>
               {/* 桌面版表格 */}
               <div className="hidden md:block">
                 <DataCard>
@@ -388,7 +420,7 @@ export default function RoutineManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {routines.map((routine) => (
+                      {filteredRoutines.map((routine) => (
                         <TableRow key={routine.$id}>
                           <TableCell>
                             {routine.photo ? (
@@ -436,7 +468,7 @@ export default function RoutineManagement() {
 
               {/* 手機版卡片 */}
               <div className="md:hidden space-y-4">
-                {routines.map((routine) => (
+                {filteredRoutines.map((routine) => (
                   <DataCard key={routine.$id}>
                     <div className="space-y-3">
                       <div className="flex items-start gap-3">
@@ -498,6 +530,8 @@ export default function RoutineManagement() {
                   </DataCard>
                 ))}
               </div>
+                </>
+              )}
             </>
           )}
         </>

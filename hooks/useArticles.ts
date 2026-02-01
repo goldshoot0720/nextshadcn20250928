@@ -86,18 +86,12 @@ export function useArticles() {
       if (formData.file3 && formData.file3.trim()) dataToSend.file3 = formData.file3;
       if (formData.file3type && formData.file3type.trim()) dataToSend.file3type = formData.file3type;
       
-      const res = await fetch(API_ENDPOINTS.ARTICLE, {
+      const res = await fetchApi<Article>(API_ENDPOINTS.ARTICLE, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSend),
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("API Error:", errorData);
-        throw new Error(errorData.error || "新增失敗");
-      }
       
-      const newArticle: Article = await res.json();
+      const newArticle: Article = res;
       setArticles((prev) => {
         const updated = [newArticle, ...prev];
         return updated.sort(
@@ -139,18 +133,12 @@ export function useArticles() {
       if (formData.file3 && formData.file3.trim()) dataToSend.file3 = formData.file3;
       if (formData.file3type && formData.file3type.trim()) dataToSend.file3type = formData.file3type;
       
-      const res = await fetch(`${API_ENDPOINTS.ARTICLE}/${id}`, {
+      const res = await fetchApi<Article>(`${API_ENDPOINTS.ARTICLE}/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSend),
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("API Error:", errorData);
-        throw new Error(errorData.error || "更新失敗");
-      }
       
-      const updatedArticle: Article = await res.json();
+      const updatedArticle: Article = res;
       setArticles((prev) => {
         const updated = prev.map((a) => (a.$id === id ? updatedArticle : a));
         return updated.sort(
@@ -169,8 +157,7 @@ export function useArticles() {
   // 刪除文章
   const deleteArticle = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_ENDPOINTS.ARTICLE}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("刪除失敗");
+      await fetchApi(`${API_ENDPOINTS.ARTICLE}/${id}`, { method: "DELETE" });
       
       setArticles((prev) => prev.filter((a) => a.$id !== id));
       cachedArticles = null;

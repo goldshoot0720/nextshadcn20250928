@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
@@ -47,6 +47,17 @@ export default function MusicManagement() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingMusic, setEditingMusic] = useState<MusicData | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 搜尋過濾
+  const filteredMusic = useMemo(() => {
+    if (!searchQuery.trim()) return music;
+    const query = searchQuery.toLowerCase();
+    return music.filter(item => 
+      item.name?.toLowerCase().includes(query) ||
+      item.lyrics?.toLowerCase().includes(query)
+    );
+  }, [music, searchQuery]);
 
   const handleAdd = () => {
     setEditingMusic(null);
@@ -125,6 +136,19 @@ export default function MusicManagement() {
         <StatCard title="音樂總數" value={stats.total} icon={MusicIcon} />
       </div>
 
+      {/* 搜尋欄位 */}
+      {music.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋音樂名稱、歌詞..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
       {/* 音樂列表 */}
       {music.length === 0 ? (
         <EmptyState
@@ -132,9 +156,15 @@ export default function MusicManagement() {
           title="尚無音樂"
           description="點擊上方「新增音樂」按鈕新增第一首音樂"
         />
+      ) : filteredMusic.length === 0 ? (
+        <EmptyState
+          icon={<Search className="w-12 h-12" />}
+          title="無搜尋結果"
+          description={`找不到「${searchQuery}」相關的音樂`}
+        />
       ) : (
         <div className="flex flex-wrap gap-4 lg:gap-6">
-          {music.map((musicItem) => (
+          {filteredMusic.map((musicItem) => (
             <MusicCard
               key={musicItem.$id}
               music={musicItem}

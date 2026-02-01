@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar, Search } from "lucide-react";
 import SimpleVideoPlayer from "@/components/ui/simple-video-player";
 import { useVideoCache } from "@/hooks/useVideoCache";
 import { useVideos, VideoData } from "@/hooks/useVideos";
@@ -53,7 +53,18 @@ export default function VideoIntroduction() {
   const [editingVideo, setEditingVideo] = useState<VideoData | null>(null);
   const [currentVideo, setCurrentVideo] = useState<string | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // 搜尋過濾
+  const filteredVideos = useMemo(() => {
+    if (!searchQuery.trim()) return videos;
+    const query = searchQuery.toLowerCase();
+    return videos.filter(video => 
+      video.name?.toLowerCase().includes(query) ||
+      video.note?.toLowerCase().includes(query)
+    );
+  }, [videos, searchQuery]);
   
   const {
     cacheStatus,
@@ -192,6 +203,19 @@ export default function VideoIntroduction() {
         />
       )}
 
+      {/* 搜尋欄位 */}
+      {videos.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋影片名稱、備註..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
       {/* 影片列表 */}
       {videos.length === 0 ? (
         <EmptyState
@@ -199,9 +223,15 @@ export default function VideoIntroduction() {
           title="尚無影片"
           description="點擊上方「新增影片」按鈕新增第一個影片"
         />
+      ) : filteredVideos.length === 0 ? (
+        <EmptyState
+          icon={<Search className="w-12 h-12" />}
+          title="無搜尋結果"
+          description={`找不到「${searchQuery}」相關的影片`}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-          {videos.map((video) => (
+          {filteredVideos.map((video) => (
             <VideoManagementCard
               key={video.$id}
               video={video}

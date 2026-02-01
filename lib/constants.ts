@@ -72,6 +72,7 @@ export const THEME_COLORS = {
 export const API_ENDPOINTS = {
   FOOD: "/api/food",
   SUBSCRIPTION: "/api/subscription",
+  BANK: "/api/bank",
   IMAGES: "/api/images",
   IMAGE: "/api/image",
   VIDEOS: "/api/videos",

@@ -98,10 +98,12 @@ export function useFoods() {
   // 更新食品
   const updateFood = useCallback(async (id: string, formData: FoodFormData): Promise<Food | null> => {
     try {
+      console.log('更新食品 - ID:', id, '資料:', formData);
       const updatedFood = await fetchApi<Food>(`${API_ENDPOINTS.FOOD}/${id}`, {
         method: "PUT",
         body: JSON.stringify(formData),
       });
+      console.log('更新成功:', updatedFood);
       
       setFoods((prev) => {
         const updated = prev.map((f) => (f.$id === id ? updatedFood : f));
@@ -114,6 +116,7 @@ export function useFoods() {
       return updatedFood;
     } catch (err) {
       console.error("更新食品失敗:", err);
+      console.error("錯誤詳情:", err instanceof Error ? err.message : err);
       throw err;
     }
   }, []);
@@ -139,7 +142,15 @@ export function useFoods() {
     if (newAmount < 0) return false;
 
     try {
-      await updateFood(food.$id, { ...food, amount: newAmount });
+      await updateFood(food.$id, {
+        name: food.name,
+        amount: newAmount,
+        todate: food.todate,
+        photo: food.photo || '',
+        price: food.price || 0,
+        shop: food.shop || '',
+        photohash: food.photohash || '',
+      });
       return true;
     } catch {
       return false;

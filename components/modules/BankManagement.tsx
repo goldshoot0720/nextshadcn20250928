@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   Building2, 
   Plus, 
@@ -13,7 +13,8 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Activity,
-  User
+  User,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,20 @@ export default function BankManagement() {
   const [form, setForm] = useState<BankFormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 搜尋過濾
+  const filteredBanks = useMemo(() => {
+    if (!searchQuery.trim()) return banks;
+    const query = searchQuery.toLowerCase();
+    return banks.filter(bank => 
+      bank.name?.toLowerCase().includes(query) ||
+      bank.site?.toLowerCase().includes(query) ||
+      bank.address?.toLowerCase().includes(query) ||
+      bank.card?.toLowerCase().includes(query) ||
+      bank.account?.toLowerCase().includes(query)
+    );
+  }, [banks, searchQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,12 +201,27 @@ export default function BankManagement() {
         </FormCard>
       )}
 
+      {/* 搜尋欄位 */}
+      {banks.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋名稱、網站、地址、卡號、帳號..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
       <DataCard>
         {banks.length === 0 ? (
           <EmptyState icon={<Building2 className="w-12 h-12" />} title="暫無銀行資料" description="點擊上方按鈕新增您的第一筆銀行資料" />
+        ) : filteredBanks.length === 0 ? (
+          <EmptyState icon={<Search className="w-12 h-12" />} title="無搜尋結果" description={`找不到「${searchQuery}」相關的銀行`} />
         ) : (
           <DataCardList>
-            {banks.map((bank) => (
+            {filteredBanks.map((bank) => (
               <DataCardItem key={bank.$id}>
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">

@@ -35,14 +35,10 @@ export function useBanks() {
   // 新增銀行
   const createBank = useCallback(async (formData: BankFormData): Promise<Bank | null> => {
     try {
-      const res = await fetch('/api/bank', {
+      const newBank = await fetchApi<Bank>(API_ENDPOINTS.BANK, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("新增失敗");
-      
-      const newBank: Bank = await res.json();
       // 重新載入以確保資料同步
       await loadBanks();
       return newBank;
@@ -55,14 +51,10 @@ export function useBanks() {
   // 更新銀行
   const updateBank = useCallback(async (id: string, formData: BankFormData): Promise<Bank | null> => {
     try {
-      const res = await fetch(`/api/bank/${id}`, {
+      const updatedBank = await fetchApi<Bank>(`${API_ENDPOINTS.BANK}/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("更新失敗");
-      
-      const updatedBank: Bank = await res.json();
       // 重新載入以確保資料同步
       await loadBanks();
       return updatedBank;
@@ -75,8 +67,7 @@ export function useBanks() {
   // 刪除銀行
   const deleteBank = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/bank/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("刪除失敗");
+      await fetchApi(`${API_ENDPOINTS.BANK}/${id}`, { method: "DELETE" });
       
       // 重新載入以確保資料同步
       await loadBanks();

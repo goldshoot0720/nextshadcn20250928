@@ -12,6 +12,12 @@ interface CollectionStats {
   columnCount: number;
   documentCount: number;
   error?: boolean;
+  schemaMismatch?: boolean;
+  schemaDetails?: {
+    toAdd: any[];
+    toUpdate: any[];
+    conflicts: any[];
+  };
 }
 
 interface DatabaseStats {
@@ -39,6 +45,7 @@ export default function SettingsManagement() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<string | null>(null);
   const [progress, setProgress] = useState<CreateProgress | null>(null);
+  const [recentlyCreated, setRecentlyCreated] = useState<Set<string>>(new Set()); // Track recently created tables
   const [appwriteConfig, setAppwriteConfig] = useState({
     endpoint: '',
     projectId: '',
@@ -47,6 +54,9 @@ export default function SettingsManagement() {
     apiKey: ''
   });
   const [configSaved, setConfigSaved] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkIsUpdate, setBulkIsUpdate] = useState(false);
+  const [bulkQueue, setBulkQueue] = useState<string[]>([]);
 
   // 載入 Appwrite 設定
   useEffect(() => {
@@ -92,6 +102,56 @@ export default function SettingsManagement() {
     setTimeout(() => {
       window.location.reload();
     }, 500);
+  };
+
+  const handleBulkCreate = () => {
+    if (!dbStats) return;
+    const missingTables = dbStats.collections
+      .filter(col => col.error)
+      .map(col => col.name);
+    
+    if (missingTables.length === 0) {
+      alert("所有表格皆已存在。");
+      return;
+    }
+
+    if (!confirm(`確定要一次建立 ${missingTables.length} 個表格嗎？\n\n[${missingTables.join(', ')}]`)) {
+      return;
+    }
+
+    setBulkMode(true);
+    setBulkIsUpdate(false);
+    const queue = [...missingTables];
+    const first = queue.shift();
+    setBulkQueue(queue);
+    if (first) handleCreateTable(first, false);
+  };
+
+  const handleBulkRebuild = () => {
+    if (!dbStats) return;
+    const mismatchTables = dbStats.collections
+      .filter(col => col.schemaMismatch && !col.error)
+      .map(col => col.name);
+    
+    if (mismatchTables.length === 0) {
+      alert("所有表格結構皆一致。");
+      return;
+    }
+
+    if (!confirm(`⚠️ 警告：一次重建 ${mismatchTables.length} 個表格將會刪除所有相關資料！
+
+[${mismatchTables.join(', ')}]
+
+確定要繼續嗎？`)) {
+      return;
+    }
+
+    setBulkMode(true);
+    setBulkIsUpdate(true);
+    const queue = [...mismatchTables];
+    const first = queue.shift();
+    setBulkQueue(queue);
+    if (first) handleCreateTable(first, true);
   };
 
   const handleResetToDefault = () => {
@@ -162,7 +222,22 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
     fetchStats();
   }, []);
 
-  const handleCreateTable = async (tableName: string) => {
+  const handleCreateTable = async (tableName: string, isUpdate = false) => {
+    // 如果是更新操作且不在批次模式中，顯示警告
+    if (isUpdate && !bulkMode) {
+      const confirmed = confirm(
+        `⚠️ 警告：更新 ${tableName} 表結構需要重建表格\n\n` +
+        `這個操作將：\n` +
+        `1. 刪除現有表格\n` +
+        `2. 創建新的表格結構\n` +
+        `3. 所有資料將會遺失\n\n` +
+        `建議：請先在 Appwrite 控制台備份資料\n\n` +
+        `✅ 完成後請刷新頁面確認結果\n\n` +
+        `確定要繼續嗎？`
+      );
+      if (!confirmed) return;
+    }
+
     setCreating(tableName);
     setProgress({
       tableName,
@@ -224,11 +299,49 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
               collectionId: data.collectionId
             } : null);
             eventSource.close();
+            // Mark this table as recently created
+            setRecentlyCreated(prev => new Set(prev).add(tableName));
+            // Auto-remove from recently created after 10 seconds
+            setTimeout(() => {
+              setRecentlyCreated(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(tableName);
+                return newSet;
+              });
+            }, 10000);
             clearAllCaches(); // 清除所有模組快取
-            // 延遲一點時間確保快取清除完成後再重新載入統計
+            
+            // 如果是在批次模式中，且還有後續表格，處理下一個而不重新整理
+            if (bulkMode && bulkQueue.length > 0) {
+              const nextQueue = [...bulkQueue];
+              const nextTable = nextQueue.shift();
+              setBulkQueue(nextQueue);
+              if (nextTable) {
+                setTimeout(() => {
+                  handleCreateTable(nextTable, bulkIsUpdate); 
+                }, 1000);
+                return;
+              }
+            }
+
+            // 批次或單一操作結束後的清理與確認
             setTimeout(() => {
               fetchStats(); // 重新載入資料庫統計
-            }, 300);
+              setCreating(null);
+              const wasInBulk = bulkMode; // 保存當前狀態
+              setBulkMode(false); // 重設批次模式
+              
+              // 完成後自動刷新頁面以確保顯示最新狀態
+              setTimeout(() => {
+                const finishMsg = wasInBulk 
+                  ? `✅ 批次處理已全部完成！` 
+                  : `✅ ${tableName} 表格已成功處理！`;
+                
+                if (confirm(`${finishMsg}\n\n點擊「確定」自動刷新頁面以確認最終結果。`)) {
+                  window.location.reload();
+                }
+              }, 1000);
+            }, 2000); 
             break;
           case 'error':
             setProgress(prev => prev ? {
@@ -381,9 +494,30 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
             </div>
           ) : dbStats ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-                <span className="text-gray-600 dark:text-gray-300">總欄位數</span>
-                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns || 0}</span>
+              <div className="flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl mb-4">
+                <div className="flex flex-col">
+                  <span className="text-gray-600 dark:text-gray-300">總欄位數</span>
+                  <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{dbStats.totalColumns || 0}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleBulkCreate}
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1"
+                    title="一次建立所有不存在的表格"
+                  >
+                    <Plus size={14} /> 一鍵全建立
+                  </Button>
+                  <Button 
+                    onClick={handleBulkRebuild}
+                    size="sm"
+                    variant="outline"
+                    className="text-orange-600 border-orange-200 hover:bg-orange-50 flex items-center gap-1"
+                    title="一次重建所有結構不一致的表格"
+                  >
+                    🔄 一鍵全重建
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2 text-sm">
                 {dbStats.collections && dbStats.collections.map(col => {
@@ -406,6 +540,11 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
                           title={statusTitle}
                         />
                         <span className="font-mono text-gray-600 dark:text-gray-400">{col.name}</span>
+                        {col.schemaMismatch && !col.error && (
+                          <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded" title="結構不一致">
+                            ❗
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-400">{col.columnCount} 欄位</span>
@@ -424,6 +563,32 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
                               <><Plus size={12} /> 建立</>
                             )}
                           </Button>
+                        )}
+                        {col.schemaMismatch && !col.error && !recentlyCreated.has(col.name) && (
+                          <>
+                            <span className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded" title="結構不一致">
+                              ❗
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
+                              onClick={() => handleCreateTable(col.name, true)}
+                              disabled={creating === col.name}
+                              title="結構不一致，需要重建（會刪除資料）"
+                            >
+                              {creating === col.name ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                "重建"
+                              )}
+                            </Button>
+                          </>
+                        )}
+                        {!col.schemaMismatch && !col.error && (
+                          <span className="text-xs text-green-600 dark:text-green-400" title="結構一致">
+                            ✔️
+                          </span>
                         )}
                       </div>
                     </div>

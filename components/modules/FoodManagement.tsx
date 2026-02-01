@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,6 +25,17 @@ export default function FoodManagement() {
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 搜尋過濾
+  const filteredFoods = useMemo(() => {
+    if (!searchQuery.trim()) return foods;
+    const query = searchQuery.toLowerCase();
+    return foods.filter(food => 
+      food.name?.toLowerCase().includes(query) ||
+      food.shop?.toLowerCase().includes(query)
+    );
+  }, [foods, searchQuery]);
 
   useEffect(() => {
     // Clean up object URLs on unmount
@@ -142,7 +153,15 @@ export default function FoodManagement() {
   };
 
   const handleEdit = (food: Food) => {
-    setForm({ ...food, todate: formatDate(food.todate) });
+    setForm({ 
+      name: food.name,
+      amount: food.amount,
+      todate: formatDate(food.todate),
+      photo: food.photo || '',
+      price: food.price || 0,
+      shop: food.shop || '',
+      photohash: food.photohash || '',
+    });
     setEditingId(food.$id);
     setIsFormOpen(true);
     // 滾動到頁面頂部讓用戶看到編輯表單
@@ -204,19 +223,40 @@ export default function FoodManagement() {
         />
       )}
 
+      {/* 搜尋欄位 */}
+      {foods.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋食品名稱、商店..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
       <DataCard>
-        <DesktopTable
-          foods={foods}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAmountChange={updateAmount}
-        />
-        <MobileList
-          foods={foods}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAmountChange={updateAmount}
-        />
+        {foods.length === 0 ? (
+          <EmptyState emoji="🍔" title="暫無食品資料" description="點擊上方按鈕新增您的第一筆食品資料" />
+        ) : filteredFoods.length === 0 ? (
+          <EmptyState emoji="🔍" title="無搜尋結果" description={`找不到「${searchQuery}」相關的食品`} />
+        ) : (
+          <>
+            <DesktopTable
+              foods={filteredFoods}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAmountChange={updateAmount}
+            />
+            <MobileList
+              foods={filteredFoods}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAmountChange={updateAmount}
+            />
+          </>
+        )}
       </DataCard>
     </div>
   );

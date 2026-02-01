@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +29,7 @@ export default function SubscriptionManagement() {
   const [canAskNotification, setCanAskNotification] = useState(false);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
   // 取得已存在的不重複服務名稱
   const existingNames = useMemo(() => {
@@ -41,6 +42,18 @@ export default function SubscriptionManagement() {
     const sites = subscriptions.map(s => s.site).filter(Boolean) as string[];
     return Array.from(new Set(sites)).sort();
   }, [subscriptions]);
+
+  // 搜尋過濾
+  const filteredSubscriptions = useMemo(() => {
+    if (!searchQuery.trim()) return subscriptions;
+    const query = searchQuery.toLowerCase();
+    return subscriptions.filter(sub => 
+      sub.name?.toLowerCase().includes(query) ||
+      sub.site?.toLowerCase().includes(query) ||
+      sub.account?.toLowerCase().includes(query) ||
+      sub.note?.toLowerCase().includes(query)
+    );
+  }, [subscriptions, searchQuery]);
 
   const truncateName = (name: string, id: string) => {
     const isExpanded = expandedNames.has(id);
@@ -400,6 +413,19 @@ export default function SubscriptionManagement() {
         </FormCard>
       )}
 
+      {/* 搜尋欄位 */}
+      {subscriptions.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋服務名稱、網站、帳號、備註..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
       <DataCard>
         {error ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -413,6 +439,8 @@ export default function SubscriptionManagement() {
           </div>
         ) : subscriptions.length === 0 ? (
           <EmptyState emoji="💳" title="暫無訂閱資料" description="點擊上方表單新增第一個訂閱" />
+        ) : filteredSubscriptions.length === 0 ? (
+          <EmptyState emoji="🔍" title="無搜尋結果" description={`找不到「${searchQuery}」相關的訂閱`} />
         ) : (
           <>
             <div className="hidden lg:block overflow-x-auto">
@@ -427,9 +455,9 @@ export default function SubscriptionManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {subscriptions.map((sub) => {
-                    const { daysRemaining, status, formattedDate, isOverdue, isUpcoming } = getSubscriptionExpiryInfo(sub);
-                    const rowClass = isOverdue ? "bg-red-50 dark:bg-red-900/20" : isUpcoming ? "bg-yellow-50 dark:bg-yellow-900/20" : "";
+                  {filteredSubscriptions.map((sub) => {
+                    const { daysRemaining, status, formattedDate, isExpired, isExpiringSoon } = getSubscriptionExpiryInfo(sub);
+                    const rowClass = isExpired ? "bg-red-50 dark:bg-red-900/20" : isExpiringSoon ? "bg-yellow-50 dark:bg-yellow-900/20" : "";
                     return (
                       <TableRow key={sub.$id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 ${rowClass}`}>
                         <TableCell className="font-medium">
@@ -498,9 +526,9 @@ export default function SubscriptionManagement() {
 
             <div className="lg:hidden">
               <DataCardList>
-                {subscriptions.map((sub) => {
-                  const { daysRemaining, status, formattedDate, isOverdue, isUpcoming } = getSubscriptionExpiryInfo(sub);
-                  const highlight = isOverdue ? "expired" : isUpcoming ? "warning" : "normal";
+                {filteredSubscriptions.map((sub) => {
+                  const { daysRemaining, status, formattedDate, isExpired, isExpiringSoon } = getSubscriptionExpiryInfo(sub);
+                  const highlight = isExpired ? "expired" : isExpiringSoon ? "warning" : "normal";
                   return (
                     <DataCardItem key={sub.$id} highlight={highlight}>
                       <div className="space-y-3">

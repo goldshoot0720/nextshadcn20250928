@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +13,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { useArticles } from "@/hooks/useArticles";
 import { ArticleFormData, Article } from "@/types";
 import { formatDate } from "@/lib/formatters";
-import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Link as LinkIcon, File, Copy, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
 
 const INITIAL_FORM: ArticleFormData = {
   title: "",
@@ -22,6 +22,12 @@ const INITIAL_FORM: ArticleFormData = {
   url1: "",
   url2: "",
   url3: "",
+  file1: "",
+  file1type: "",
+  file2: "",
+  file2type: "",
+  file3: "",
+  file3type: "",
 };
 
 export default function NotesManagement() {
@@ -32,14 +38,134 @@ export default function NotesManagement() {
   const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isFormCollapsed, setIsFormCollapsed] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // File upload states
+  const [selectedFile1, setSelectedFile1] = useState<File | null>(null);
+  const [selectedFile2, setSelectedFile2] = useState<File | null>(null);
+  const [selectedFile3, setSelectedFile3] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState<number | null>(null);
+  
+  // Edit mode file upload states
+  const [editSelectedFile1, setEditSelectedFile1] = useState<File | null>(null);
+  const [editSelectedFile2, setEditSelectedFile2] = useState<File | null>(null);
+  const [editSelectedFile3, setEditSelectedFile3] = useState<File | null>(null);
+  const [editUploadingFile, setEditUploadingFile] = useState<number | null>(null);
+
+  // 搜尋過濾
+  const filteredArticles = useMemo(() => {
+    if (!searchQuery.trim()) return articles;
+    const query = searchQuery.toLowerCase();
+    return articles.filter(article => 
+      article.title?.toLowerCase().includes(query) ||
+      article.content?.toLowerCase().includes(query)
+    );
+  }, [articles, searchQuery]);
+
+  // File upload handlers
+  const handleFileSelect = (fileNumber: 1 | 2 | 3, file: File | null) => {
+    if (!file) return;
+    
+    // Determine file type
+    let fileType = 'other';
+    if (file.type.startsWith('image/')) fileType = 'image';
+    else if (file.type.startsWith('video/')) fileType = 'video';
+    else if (file.type.startsWith('audio/')) fileType = 'audio';
+    
+    if (fileNumber === 1) {
+      setSelectedFile1(file);
+      setForm({ ...form, [`file${fileNumber}type`]: fileType });
+    } else if (fileNumber === 2) {
+      setSelectedFile2(file);
+      setForm({ ...form, [`file${fileNumber}type`]: fileType });
+    } else {
+      setSelectedFile3(file);
+      setForm({ ...form, [`file${fileNumber}type`]: fileType });
+    }
+  };
+
+  const handleEditFileSelect = (fileNumber: 1 | 2 | 3, file: File | null) => {
+    if (!file) return;
+    
+    // Determine file type
+    let fileType = 'other';
+    if (file.type.startsWith('image/')) fileType = 'image';
+    else if (file.type.startsWith('video/')) fileType = 'video';
+    else if (file.type.startsWith('audio/')) fileType = 'audio';
+    
+    if (fileNumber === 1) {
+      setEditSelectedFile1(file);
+      setEditForm({ ...editForm, [`file${fileNumber}type`]: fileType });
+    } else if (fileNumber === 2) {
+      setEditSelectedFile2(file);
+      setEditForm({ ...editForm, [`file${fileNumber}type`]: fileType });
+    } else {
+      setEditSelectedFile3(file);
+      setEditForm({ ...editForm, [`file${fileNumber}type`]: fileType });
+    }
+  };
+
+  const uploadFile = async (file: File, endpoint: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const appwriteConfig = localStorage.getItem('appwriteConfig');
+    const config = appwriteConfig ? JSON.parse(appwriteConfig) : {};
+    const params = new URLSearchParams({
+      _endpoint: config.endpoint || '',
+      _project: config.projectId || '',
+      _database: config.databaseId || '',
+      _key: config.apiKey || '',
+      _bucket: config.bucketId || '',
+    });
+
+    const response = await fetch(`${endpoint}?${params}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('上傳失敗');
+    }
+
+    const data = await response.json();
+    return data.url;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createArticle(form);
+      const formDataToSubmit = { ...form };
+
+      // Upload files if selected
+      if (selectedFile1) {
+        setUploadingFile(1);
+        const endpoint = form.file1type === 'image' ? '/api/upload-image' : 
+                        form.file1type === 'video' ? '/api/upload-video' : 
+                        '/api/upload-music';
+        formDataToSubmit.file1 = await uploadFile(selectedFile1, endpoint);
+      }
+      if (selectedFile2) {
+        setUploadingFile(2);
+        const endpoint = form.file2type === 'image' ? '/api/upload-image' : 
+                        form.file2type === 'video' ? '/api/upload-video' : 
+                        '/api/upload-music';
+        formDataToSubmit.file2 = await uploadFile(selectedFile2, endpoint);
+      }
+      if (selectedFile3) {
+        setUploadingFile(3);
+        const endpoint = form.file3type === 'image' ? '/api/upload-image' : 
+                        form.file3type === 'video' ? '/api/upload-video' : 
+                        '/api/upload-music';
+        formDataToSubmit.file3 = await uploadFile(selectedFile3, endpoint);
+      }
+
+      setUploadingFile(null);
+      await createArticle(formDataToSubmit);
       resetForm();
       setIsFormCollapsed(true);
     } catch {
+      setUploadingFile(null);
       alert("操作失敗，請稍後再試");
     }
   };
@@ -48,9 +174,39 @@ export default function NotesManagement() {
     e.preventDefault();
     if (!editingId) return;
     try {
-      await updateArticle(editingId, editForm);
+      const formDataToSubmit = { ...editForm };
+
+      // Upload new files if selected
+      if (editSelectedFile1) {
+        setEditUploadingFile(1);
+        const endpoint = editForm.file1type === 'image' ? '/api/upload-image' : 
+                        editForm.file1type === 'video' ? '/api/upload-video' : 
+                        '/api/upload-music';
+        formDataToSubmit.file1 = await uploadFile(editSelectedFile1, endpoint);
+      }
+      if (editSelectedFile2) {
+        setEditUploadingFile(2);
+        const endpoint = editForm.file2type === 'image' ? '/api/upload-image' : 
+                        editForm.file2type === 'video' ? '/api/upload-video' : 
+                        '/api/upload-music';
+        formDataToSubmit.file2 = await uploadFile(editSelectedFile2, endpoint);
+      }
+      if (editSelectedFile3) {
+        setEditUploadingFile(3);
+        const endpoint = editForm.file3type === 'image' ? '/api/upload-image' : 
+                        editForm.file3type === 'video' ? '/api/upload-video' : 
+                        '/api/upload-music';
+        formDataToSubmit.file3 = await uploadFile(editSelectedFile3, endpoint);
+      }
+
+      setEditUploadingFile(null);
+      await updateArticle(editingId, formDataToSubmit);
       setEditingId(null);
+      setEditSelectedFile1(null);
+      setEditSelectedFile2(null);
+      setEditSelectedFile3(null);
     } catch {
+      setEditUploadingFile(null);
       alert("更新失敗，請稍後再試");
     }
   };
@@ -72,12 +228,25 @@ export default function NotesManagement() {
       url1: article.url1 || "",
       url2: article.url2 || "",
       url3: article.url3 || "",
+      file1: article.file1 || "",
+      file1type: article.file1type || "",
+      file2: article.file2 || "",
+      file2type: article.file2type || "",
+      file3: article.file3 || "",
+      file3type: article.file3type || "",
     });
     setEditingId(article.$id);
+    setEditSelectedFile1(null);
+    setEditSelectedFile2(null);
+    setEditSelectedFile3(null);
   };
 
   const resetForm = () => {
     setForm(INITIAL_FORM);
+    setSelectedFile1(null);
+    setSelectedFile2(null);
+    setSelectedFile3(null);
+    setUploadingFile(null);
   };
 
   const resetEditForm = () => {
@@ -201,6 +370,45 @@ export default function NotesManagement() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">上傳檔案（選填）</label>
+            <div className="space-y-2">
+              <div>
+                <Input
+                  type="file"
+                  accept="image/*,video/*,audio/*"
+                  onChange={(e) => handleFileSelect(1, e.target.files?.[0] || null)}
+                  disabled={uploadingFile !== null}
+                  className="h-12 rounded-xl"
+                />
+                {selectedFile1 && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">已選擇: {selectedFile1.name}</p>}
+              </div>
+              <div>
+                <Input
+                  type="file"
+                  accept="image/*,video/*,audio/*"
+                  onChange={(e) => handleFileSelect(2, e.target.files?.[0] || null)}
+                  disabled={uploadingFile !== null}
+                  className="h-12 rounded-xl"
+                />
+                {selectedFile2 && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">已選擇: {selectedFile2.name}</p>}
+              </div>
+              <div>
+                <Input
+                  type="file"
+                  accept="image/*,video/*,audio/*"
+                  onChange={(e) => handleFileSelect(3, e.target.files?.[0] || null)}
+                  disabled={uploadingFile !== null}
+                  className="h-12 rounded-xl"
+                />
+                {selectedFile3 && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">已選擇: {selectedFile3.name}</p>}
+              </div>
+            </div>
+            {uploadingFile && (
+              <p className="text-sm text-purple-600 dark:text-purple-400">正在上傳檔案 {uploadingFile}...</p>
+            )}
+          </div>
+
           <FormActions>
             <Button type="submit" className="h-12 px-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-medium shadow-lg shadow-purple-500/25">
               新增筆記
@@ -211,12 +419,27 @@ export default function NotesManagement() {
         )}
       </FormCard>
 
+      {/* 搜尋欄位 */}
+      {articles.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋標題、內容..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
       <DataCard>
         {articles.length === 0 ? (
           <EmptyState emoji="📝" title="暫無筆記資料" description="點擊上方表單新增第一篇筆記" />
+        ) : filteredArticles.length === 0 ? (
+          <EmptyState emoji="🔍" title="無搜尋結果" description={`找不到「${searchQuery}」相關的筆記`} />
         ) : (
           <DataCardList>
-            {articles.map((article) => {
+            {filteredArticles.map((article) => {
               const isEditing = editingId === article.$id;
               const isExpanded = expandedArticles.has(article.$id);
               const hasUrls = article.url1 || article.url2 || article.url3;
@@ -261,6 +484,57 @@ export default function NotesManagement() {
                         <Input placeholder="URL 1" type="url" value={editForm.url1} onChange={(e) => setEditForm({ ...editForm, url1: e.target.value })} className="h-9 rounded-lg text-xs" />
                         <Input placeholder="URL 2" type="url" value={editForm.url2} onChange={(e) => setEditForm({ ...editForm, url2: e.target.value })} className="h-9 rounded-lg text-xs" />
                         <Input placeholder="URL 3" type="url" value={editForm.url3} onChange={(e) => setEditForm({ ...editForm, url3: e.target.value })} className="h-9 rounded-lg text-xs" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">上傳新檔案（選填）</label>
+                        <div className="space-y-2">
+                          <div>
+                            <Input
+                              type="file"
+                              accept="image/*,video/*,audio/*"
+                              onChange={(e) => handleEditFileSelect(1, e.target.files?.[0] || null)}
+                              disabled={editUploadingFile !== null}
+                              className="h-9 rounded-lg text-xs"
+                            />
+                            {editSelectedFile1 ? (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">已選擇: {editSelectedFile1.name}</p>
+                            ) : editForm.file1 ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">現有: {editForm.file1type === 'image' ? '🖼️' : editForm.file1type === 'video' ? '🎥' : editForm.file1type === 'audio' ? '🎵' : '📄'} 檔案 1</p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <Input
+                              type="file"
+                              accept="image/*,video/*,audio/*"
+                              onChange={(e) => handleEditFileSelect(2, e.target.files?.[0] || null)}
+                              disabled={editUploadingFile !== null}
+                              className="h-9 rounded-lg text-xs"
+                            />
+                            {editSelectedFile2 ? (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">已選擇: {editSelectedFile2.name}</p>
+                            ) : editForm.file2 ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">現有: {editForm.file2type === 'image' ? '🖼️' : editForm.file2type === 'video' ? '🎥' : editForm.file2type === 'audio' ? '🎵' : '📄'} 檔案 2</p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <Input
+                              type="file"
+                              accept="image/*,video/*,audio/*"
+                              onChange={(e) => handleEditFileSelect(3, e.target.files?.[0] || null)}
+                              disabled={editUploadingFile !== null}
+                              className="h-9 rounded-lg text-xs"
+                            />
+                            {editSelectedFile3 ? (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">已選擇: {editSelectedFile3.name}</p>
+                            ) : editForm.file3 ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">現有: {editForm.file3type === 'image' ? '🖼️' : editForm.file3type === 'video' ? '🎥' : editForm.file3type === 'audio' ? '🎵' : '📄'} 檔案 3</p>
+                            ) : null}
+                          </div>
+                        </div>
+                        {editUploadingFile && (
+                          <p className="text-xs text-purple-600 dark:text-purple-400">正在上傳檔案 {editUploadingFile}...</p>
+                        )}
                       </div>
 
                       <div className="flex gap-2 justify-end pt-2">
@@ -334,6 +608,30 @@ export default function NotesManagement() {
                           {article.url3 && (
                             <a href={article.url3} target="_blank" rel="noreferrer" className="block text-sm text-blue-600 dark:text-blue-400 hover:underline truncate">
                               {article.url3}
+                            </a>
+                          )}
+                        </div>
+                      )}
+
+                      {(article.file1 || article.file2 || article.file3) && (
+                        <div className="space-y-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <File size={16} />
+                            <span>附件</span>
+                          </div>
+                          {article.file1 && (
+                            <a href={article.file1} target="_blank" rel="noreferrer" className="block text-sm text-green-600 dark:text-green-400 hover:underline truncate">
+                              {article.file1type === 'image' ? '🖼️' : article.file1type === 'video' ? '🎥' : article.file1type === 'audio' ? '🎵' : '📄'} 檔案 1
+                            </a>
+                          )}
+                          {article.file2 && (
+                            <a href={article.file2} target="_blank" rel="noreferrer" className="block text-sm text-green-600 dark:text-green-400 hover:underline truncate">
+                              {article.file2type === 'image' ? '🖼️' : article.file2type === 'video' ? '🎥' : article.file2type === 'audio' ? '🎵' : '📄'} 檔案 2
+                            </a>
+                          )}
+                          {article.file3 && (
+                            <a href={article.file3} target="_blank" rel="noreferrer" className="block text-sm text-green-600 dark:text-green-400 hover:underline truncate">
+                              {article.file3type === 'image' ? '🖼️' : article.file3type === 'video' ? '🎥' : article.file3type === 'audio' ? '🎵' : '📄'} 檔案 3
                             </a>
                           )}
                         </div>

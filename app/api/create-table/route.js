@@ -47,12 +47,12 @@ const TABLE_SCHEMAS = {
       { key: 'url1', type: 'url', required: false },
       { key: 'url2', type: 'url', required: false },
       { key: 'url3', type: 'url', required: false },
-      { key: 'file1', type: 'string', size: 100, required: false },
-      { key: 'file2', type: 'string', size: 100, required: false },
-      { key: 'file3', type: 'string', size: 100, required: false },
-      { key: 'file1type', type: 'string', size: 100, required: false },
-      { key: 'file2type', type: 'string', size: 100, required: false },
-      { key: 'file3type', type: 'string', size: 100, required: false }
+      { key: 'file1', type: 'string', size: 150, required: false },
+      { key: 'file2', type: 'string', size: 150, required: false },
+      { key: 'file3', type: 'string', size: 150, required: false },
+      { key: 'file1type', type: 'string', size: 20, required: false },
+      { key: 'file2type', type: 'string', size: 20, required: false },
+      { key: 'file3type', type: 'string', size: 20, required: false }
     ]
   },
   food: {
@@ -173,18 +173,32 @@ export async function GET(request) {
 
         const databases = new sdk.Databases(client);
 
-        // Check if collection exists
+        // Check if collection exists and delete if rebuild is requested
         try {
-          await databases.getCollection(databaseId, tableName);
-          send({ type: 'error', message: `${tableName} table already exists` });
+          // List all collections to find any with matching name
+          const allCollections = await databases.listCollections(databaseId);
+          const existingCollections = allCollections.collections.filter(col => col.name === tableName);
+          
+          if (existingCollections.length > 0) {
+            // Delete all existing collections with this name
+            send({ type: 'progress', step: 'cleanup', message: `Found ${existingCollections.length} existing ${tableName} collection(s), deleting...` });
+            
+            for (const col of existingCollections) {
+              try {
+                await databases.deleteCollection(databaseId, col.$id);
+                send({ type: 'progress', step: 'cleanup', message: `Deleted collection ${col.$id}` });
+              } catch (delErr) {
+                console.error(`Failed to delete collection ${col.$id}:`, delErr);
+              }
+            }
+            
+            // Wait a bit for Appwrite to process deletions
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (err) {
+          send({ type: 'error', message: `Failed to check existing collections: ${err.message}` });
           controller.close();
           return;
-        } catch (err) {
-          if (err.code !== 404) {
-            send({ type: 'error', message: err.message });
-            controller.close();
-            return;
-          }
         }
 
         // Send start message
@@ -305,14 +319,26 @@ export async function POST(request) {
 
     const databases = new sdk.Databases(client);
 
+    // Delete all existing collections with this name
     try {
-      await databases.getCollection(databaseId, tableName);
-      return NextResponse.json(
-        { success: false, error: `${tableName} table already exists` },
-        { status: 400 }
-      );
+      const allCollections = await databases.listCollections(databaseId);
+      const existingCollections = allCollections.collections.filter(col => col.name === tableName);
+      
+      for (const col of existingCollections) {
+        try {
+          await databases.deleteCollection(databaseId, col.$id);
+          console.log(`Deleted existing collection ${col.$id} (${tableName})`);
+        } catch (delErr) {
+          console.error(`Failed to delete collection ${col.$id}:`, delErr);
+        }
+      }
+      
+      if (existingCollections.length > 0) {
+        // Wait for deletions to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     } catch (err) {
-      if (err.code !== 404) throw err;
+      console.error('Error checking/deleting existing collections:', err);
     }
 
     const collection = await databases.createCollection(

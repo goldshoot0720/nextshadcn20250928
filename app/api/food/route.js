@@ -75,7 +75,8 @@ export async function POST(req) {
     };
     
     // Only add optional fields if they have values
-    if (photo) docData.photo = photo;
+    // Use null for empty photo URLs (Appwrite requires valid URL or null)
+    if (photo && photo.trim()) docData.photo = photo;
     if (shop) docData.shop = shop;
     if (photohash) docData.photohash = photohash;
 

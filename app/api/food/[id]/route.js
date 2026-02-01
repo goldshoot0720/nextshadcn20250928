@@ -51,20 +51,41 @@ export async function PUT(req, context) {
     }
 
     const body = await req.json();
+    console.log('[PUT /api/food/[id]] Request body:', body);
     const { name, amount, todate, photo, price, shop, photohash } = body;
+
+    // Validate and format date
+    let formattedDate = '';
+    if (todate) {
+      try {
+        // Try to parse and format the date
+        const dateObj = new Date(todate);
+        if (isNaN(dateObj.getTime())) {
+          throw new Error(`Invalid date: ${todate}`);
+        }
+        // Format as YYYY-MM-DD for date field or ISO string for datetime
+        formattedDate = todate.includes('T') ? dateObj.toISOString() : todate;
+      } catch (dateErr) {
+        console.error('[PUT /api/food/[id]] Date parsing error:', dateErr);
+        return NextResponse.json({ error: `Invalid date format: ${todate}` }, { status: 400 });
+      }
+    }
 
     // Build document data, only include defined values
     const docData = {
       name: name || '',
       amount: amount ? parseInt(amount, 10) : 0,
-      todate: todate || '',
+      todate: formattedDate,
       price: price ? parseInt(price, 10) : 0,
     };
     
     // Only add optional fields if they have values
-    if (photo !== undefined) docData.photo = photo || '';
+    // Use null for empty photo URLs (Appwrite requires valid URL or null)
+    if (photo !== undefined) docData.photo = photo && photo.trim() ? photo : null;
     if (shop !== undefined) docData.shop = shop || '';
     if (photohash !== undefined) docData.photohash = photohash || '';
+
+    console.log('[PUT /api/food/[id]] Updating with data:', docData);
 
     const response = await databases.updateDocument(
       databaseId,
@@ -73,10 +94,27 @@ export async function PUT(req, context) {
       docData
     );
 
+    console.log('[PUT /api/food/[id]] Success');
     return NextResponse.json(response);
   } catch (err) {
     console.error("PUT /api/food/[id] error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("Error details:", {
+      message: err.message,
+      code: err.code,
+      type: err.type,
+      response: err.response,
+      stack: err.stack
+    });
+    
+    // Return detailed error message
+    const errorMessage = err.message || 'Update failed';
+    return NextResponse.json({ 
+      error: errorMessage,
+      details: {
+        code: err.code,
+        type: err.type
+      }
+    }, { status: 500 });
   }
 }
 

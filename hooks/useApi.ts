@@ -71,18 +71,42 @@ export async function fetchApi<T>(
   });
 
   if (!response.ok) {
-    if (response.status === 404) {
-      // 讀取錯誤訊息
-      const errorData = await response.json().catch(() => ({}));
-      if (errorData.error) {
-        // 直接使用 API 回傳的錯誤訊息
-        throw new Error(errorData.error);
+    // 嘗試讀取錯誤訊息
+    let errorMessage = `HTTP error! status: ${response.status}`;
+    let errorData: any = null;
+    
+    try {
+      const text = await response.text();
+      if (text) {
+        try {
+          errorData = JSON.parse(text);
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+          console.error('[fetchApi] Error response:', errorData);
+        } catch {
+          // Not JSON, use text as error message
+          errorMessage = text;
+          console.error('[fetchApi] Error text:', text);
+        }
+      } else {
+        console.error('[fetchApi] Empty error response body');
       }
-      // 如果沒有錯誤訊息，嘗試從 URL 提取 table 名稱
-      let tableName = url.split('/api/')[1]?.split('/')[0]?.split('?')[0] || 'table';
-      throw new Error(`Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`);
+    } catch (parseErr) {
+      console.error('[fetchApi] Could not read error response:', parseErr);
     }
-    throw new Error(`HTTP error! status: ${response.status}`);
+
+    if (response.status === 404) {
+      // 嘗試從 URL 提取 table 名稱
+      let tableName = url.split('/api/')[1]?.split('/')[0]?.split('?')[0] || 'table';
+      if (errorMessage === `HTTP error! status: 404`) {
+        errorMessage = `Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`;
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -230,7 +254,7 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
   const remove = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
+        await fetchApi(`${baseUrl}/${id}`, { method: "DELETE" });
         setItems((prev) => prev.filter((i) => i.$id !== id));
         clearCache();
         setRefreshKeyValue();

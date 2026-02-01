@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Image as ImageIcon, Plus, Edit, Trash2, RefreshCw, X, Calendar, Upload, Search } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
@@ -47,6 +47,18 @@ export default function ImageGallery() {
   const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingImage, setEditingImage] = useState<ImageData | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 搜尋過濾
+  const filteredImages = useMemo(() => {
+    if (!searchQuery.trim()) return images;
+    const query = searchQuery.toLowerCase();
+    return images.filter(image => 
+      image.name?.toLowerCase().includes(query) ||
+      image.note?.toLowerCase().includes(query) ||
+      image.category?.toLowerCase().includes(query)
+    );
+  }, [images, searchQuery]);
 
   const handleEdit = (image: ImageData) => {
     setEditingImage(image);
@@ -80,7 +92,7 @@ export default function ImageGallery() {
               <Plus size={16} />
               <span className="hidden sm:inline">新增圖片</span>
             </Button>
-            <Button onClick={loadImages} disabled={loading} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
+            <Button onClick={() => loadImages(true)} disabled={loading} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               <span className="hidden sm:inline">重新載入</span>
             </Button>
@@ -90,7 +102,24 @@ export default function ImageGallery() {
 
       <ImageStats images={images} />
 
-      <ImageGrid images={images} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={() => loadImages(true)} />
+      {/* 搜尋欄位 */}
+      {images.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="搜尋圖片名稱、備註、分類..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-xl"
+          />
+        </div>
+      )}
+
+      {filteredImages.length === 0 && images.length > 0 ? (
+        <EmptyState icon={<Search className="text-gray-400" size={32} />} title="無搜尋結果" description={`找不到「${searchQuery}」相關的圖片`} />
+      ) : (
+        <ImageGrid images={filteredImages} loading={loading} onSelectImage={setSelectedImage} onEdit={handleEdit} onRefresh={() => loadImages(true)} />
+      )}
       
       {selectedImage && (
         <ImagePreviewModal image={selectedImage} onClose={() => setSelectedImage(null)} />
