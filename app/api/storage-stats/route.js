@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic';
 function createAppwrite(config) {
   const endpoint = config?.endpoint || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = config?.projectId || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const apiKey = config?.apiKey || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
-  const bucketId = config?.bucketId || process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID;
+  const apiKey = config?.apiKey || process.env.APPWRITE_API_KEY || process.env.NEXT_PUBLIC_APPWRITE_API_KEY;
+  const bucketId = config?.bucketId || process.env.APPWRITE_BUCKET_ID || process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID;
+  const databaseId = config?.databaseId || process.env.APPWRITE_DATABASE_ID;
 
   if (!endpoint || !projectId || !apiKey || !bucketId) {
     throw new Error("Appwrite configuration is missing");
@@ -20,21 +21,224 @@ function createAppwrite(config) {
     .setKey(apiKey);
 
   const storage = new sdk.Storage(client);
+  const databases = new sdk.Databases(client);
 
-  return { storage, bucketId };
+  return { storage, databases, bucketId, databaseId };
+}
+
+// Helper function to get all files from storage
+async function getAllStorageFiles(storage, bucketId) {
+  let allFiles = [];
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const response = await storage.listFiles(bucketId, [
+      sdk.Query.limit(limit),
+      sdk.Query.offset(offset)
+    ]);
+
+    allFiles = allFiles.concat(response.files);
+
+    if (response.files.length < limit) {
+      break;
+    }
+
+    offset += limit;
+  }
+
+  return allFiles;
+}
+
+// Helper function to get all referenced file IDs from database
+async function getAllReferencedFileIds(databases, databaseId) {
+  const collections = ['image', 'video', 'music', 'commondocument', 'podcast'];
+  const fileIdSet = new Set();
+
+  for (const collectionName of collections) {
+    try {
+      let offset = 0;
+      const limit = 100;
+
+      while (true) {
+        const response = await databases.listDocuments(databaseId, collectionName, [
+          sdk.Query.limit(limit),
+          sdk.Query.offset(offset)
+        ]);
+
+        response.documents.forEach(doc => {
+          // Extract file IDs from various fields
+          if (doc.cover) fileIdSet.add(doc.cover);
+          if (doc.file) fileIdSet.add(doc.file);
+          if (doc.audio) fileIdSet.add(doc.audio);
+          if (doc.video) fileIdSet.add(doc.video);
+        });
+
+        if (response.documents.length < limit) {
+          break;
+        }
+
+        offset += limit;
+      }
+    } catch (error) {
+      console.error(`Error fetching ${collectionName}:`, error.message);
+    }
+  }
+
+  return fileIdSet;
+}
+
+// Count orphaned files
+async function countOrphanedFiles(appwriteConfig) {
+  try {
+    const { storage, databases, bucketId, databaseId } = createAppwrite(appwriteConfig);
+
+    // Get all storage files
+    const allFiles = await getAllStorageFiles(storage, bucketId);
+
+    // Get all referenced file IDs
+    const referencedIds = await getAllReferencedFileIds(databases, databaseId);
+
+    // Find orphaned files
+    const orphanedFiles = allFiles.filter(file => !referencedIds.has(file.$id));
+
+    // Categorize orphaned files by type
+    const orphanedByType = {
+      images: 0,
+      videos: 0,
+      music: 0,
+      documents: 0,
+      podcasts: 0,
+      other: 0
+    };
+
+    orphanedFiles.forEach(file => {
+      const mimeType = file.mimeType || '';
+      if (mimeType.startsWith('image/')) {
+        orphanedByType.images++;
+      } else if (mimeType.startsWith('video/')) {
+        orphanedByType.videos++;
+      } else if (mimeType.startsWith('audio/')) {
+        orphanedByType.music++;
+        orphanedByType.podcasts++; // Audio files could be music or podcasts
+      } else if (
+        mimeType === 'application/pdf' ||
+        mimeType === 'text/plain' ||
+        mimeType === 'text/markdown' ||
+        mimeType.includes('document') ||
+        mimeType.includes('spreadsheet')
+      ) {
+        orphanedByType.documents++;
+      } else {
+        orphanedByType.other++;
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      totalFiles: allFiles.length,
+      referencedFiles: referencedIds.size,
+      orphanedFiles: orphanedFiles.length,
+      orphanedByType,
+      orphanedFileIds: orphanedFiles.map(f => f.$id)
+    });
+  } catch (error) {
+    console.error('Count orphaned files error:', error);
+    return NextResponse.json({
+      error: error.message || '統計失敗',
+      totalFiles: 0,
+      referencedFiles: 0,
+      orphanedFiles: 0,
+      orphanedByType: {
+        images: 0,
+        videos: 0,
+        music: 0,
+        documents: 0,
+        podcasts: 0
+      }
+    }, { status: 500 });
+  }
+}
+
+// POST handler for deleting orphaned files
+export async function POST(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    if (action !== 'delete') {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    }
+
+    const appwriteConfig = {
+      endpoint: searchParams.get('_endpoint'),
+      projectId: searchParams.get('_project'),
+      databaseId: searchParams.get('_database'),
+      apiKey: searchParams.get('_key'),
+      bucketId: searchParams.get('_bucket'),
+    };
+
+    const { storage, databases, bucketId, databaseId } = createAppwrite(appwriteConfig);
+
+    // Get all storage files
+    const allFiles = await getAllStorageFiles(storage, bucketId);
+
+    // Get all referenced file IDs
+    const referencedIds = await getAllReferencedFileIds(databases, databaseId);
+
+    // Find orphaned files
+    const orphanedFiles = allFiles.filter(file => !referencedIds.has(file.$id));
+
+    // Delete orphaned files
+    let deletedCount = 0;
+    let failedCount = 0;
+
+    for (const file of orphanedFiles) {
+      try {
+        await storage.deleteFile(bucketId, file.$id);
+        deletedCount++;
+      } catch (error) {
+        console.error(`Failed to delete file ${file.$id}:`, error.message);
+        failedCount++;
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      deletedCount,
+      failedCount,
+      totalOrphaned: orphanedFiles.length
+    });
+  } catch (error) {
+    console.error('Delete orphaned files error:', error);
+    return NextResponse.json({
+      error: error.message || '刪除失敗',
+      deletedCount: 0,
+      failedCount: 0
+    }, { status: 500 });
+  }
 }
 
 // GET /api/storage-stats - Get storage statistics from Appwrite Storage
 export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+    
     const appwriteConfig = {
-      endpoint: request.headers.get('x-appwrite-endpoint'),
-      projectId: request.headers.get('x-appwrite-project'),
-      apiKey: request.headers.get('x-appwrite-key'),
-      bucketId: request.headers.get('x-appwrite-bucket'),
+      endpoint: searchParams.get('_endpoint'),
+      projectId: searchParams.get('_project'),
+      databaseId: searchParams.get('_database'),
+      apiKey: searchParams.get('_key'),
+      bucketId: searchParams.get('_bucket'),
     };
 
     const { storage, bucketId } = createAppwrite(appwriteConfig);
+
+    // If action is 'count', find orphaned files
+    if (action === 'count') {
+      return await countOrphanedFiles(appwriteConfig);
+    }
 
     // Get all files from the bucket
     let allFiles = [];
