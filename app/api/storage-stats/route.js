@@ -4,6 +4,19 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to get collection ID by name
+async function getCollectionId(databases, databaseId, name) {
+  try {
+    const allCollections = await databases.listCollections(databaseId);
+    const col = allCollections.collections.find(c => c.name === name);
+    if (!col) return null; // Return null if not found instead of throwing
+    return col.$id;
+  } catch (error) {
+    console.error(`Error getting collection ID for ${name}:`, error.message);
+    return null;
+  }
+}
+
 function createAppwrite(config) {
   const endpoint = config?.endpoint || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = config?.projectId || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
@@ -52,11 +65,11 @@ async function getAllStorageFiles(storage, bucketId) {
 
 // Helper function to get all referenced file IDs from database
 async function getAllReferencedFileIds(databases, databaseId) {
-  // 所有可能使用檔案的集合與對應欄位
+  // 所有可能使用檔案的集合與對應欄位 (使用 table name)
   // bank, commonaccount, subscription 不會使用到 storage 檔案
   const collectionFields = {
-    // 'article': ['file1', 'file2', 'file3'],  // 筆記 - file1, file2, file3 (collection 不存在，已註解)
-    // 'food': ['photo'],                        // 食物 - photo (collection 不存在，已註解)
+    'article': ['file1', 'file2', 'file3'],  // 筆記 - file1, file2, file3
+    'food': ['photo'],                        // 食物 - photo
     'music': ['file', 'cover'],               // 音樂 - file, cover
     'podcast': ['file'],                      // 播客 - file
     'commondocument': ['file'],               // 文件 - file
@@ -70,15 +83,23 @@ async function getAllReferencedFileIds(databases, databaseId) {
 
   for (const [collectionName, fields] of Object.entries(collectionFields)) {
     try {
+      // 使用 table name 查詢 collection ID
+      const collectionId = await getCollectionId(databases, databaseId, collectionName);
+      
+      if (!collectionId) {
+        console.log(`    ⚠️ 跳過 ${collectionName}: Collection 不存在`);
+        continue;
+      }
+
       let offset = 0;
       const limit = 100;
       let collectionTotal = 0;
       let filesFound = 0;
 
-      console.log(`\n  📂 ${collectionName} (欄位: ${fields.join(', ')})`);
+      console.log(`\n  📂 ${collectionName} [${collectionId}] (欄位: ${fields.join(', ')})`);
 
       while (true) {
-        const response = await databases.listDocuments(databaseId, collectionName, [
+        const response = await databases.listDocuments(databaseId, collectionId, [
           sdk.Query.limit(limit),
           sdk.Query.offset(offset)
         ]);
@@ -105,11 +126,7 @@ async function getAllReferencedFileIds(databases, databaseId) {
 
       console.log(`    📊 ${collectionName}: ${collectionTotal} 筆資料, ${filesFound} 個檔案引用`);
     } catch (error) {
-      if (error.message && error.message.includes('could not be found')) {
-        console.log(`    ⚠️ 跳過 ${collectionName}: Collection 不存在`);
-      } else {
-        console.error(`    ❌ 錯誤 ${collectionName}:`, error.message);
-      }
+      console.error(`    ❌ 錯誤 ${collectionName}:`, error.message);
     }
   }
 
