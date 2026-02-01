@@ -306,15 +306,6 @@ function DocumentCard({ document, onEdit, onDelete, onPreview }: DocumentCardPro
 
       {/* 操作按鈕 */}
       <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-        {canPreview && (
-          <button
-            onClick={onPreview}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200 text-sm font-medium"
-          >
-            <Eye className="w-4 h-4" />
-            預覽
-          </button>
-        )}
         {document.file && (
           <a
             href={getAppwriteDownloadUrl(document.file)}
@@ -327,12 +318,22 @@ function DocumentCard({ document, onEdit, onDelete, onPreview }: DocumentCardPro
             下載
           </a>
         )}
+        {canPreview && (
+          <button
+            onClick={onPreview}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200 text-sm font-medium"
+          >
+            <Eye className="w-4 h-4" />
+            預覽
+          </button>
+        )}
         <button
           onClick={onEdit}
-          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all duration-200 text-sm font-medium"
           title="編輯"
         >
           <Edit className="w-4 h-4" />
+          編輯
         </button>
         <button
           onClick={onDelete}
