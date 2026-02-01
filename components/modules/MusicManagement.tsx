@@ -313,7 +313,7 @@ function MusicCard({ music, isPlaying, onPlay, onEdit, onDelete }: MusicCardProp
               <div className="space-y-2">
                 <PlyrPlayer 
                   type="audio"
-                  src={music.file}
+                  src={addAppwriteConfigToUrl(music.file)}
                   loop={isLooping}
                   className="w-full"
                 />

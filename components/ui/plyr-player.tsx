@@ -118,17 +118,8 @@ export function PlyrPlayer({
     );
   }
 
-  // Apply styling based on aspect ratio
-  const containerClass = type === 'video' 
-    ? aspectRatio === 'portrait' 
-      ? 'max-w-md mx-auto' // Vertical video: narrower container, centered
-      : aspectRatio === 'square'
-      ? 'max-w-2xl mx-auto' // Square video: medium container, centered
-      : 'w-full' // Landscape video: full width
-    : '';
-
   return (
-    <div className={`${className} ${containerClass}`}>
+    <div className={className}>
       <Plyr {...plyrProps} />
     </div>
   );

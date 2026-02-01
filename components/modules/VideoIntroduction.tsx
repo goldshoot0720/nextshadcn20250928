@@ -207,7 +207,7 @@ export default function VideoIntroduction() {
 
       {/* 搜尋欄位 */}
       {videos.length > 0 && (
-        <div className="relative mb-4">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input
             placeholder="搜尋影片名稱、備註..."
@@ -275,16 +275,40 @@ export default function VideoIntroduction() {
 
 // 影片播放器模態框
 function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; videoRef: React.RefObject<HTMLVideoElement | null>; onClose: () => void }) {
+  const [isPortrait, setIsPortrait] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Detect video aspect ratio
+  useEffect(() => {
+    const checkAspectRatio = () => {
+      const videoElement = modalRef.current?.querySelector('video');
+      if (videoElement && videoElement.videoWidth && videoElement.videoHeight) {
+        const ratio = videoElement.videoWidth / videoElement.videoHeight;
+        setIsPortrait(ratio < 1); // Portrait if width < height
+      }
+    };
+
+    const timer = setTimeout(checkAspectRatio, 500);
+    return () => clearTimeout(timer);
+  }, [video]);
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-2 sm:p-4">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{video.name}</h3>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+      <div 
+        ref={modalRef}
+        className={`bg-white dark:bg-gray-800 rounded-2xl w-full max-h-[85vh] overflow-y-auto ${
+          isPortrait ? 'max-w-md' : 'max-w-4xl'
+        }`} 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{video.name}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className={isPortrait ? 'pb-16' : 'pb-4'}>
           <PlyrPlayer
             type="video"
             src={videoRef.current?.src || video.file || ''}
@@ -292,6 +316,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
             className="w-full"
           />
         </div>
+        
         {video.note && (
           <div className="p-4 pt-0">
             <p className="text-gray-600 dark:text-gray-400 text-sm">{video.note}</p>
@@ -315,6 +340,7 @@ interface VideoManagementCardProps {
 
 function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onDownload, onDeleteCache }: VideoManagementCardProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -346,66 +372,84 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
     }
   }, [video.cover, video.file]);
 
+  const handlePlayClick = () => {
+    setIsPlaying(true);
+    onPlay();
+  };
+
   return (
     <DataCard className="overflow-hidden hover:shadow-md transition-all duration-200 group">
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      {/* 縮圖 */}
-      <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" onClick={onPlay}>
-        {(video.cover || thumbnailUrl) ? (
-          <img 
-            src={video.cover || thumbnailUrl || ''} 
-            alt={video.name} 
-            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
+      
+      {isPlaying ? (
+        /* 播放器 */
+        <div className="relative">
+          <PlyrPlayer
+            type="video"
+            src={video.file || ''}
+            poster={video.cover}
+            className="w-full"
           />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300" />
-        )}
-        
-        {/* 播放按鈕 */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Play className="text-white group-hover:scale-110 transition-transform duration-300 w-12 h-12 drop-shadow-lg" />
         </div>
-        
-        {/* 分類標籤 */}
-        {video.category && (
-          <div className="absolute top-2 left-2">
-            <span className="px-2 py-1 text-xs font-medium bg-indigo-500/90 text-white rounded-md backdrop-blur-sm">
-              {video.category}
-            </span>
+      ) : (
+        /* 縮圖 */
+        <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden cursor-pointer" onClick={handlePlayClick}>
+          {(video.cover || thumbnailUrl) ? (
+            <img 
+              src={video.cover || thumbnailUrl || ''} 
+              alt={video.name} 
+              className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300" />
+          )}
+          
+          {/* 播放按鈕 */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Play className="text-white group-hover:scale-110 transition-transform duration-300 w-12 h-12 drop-shadow-lg" />
           </div>
-        )}
-        
-        <div className="absolute top-2 right-2 flex gap-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
-          {typeof video.cover === 'string' && video.cover && (
-            <div className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center">
-              THUMBNAIL
+          
+          {/* 分類標籤 */}
+          {video.category && (
+            <div className="absolute top-2 left-2">
+              <span className="px-2 py-1 text-xs font-medium bg-indigo-500/90 text-white rounded-md backdrop-blur-sm">
+                {video.category}
+              </span>
             </div>
           )}
-          <CacheStatusIcon status={cacheStatus} />
-        </div>
+          
+          <div className="absolute top-2 right-2 flex gap-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+            {typeof video.cover === 'string' && video.cover && (
+              <div className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center">
+                THUMBNAIL
+              </div>
+            )}
+            <CacheStatusIcon status={cacheStatus} />
+          </div>
 
-        {/* 編輯和刪除按鈕 */}
-        <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
-          >
-            <Edit className="w-4 h-4 text-blue-600" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
-          >
-            <Trash2 className="w-4 h-4 text-red-600" />
-          </button>
+          {/* 編輯和刪除按鈕 */}
+          <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
+            >
+              <Edit className="w-4 h-4 text-blue-600" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="bg-white/90 backdrop-blur-sm hover:bg-white rounded-lg p-2 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       
       {/* 資訊 */}
       <div className="p-4">
@@ -421,7 +465,7 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
         </div>
         
         <div className="flex gap-2">
-          <Button onClick={onPlay} className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl text-sm">
+          <Button onClick={handlePlayClick} className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl text-sm">
             <Play size={14} />
             <span className="hidden xs:inline">播放影片</span>
             <span className="xs:hidden">播放</span>

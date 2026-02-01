@@ -187,7 +187,8 @@ export function useVideoCache() {
       }
 
       const blob = new Blob(chunks as BlobPart[], { type: 'video/mp4' });
-      await saveVideoToCache(video.id, blob, video, total);
+      const actualSize = blob.size; // Use actual blob size
+      await saveVideoToCache(video.id, blob, video, actualSize);
 
       setCacheStatus(prev => ({
         ...prev,
@@ -195,7 +196,7 @@ export function useVideoCache() {
           cached: true,
           downloading: false,
           progress: 100,
-          size: total,
+          size: actualSize,
           cachedAt: new Date().toISOString()
         }
       }));

@@ -215,7 +215,7 @@ export default function SubscriptionManagement() {
     setForm({ 
       name: sub.name,
       site: sub.site,
-      price: sub.price !== undefined && sub.price !== null && sub.price !== 0 ? sub.price : undefined,
+      price: sub.price !== undefined && sub.price !== null && sub.price !== 0 ? sub.price : 0,
       nextdate: sub.nextdate ? formatDate(sub.nextdate) : "",
       note: sub.note || "",
       account: sub.account || "",
@@ -402,7 +402,7 @@ export default function SubscriptionManagement() {
                     min="0" 
                     step="0.01"
                     value={form.price ?? ""} 
-                    onChange={(e) => setForm({ ...form, price: e.target.value === "" ? undefined : parseFloat(e.target.value) || 0 })} 
+                    onChange={(e) => setForm({ ...form, price: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })} 
                     className="h-12 rounded-xl flex-1" 
                   />
                   <div className="px-1 h-4">

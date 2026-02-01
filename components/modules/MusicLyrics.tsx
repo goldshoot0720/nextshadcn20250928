@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Music, Search, Plus, Heart, Play, Pause, Volume2, SkipBack, SkipForward, Download, Copy } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
+import { useMusic, MusicData } from "@/hooks/useMusic";
 
 interface Song {
   id: string;
@@ -40,6 +41,7 @@ interface Song {
   genre?: string;
   year?: number;
   isFavorite: boolean;
+  originalData?: MusicData; // 保存原始 Appwrite 數據
 }
 
 // 示例歌曲數據
@@ -853,6 +855,9 @@ AI 보조 행정 조작, 데이터 개방의 새로운 시대
 ];
 
 export default function MusicLyrics() {
+  // 從 Appwrite 獲取音樂數據
+  const { music: appwriteMusic, loading: musicLoading, error: musicError } = useMusic();
+  
   const [songs, setSongs] = useState<Song[]>(SAMPLE_SONGS);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState<'zh' | 'en' | 'ja' | 'yue' | 'ko'>('zh');
@@ -881,6 +886,48 @@ export default function MusicLyrics() {
     genre: "",
     year: new Date().getFullYear(),
   });
+
+  // 將 Appwrite 音樂數據轉換為 Song 格式
+  useEffect(() => {
+    if (appwriteMusic && appwriteMusic.length > 0) {
+      const convertedSongs: Song[] = appwriteMusic.map((music) => {
+        // 解析歌詞（假設存儲為 JSON 字符串）
+        let parsedLyrics: any = {};
+        try {
+          parsedLyrics = music.lyrics ? JSON.parse(music.lyrics) : {};
+        } catch {
+          parsedLyrics = { zh: music.lyrics || "" };
+        }
+
+        // 根據 language 字段確定音頻文件的語言
+        const lang = (music.language || 'zh') as 'zh' | 'en' | 'ja' | 'yue' | 'ko';
+        
+        return {
+          id: music.$id,
+          title: music.name,
+          artist: "鋒兄 & 塗哥", // 默認藝術家
+          album: "鋒兄音樂精選",
+          lyrics: {
+            zh: parsedLyrics.zh || parsedLyrics[lang] || music.lyrics || "",
+            en: parsedLyrics.en,
+            ja: parsedLyrics.ja,
+            yue: parsedLyrics.yue,
+            ko: parsedLyrics.ko,
+          },
+          audioFiles: {
+            [lang]: music.file, // 使用 Appwrite Storage URL
+          } as any,
+          genre: music.category || "台灣民謠",
+          year: new Date(music.$createdAt).getFullYear(),
+          isFavorite: false,
+          originalData: music,
+        };
+      });
+
+      // 合併 Appwrite 數據和示例數據
+      setSongs([...convertedSongs, ...SAMPLE_SONGS]);
+    }
+  }, [appwriteMusic]);
 
   // 格式化歌词显示
   const formatLyrics = useCallback((lyrics: string) => {
@@ -1510,6 +1557,22 @@ export default function MusicLyrics() {
           </Button>
         }
       />
+
+      {/* 加載狀態 */}
+      {musicLoading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">正在載入音樂...</p>
+        </div>
+      )}
+
+      {/* 錯誤狀態 */}
+      {musicError && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-600 dark:text-red-400">載入音樂失敗: {musicError}</p>
+        </div>
+      )}
+
       {/* 添加歌词样式 */}
       <style jsx>{`
         .lyrics-container {
