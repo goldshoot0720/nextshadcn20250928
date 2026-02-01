@@ -1975,17 +1975,31 @@ export default function MusicLyrics() {
                     
                     {/* 播放信息 - 手機優化 */}
                     <div className="mb-4 space-y-3">
-                      <div>
-                        <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100">
-                          正在播放: {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : currentLanguage === 'ja' ? '日文版' : currentLanguage === 'yue' ? '粵語版' : '韓語版'}
-                          {currentVariation !== 'default' && ` - ${currentVariation}`}
-                        </h4>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
-                          {selectedSong.title} - {selectedSong.artist}
-                        </p>
-                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                          🎵 真實音頻 - 來自 /musics 文件夾
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100">
+                            正在播放: {currentLanguage === 'zh' ? '中文版' : currentLanguage === 'en' ? '英文版' : currentLanguage === 'ja' ? '日文版' : currentLanguage === 'yue' ? '粵語版' : '韓語版'}
+                            {currentVariation !== 'default' && ` - ${currentVariation}`}
+                          </h4>
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {selectedSong.title} - {selectedSong.artist}
+                          </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            🎵 {currentAudio ? 'Appwrite Storage' : '準備播放'}
+                          </p>
+                        </div>
+                        
+                        {/* 大時間顯示 */}
+                        {currentAudio && duration > 0 && (
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400 font-mono">
+                              {formatTime(currentTime)}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              / {formatTime(duration)}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       {/* 播放控制按鈕 - 手機優化 */}
@@ -2006,31 +2020,54 @@ export default function MusicLyrics() {
                       </div>
                     </div>
                     
-                    {/* 進度條 */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 w-10">
-                          {formatTime(currentTime)}
-                        </span>
-                        <div className="flex-1">
-                          <Slider
-                            value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
-                            onValueChange={handleProgressChange}
-                            max={100}
-                            step={0.1}
-                            className="w-full"
-                            disabled={!currentAudio || duration === 0}
-                          />
+                    {/* 時間軸和進度條 - 增強版 */}
+                    <div className="space-y-4">
+                      {/* 播放進度時間軸 */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                          <span className="font-medium">播放進度</span>
+                          <span className="font-mono">
+                            {formatTime(currentTime)} / {formatTime(duration)}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 w-10">
-                          {formatTime(duration)}
-                        </span>
+                        
+                        <div className="relative">
+                          {/* 進度條背景 */}
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            {/* 已播放進度 */}
+                            <div 
+                              className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300 ease-out"
+                              style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                            />
+                          </div>
+                          
+                          {/* 可拖動的滑塊 */}
+                          <div className="absolute top-0 left-0 w-full h-2">
+                            <Slider
+                              value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
+                              onValueChange={handleProgressChange}
+                              max={100}
+                              step={0.1}
+                              className="w-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                              disabled={!currentAudio || duration === 0}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* 時間標記 */}
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
+                          <span>0:00</span>
+                          <span>{formatTime(duration / 4)}</span>
+                          <span>{formatTime(duration / 2)}</span>
+                          <span>{formatTime(duration * 3 / 4)}</span>
+                          <span>{formatTime(duration)}</span>
+                        </div>
                       </div>
                       
                       {/* 音量控制 */}
-                      <div className="flex items-center gap-3">
-                        <Volume2 size={16} className="text-gray-500 dark:text-gray-400" />
-                        <div className="flex-1 max-w-32">
+                      <div className="flex items-center gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <Volume2 size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <div className="flex-1 max-w-xs">
                           <Slider
                             value={[volume * 100]}
                             onValueChange={handleVolumeChange}
@@ -2039,7 +2076,7 @@ export default function MusicLyrics() {
                             className="w-full"
                           />
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 w-8">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-10 text-right font-mono">
                           {Math.round(volume * 100)}%
                         </span>
                       </div>
