@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FileText as DocumentIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, Download, Eye, FileArchive, File } from "lucide-react";
+import { FileText as DocumentIcon, Plus, Edit, Edit2, Trash2, X, Upload, Calendar, Search, Download, Eye, FileArchive, File } from "lucide-react";
 import { useCommonDocument, CommonDocumentData } from "@/hooks/useCommonDocument";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -228,6 +228,7 @@ export default function CommonDocumentManagement() {
               onEdit={() => handleEdit(doc)}
               onDelete={() => handleDelete(doc)}
               onPreview={() => handlePreview(doc)}
+              onEditContent={() => handlePreview(doc)}
             />
           ))}
         </div>
@@ -263,11 +264,14 @@ interface DocumentCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onPreview: () => void;
+  onEditContent: () => void;
 }
 
-function DocumentCard({ document, onEdit, onDelete, onPreview }: DocumentCardProps) {
+function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: DocumentCardProps) {
   const fileInfo = getFileTypeInfo(document.name || document.file || '');
   const canPreview = document.file && canPreviewFile(document.name || document.file);
+  const ext = getFileExtension(document.name || document.file || '');
+  const canEditContent = ext === 'txt' || ext === 'md';
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700 p-4">
@@ -327,13 +331,22 @@ function DocumentCard({ document, onEdit, onDelete, onPreview }: DocumentCardPro
             預覽
           </button>
         )}
+        {canEditContent && (
+          <button
+            onClick={onEditContent}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all duration-200 text-sm font-medium"
+            title="編輯檔案內容"
+          >
+            <Edit className="w-4 h-4" />
+            編輯內容
+          </button>
+        )}
         <button
           onClick={onEdit}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all duration-200 text-sm font-medium"
-          title="編輯"
+          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-200"
+          title="編輯資訊"
         >
-          <Edit className="w-4 h-4" />
-          編輯
+          <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={onDelete}
