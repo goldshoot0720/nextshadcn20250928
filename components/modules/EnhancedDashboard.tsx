@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useMediaStats } from "@/hooks/useMediaStats";
-import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive, FileText, Star, Building2, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
+import { Package, CreditCard, AlertTriangle, TrendingUp, DollarSign, Cloud, Layout, Server, FileVideo, Shield, Zap, Image, Music, HardDrive, FileText, Star, Building2, ChevronDown, ChevronUp, CalendarClock, Mic, Bell } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataCard } from "@/components/ui/data-card";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
@@ -151,6 +151,31 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
       {/* 多媒體儲存統計 */}
       <MediaStorageStats stats={mediaStats} onNavigate={onNavigate} />
       
+      {/* 訂閱到期提醒 */}
+      {stats.subscriptionsExpiring3Days > 0 && (
+        <DataCard className="p-4 bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+              <Bell className="text-orange-600 dark:text-orange-400" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                🔔 有 {stats.subscriptionsExpiring3Days} 項訂閱將在3天內到期
+              </p>
+              <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                請至「鋒兄訂閱」查看詳情
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate('subscription')}
+              className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              查看
+            </button>
+          </div>
+        </DataCard>
+      )}
+      
       {/* 主要統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard title="訂閱服務" value={stats.totalSubscriptions} icon={CreditCard} gradient="from-green-500 to-green-600" />
@@ -167,19 +192,15 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
 
       {/* 多媒體統計 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <StatCard title="圖片總數" value={mediaStats.totalImages} icon={Image} gradient="from-blue-500 to-blue-600" />
-        <StatCard title="影片總數" value={mediaStats.totalVideos} icon={FileVideo} gradient="from-red-500 to-red-600" />
         <StatCard title="音樂總數" value={mediaStats.totalMusic} icon={Music} gradient="from-violet-500 to-violet-600" />
+        <StatCard title="文件總數" value={mediaStats.totalDocuments} icon={FileText} gradient="from-green-500 to-green-600" />
+        <StatCard title="播客總數" value={mediaStats.totalPodcasts} icon={Mic} gradient="from-orange-500 to-orange-600" />
       </div>
 
-      {/* 銀行統計 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      {/* 銀行統計 + 例行統計 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard title="銀行總數" value={stats.totalBanks} icon={Building2} gradient="from-cyan-500 to-cyan-600" />
         <StatCard title="銀行存款" value={formatCurrency(stats.totalBankDeposit)} icon={Building2} gradient="from-emerald-500 to-emerald-600" />
-      </div>
-
-      {/* 例行統計 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <StatCard title="例行數量" value={stats.totalRoutines} icon={CalendarClock} gradient="from-purple-500 to-purple-600" />
       </div>
 
@@ -369,7 +390,7 @@ function AlertSection({ stats }: { stats: ReturnType<typeof useDashboardStats>["
 }
 
 // 多媒體儲存統計
-function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number; totalVideos: number; totalMusic: number; totalDocuments: number; storageImagesCount: number; storageVideosCount: number; storageMusicCount: number; imagesSize: number; videosSize: number; musicSize: number; documentsSize: number; otherSize: number; totalSize: number; totalFiles: number; storageLimit: number; usagePercentage: number }; onNavigate: (id: string) => void }) {
+function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number; totalVideos: number; totalMusic: number; totalDocuments: number; totalPodcasts: number; storageImagesCount: number; storageVideosCount: number; storageMusicCount: number; imagesSize: number; videosSize: number; musicSize: number; documentsSize: number; otherSize: number; totalSize: number; totalFiles: number; storageLimit: number; usagePercentage: number }; onNavigate: (id: string) => void }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [includeDbRecords, setIncludeDbRecords] = useState(false);
   
@@ -415,7 +436,7 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
               className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             />
             <label htmlFor="includeDbRecords" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-              包含所有圖片、影片、音樂、文件（鋒兄圖片、鋒兄影片、鋒兄音樂、鋒兄文件）
+              包含所有圖片、影片、音樂、文件、播客（鋒兄圖片、鋒兄影片、鋒兄音樂、鋒兄文件、鋒兄播客）
             </label>
           </div>
 
@@ -436,7 +457,7 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
           </div>
 
           {/* 分類統計 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <MediaStatCard 
           icon={Image} 
           title="鋒兄圖片" 
@@ -465,6 +486,13 @@ function MediaStorageStats({ stats, onNavigate }: { stats: { totalImages: number
           size={formatBytes(stats.documentsSize)} 
           color="green"
         />
+        <MediaStatCard 
+          icon={Mic} 
+          title="鋒兄播客" 
+          count={stats.totalPodcasts} 
+          size="-" 
+          color="orange"
+        />
       </div>
         </>
       )}
@@ -479,6 +507,7 @@ function MediaStatCard({ icon: Icon, title, count, size, color }: { icon: any; t
     indigo: { bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-600 dark:text-indigo-400' },
     purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400' },
     green: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400' },
+    orange: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-400' },
   };
 
   const colors = colorMap[color];
