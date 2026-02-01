@@ -54,14 +54,20 @@ export async function POST(request) {
     // 檢查檔案類型
     const validTypes = [
       'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/m4a',
-      'application/pdf', 'text/plain', 'text/markdown',
+      'application/pdf', 'text/plain', 'text/markdown', 'text/x-markdown',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
       'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
       'application/zip', 'application/x-zip-compressed', // zip
       'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska' // video formats
     ];
-    if (!validTypes.includes(file.type)) {
+    
+    // 檢查副檔名 (用於 MIME type 不明確的情況，如 .md 檔案)
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.mp3', '.wav', '.ogg', '.aac', '.flac', '.m4a', '.pdf', '.txt', '.md', '.docx', '.xlsx', '.pptx', '.zip', '.rar', '.7z', '.mp4', '.webm', '.mov', '.avi', '.mkv'];
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!validTypes.includes(file.type) && !hasValidExtension) {
       return NextResponse.json({ error: '只支援 MP3, WAV, OGG, AAC, FLAC, M4A, PDF, TXT, MD, DOCX, XLSX, PPTX, ZIP, MP4, WEBM, MOV, AVI, MKV 格式' }, { status: 400 });
     }
 
