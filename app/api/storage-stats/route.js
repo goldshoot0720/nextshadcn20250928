@@ -52,21 +52,22 @@ async function getAllStorageFiles(storage, bucketId) {
 
 // Helper function to get all referenced file IDs from database
 async function getAllReferencedFileIds(databases, databaseId) {
-  // 所有可能使用檔案的集合
+  // 所有可能使用檔案的集合與對應欄位
   // bank, commonaccount, subscription 不會使用到 storage 檔案
-  const collections = [
-    'article',      // 筆記 - 可能有圖片
-    'food',         // 食物 - 可能有圖片
-    'music',        // 音樂 - audio, cover
-    'podcast',      // 播客 - audio, cover
-    'commondocument', // 文件 - file
-    'routine',      // 行程 - 可能有附件
-    'video',        // 影片 - video, cover
-    'image'         // 圖片 - file
-  ];
+  const collectionFields = {
+    'article': ['file1', 'file2', 'file3'],  // 筆記 - file1, file2, file3
+    'food': ['photo'],                        // 食物 - photo
+    'music': ['file', 'cover'],               // 音樂 - file, cover
+    'podcast': ['file'],                      // 播客 - file
+    'commondocument': ['file'],               // 文件 - file
+    'routine': ['photo'],                     // 行程 - photo
+    'video': ['file', 'cover'],               // 影片 - file, cover
+    'image': ['file']                         // 圖片 - file
+  };
+  
   const fileIdSet = new Set();
 
-  for (const collectionName of collections) {
+  for (const [collectionName, fields] of Object.entries(collectionFields)) {
     try {
       let offset = 0;
       const limit = 100;
@@ -78,13 +79,12 @@ async function getAllReferencedFileIds(databases, databaseId) {
         ]);
 
         response.documents.forEach(doc => {
-          // Extract file IDs from various fields
-          if (doc.cover) fileIdSet.add(doc.cover);      // 封面圖
-          if (doc.file) fileIdSet.add(doc.file);        // 檔案
-          if (doc.audio) fileIdSet.add(doc.audio);      // 音訊檔
-          if (doc.video) fileIdSet.add(doc.video);      // 影片檔
-          if (doc.image) fileIdSet.add(doc.image);      // 圖片檔
-          if (doc.attachment) fileIdSet.add(doc.attachment); // 附件
+          // Extract file IDs from collection-specific fields
+          fields.forEach(field => {
+            if (doc[field]) {
+              fileIdSet.add(doc[field]);
+            }
+          });
         });
 
         if (response.documents.length < limit) {
