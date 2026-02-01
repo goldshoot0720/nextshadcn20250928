@@ -35,9 +35,15 @@ export function useBanks() {
   // 新增銀行
   const createBank = useCallback(async (formData: BankFormData): Promise<Bank | null> => {
     try {
+      // 清理 URL 欄位，空值或非 URL 格式處理為 null
+      const sanitizedData = { ...formData };
+      if (!sanitizedData.activity || sanitizedData.activity.trim() === '') {
+        delete (sanitizedData as any).activity; // 刪除空值以避免驗證錯誤
+      }
+      
       const newBank = await fetchApi<Bank>(API_ENDPOINTS.BANK, {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sanitizedData),
       });
       // 重新載入以確保資料同步
       await loadBanks();
@@ -51,9 +57,15 @@ export function useBanks() {
   // 更新銀行
   const updateBank = useCallback(async (id: string, formData: BankFormData): Promise<Bank | null> => {
     try {
+      // 清理 URL 欄位，空值或非 URL 格式處理為 null
+      const sanitizedData = { ...formData };
+      if (!sanitizedData.activity || sanitizedData.activity.trim() === '') {
+        delete (sanitizedData as any).activity; // 刪除空值以避免驗證錯誤
+      }
+      
       const updatedBank = await fetchApi<Bank>(`${API_ENDPOINTS.BANK}/${id}`, {
         method: "PUT",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sanitizedData),
       });
       // 重新載入以確保資料同步
       await loadBanks();
