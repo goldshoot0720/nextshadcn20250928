@@ -501,14 +501,6 @@ export default function BankManagement() {
                       </div>
                     )}
 
-                    {/* 網站 */}
-                    {bank.site && (
-                      <a href={bank.site} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                        <FaviconImage siteUrl={bank.site} siteName={bank.name} size={16} />
-                        <span>官方網站</span>
-                      </a>
-                    )}
-
                     {/* 額度資訊 */}
                     {(bank.withdrawals || bank.transfer) && (
                       <div className="flex items-center gap-4 text-xs">
