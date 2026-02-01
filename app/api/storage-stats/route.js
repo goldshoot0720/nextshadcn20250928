@@ -56,7 +56,7 @@ async function getAllReferencedFileIds(databases, databaseId) {
   // bank, commonaccount, subscription 不會使用到 storage 檔案
   const collectionFields = {
     // 'article': ['file1', 'file2', 'file3'],  // 筆記 - file1, file2, file3 (collection 不存在，已註解)
-    'food': ['photo'],                        // 食物 - photo
+    // 'food': ['photo'],                        // 食物 - photo (collection 不存在，已註解)
     'music': ['file', 'cover'],               // 音樂 - file, cover
     'podcast': ['file'],                      // 播客 - file
     'commondocument': ['file'],               // 文件 - file
