@@ -5,13 +5,23 @@ const sdk = require('node-appwrite');
 export const dynamic = 'force-dynamic';
 
 // Helper function to extract file ID from Appwrite URL or return as-is
+// Returns null for external URLs (not Appwrite Storage)
 function extractFileId(value) {
   if (!value) return null;
   
-  // If it's a URL, extract the file ID
+  // Check if it's an Appwrite Storage URL
   if (value.includes('/files/')) {
     const match = value.match(/\/files\/([^\/\?]+)/);
     if (match) return match[1];
+  }
+  
+  // Filter out external URLs (http://, https://, www., etc.)
+  if (value.startsWith('http://') || 
+      value.startsWith('https://') || 
+      value.startsWith('www.') ||
+      value.includes('://')) {
+    console.log(`    ⚠️ 跳過外部網址: ${value.substring(0, 50)}...`);
+    return null; // Skip external URLs
   }
   
   // Otherwise return as-is (already a file ID)
