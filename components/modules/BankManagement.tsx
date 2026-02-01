@@ -453,9 +453,21 @@ export default function BankManagement() {
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <FaviconImage siteUrl={bank.site || ""} siteName={bank.name} size={24} />
+                      <FaviconImage siteUrl={bank.site || ""} siteName={bank.name} size={32} />
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{bank.name}</h3>
+                        {bank.site ? (
+                          <a 
+                            href={bank.site} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="text-lg font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            {bank.name}
+                            <LinkIcon size={14} />
+                          </a>
+                        ) : (
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{bank.name}</h3>
+                        )}
                         {bank.account && (
                           <div className="flex items-center gap-1 text-sm text-gray-500">
                             <User size={14} />
