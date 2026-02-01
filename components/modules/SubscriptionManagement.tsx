@@ -474,10 +474,14 @@ export default function SubscriptionManagement() {
                         </TableCell>
                         <TableCell><span className="font-semibold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span></TableCell>
                         <TableCell>
-                          {sub.continue !== false ? (
-                            <span className="text-green-600 dark:text-green-400">✓ 續訂</span>
+                          {formattedDate ? (
+                            sub.continue !== false ? (
+                              <span className="text-green-600 dark:text-green-400">✓ 續訂</span>
+                            ) : (
+                              <span className="text-red-500 dark:text-red-400">✗ 不續</span>
+                            )
                           ) : (
-                            <span className="text-red-500 dark:text-red-400">✗ 不續</span>
+                            <span className="text-gray-400 dark:text-gray-500">-</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -529,10 +533,12 @@ export default function SubscriptionManagement() {
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             <span className="font-bold text-green-600 dark:text-green-400">{formatCurrencyWithExchange(sub.price, sub.currency)}</span>
-                            {sub.continue !== false ? (
-                              <span className="text-xs text-green-600 dark:text-green-400">✓ 續訂</span>
-                            ) : (
-                              <span className="text-xs text-red-500 dark:text-red-400">✗ 不續</span>
+                            {formattedDate && (
+                              sub.continue !== false ? (
+                                <span className="text-xs text-green-600 dark:text-green-400">✓ 續訂</span>
+                              ) : (
+                                <span className="text-xs text-red-500 dark:text-red-400">✗ 不續</span>
+                              )
                             )}
                           </div>
                         </div>
