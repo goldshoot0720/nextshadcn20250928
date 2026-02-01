@@ -677,6 +677,9 @@ function DocumentPreviewModal({ document, onClose }: { document: CommonDocumentD
   const [txtLoading, setTxtLoading] = useState(false);
   const [zipEntries, setZipEntries] = useState<{ name: string; isDir: boolean; size: number }[]>([]);
   const [zipLoading, setZipLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState<string>('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if ((ext === 'txt' || ext === 'md') && document.file) {
@@ -774,6 +777,18 @@ function DocumentPreviewModal({ document, onClose }: { document: CommonDocumentD
       if (txtLoading) {
         return <div className="flex items-center justify-center h-full"><LoadingSpinner /></div>;
       }
+      if (isEditing) {
+        return (
+          <div className="p-6 h-full overflow-auto bg-gray-50 dark:bg-gray-900 flex flex-col">
+            <Textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              className="flex-1 font-mono text-sm resize-none rounded-xl"
+              placeholder="編輯內容..."
+            />
+          </div>
+        );
+      }
       return (
         <div className="p-6 h-full overflow-auto bg-gray-50 dark:bg-gray-900">
           <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-gray-200">{txtContent}</pre>
@@ -818,12 +833,98 @@ function DocumentPreviewModal({ document, onClose }: { document: CommonDocumentD
     );
   };
 
+  const handleEditToggle = () => {
+    if (!isEditing) {
+      setEditedContent(txtContent);
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      // Create a new file with edited content
+      const blob = new Blob([editedContent], { type: ext === 'md' ? 'text/markdown' : 'text/plain' });
+      const file = new globalThis.File([blob], document.name || `edited.${ext}`, { type: blob.type });
+      
+      // Upload the new file
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadResponse = await fetch('/api/upload-music', {
+        method: 'POST',
+        headers: getAppwriteHeaders(),
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('上傳失敗');
+      }
+      
+      const uploadData = await uploadResponse.json();
+      
+      // Update the document with new file URL
+      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.COMMONDOCUMENT}/${document.$id}`);
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...document,
+          file: uploadData.url,
+        }),
+      });
+      
+      if (!response.ok) throw new Error('更新失敗');
+      
+      setTxtContent(editedContent);
+      setIsEditing(false);
+      alert('儲存成功！');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '儲存失敗');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canEdit = ext === 'txt' || ext === 'md';
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="font-bold text-gray-900 dark:text-gray-100 truncate flex-1 mr-4">{document.name}</h2>
           <div className="flex items-center gap-2">
+            {canEdit && (
+              <>
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSaveEdit}
+                      disabled={saving}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4" />
+                      {saving ? '儲存中...' : '儲存'}
+                    </button>
+                    <button
+                      onClick={handleEditToggle}
+                      disabled={saving}
+                      className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      取消
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleEditToggle}
+                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    編輯
+                  </button>
+                )}
+              </>
+            )}
             <a
               href={getAppwriteDownloadUrl(document.file)}
               download={document.name || "download"}
