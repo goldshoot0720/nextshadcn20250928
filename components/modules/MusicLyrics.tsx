@@ -1323,6 +1323,7 @@ export default function MusicLyrics() {
     }
   }, [generateAudioBlob]);
   const startDemoPlayback = useCallback(() => {
+    console.warn('[Demo] Starting demo playback mode - real audio failed to load');
     setDuration(180); // 3分鐘模擬時長
     setCurrentTime(0);
     setIsPlaying(true);
@@ -1465,17 +1466,40 @@ export default function MusicLyrics() {
         
         // 嘗試播放真實音頻
         console.log(`[Audio] Attempting to play: ${audioFile}`);
+        console.log(`[Audio] Audio element ready state: ${audio.readyState}`);
+        console.log(`[Audio] Audio element network state: ${audio.networkState}`);
+        
         audio.load();
-        audio.play().then(() => {
-          console.log('Audio playback started successfully');
-          setIsPlaying(true);
-        }).catch((error) => {
-          console.error('Audio playback failed:', error);
-          console.log('Switching to demo mode');
-          startDemoPlayback();
-        });
+        
+        // 給音頻一些時間加載
+        setTimeout(() => {
+          audio.play().then(() => {
+            console.log('[Audio] Playback started successfully');
+            setIsPlaying(true);
+          }).catch((error) => {
+            console.error('[Audio] Playback failed:', error);
+            console.error('[Audio] Error name:', error.name);
+            console.error('[Audio] Error message:', error.message);
+            
+            // 只有在真正無法播放時才切換到模擬模式
+            if (error.name === 'NotSupportedError' || error.name === 'NotAllowedError') {
+              console.log('[Audio] Switching to demo mode due to:', error.name);
+              startDemoPlayback();
+            } else {
+              console.log('[Audio] Retrying playback...');
+              // 重試一次
+              setTimeout(() => {
+                audio.play().catch(() => {
+                  console.log('[Audio] Retry failed, switching to demo mode');
+                  startDemoPlayback();
+                });
+              }, 500);
+            }
+          });
+        }, 100);
       } else {
-        console.log('No audio file available, using demo mode');
+        console.log('[togglePlay] No audio file available, using demo mode');
+        console.log('[togglePlay] audioFile value:', audioFile);
         startDemoPlayback();
       }
     }
