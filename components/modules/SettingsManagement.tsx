@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus, X, CheckCircle2, Key } from "lucide-react";
+import { Settings, Moon, Sun, Bell, Shield, Database, Palette, Table2, Loader2, Plus, X, CheckCircle2, Key, HardDrive, Trash2 } from "lucide-react";
 import { Button, DataCard, SectionHeader } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -60,6 +60,8 @@ export default function SettingsManagement() {
   const bulkQueueRef = useRef<string[]>([]);
   const bulkModeRef = useRef(false);
   const bulkIsUpdateRef = useRef(false);
+  const [storageStats, setStorageStats] = useState<any>(null);
+  const [cleaningStorage, setCleaningStorage] = useState(false);
 
   // 計算待處理表格數量
   const missingTablesCount = useMemo(() => 
@@ -408,6 +410,94 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
     bulkModeRef.current = false;
   };
 
+  const handleCountOrphanedFiles = async () => {
+    setCleaningStorage(true);
+    try {
+      const config = getAppwriteConfig();
+      const params = new URLSearchParams();
+      if (config.endpoint) params.set('_endpoint', config.endpoint);
+      if (config.projectId) params.set('_project', config.projectId);
+      if (config.databaseId) params.set('_database', config.databaseId);
+      if (config.bucketId) params.set('_bucket', config.bucketId);
+      if (config.apiKey) params.set('_key', config.apiKey);
+      params.set('action', 'count');
+
+      const response = await fetch(`/api/storage-stats?${params.toString()}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '統計失敗');
+      }
+
+      setStorageStats(data);
+      alert(`⚡ 統計結果：\n\n` +
+        `💾 儲存空間總檔案：${data.totalFiles} 個\n` +
+        `📋 資料庫已引用：${data.referencedFiles} 個\n` +
+        `🗑️ 多餘檔案：${data.orphanedFiles} 個\n\n` +
+        `分類明細：\n` +
+        `- 圖片：${data.orphanedByType.images || 0} 個\n` +
+        `- 影片：${data.orphanedByType.videos || 0} 個\n` +
+        `- 音樂：${data.orphanedByType.music || 0} 個\n` +
+        `- 文件：${data.orphanedByType.documents || 0} 個\n` +
+        `- 播客：${data.orphanedByType.podcasts || 0} 個`);
+    } catch (error) {
+      alert('❗ 統計失敗：' + (error instanceof Error ? error.message : '未知錯誤'));
+    } finally {
+      setCleaningStorage(false);
+    }
+  };
+
+  const handleDeleteOrphanedFiles = async () => {
+    if (!storageStats || storageStats.orphanedFiles === 0) {
+      alert('⚠️ 請先執行「統計多餘檔案」以確認數量！');
+      return;
+    }
+
+    const confirmed = confirm(
+      `⚠️ 警告：即將刪除 ${storageStats.orphanedFiles} 個多餘檔案！\n\n` +
+      `分類明細：\n` +
+      `- 圖片：${storageStats.orphanedByType.images || 0} 個\n` +
+      `- 影片：${storageStats.orphanedByType.videos || 0} 個\n` +
+      `- 音樂：${storageStats.orphanedByType.music || 0} 個\n` +
+      `- 文件：${storageStats.orphanedByType.documents || 0} 個\n` +
+      `- 播客：${storageStats.orphanedByType.podcasts || 0} 個\n\n` +
+      `這個操作不可逆轉！確定要繼續嗎？`
+    );
+
+    if (!confirmed) return;
+
+    setCleaningStorage(true);
+    try {
+      const config = getAppwriteConfig();
+      const params = new URLSearchParams();
+      if (config.endpoint) params.set('_endpoint', config.endpoint);
+      if (config.projectId) params.set('_project', config.projectId);
+      if (config.databaseId) params.set('_database', config.databaseId);
+      if (config.bucketId) params.set('_bucket', config.bucketId);
+      if (config.apiKey) params.set('_key', config.apiKey);
+      params.set('action', 'delete');
+
+      const response = await fetch(`/api/storage-stats?${params.toString()}`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '刪除失敗');
+      }
+
+      alert(`✅ 刪除完成！\n\n` +
+        `成功刪除：${data.deletedCount} 個檔案\n` +
+        `失敗：${data.failedCount} 個`);
+      
+      setStorageStats(null);
+    } catch (error) {
+      alert('❗ 刪除失敗：' + (error instanceof Error ? error.message : '未知錯誤'));
+    } finally {
+      setCleaningStorage(false);
+    }
+  };
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <SectionHeader
@@ -715,6 +805,75 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
           </p>
           <div className="text-sm text-gray-400">
             即將推出...
+          </div>
+        </DataCard>
+
+        {/* Appwrite Storage 清理 */}
+        <DataCard className="p-6 md:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <HardDrive size={20} className="text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Appwrite Storage 管理</h3>
+              <p className="text-xs text-gray-400">統計與清理未引用的儲存檔案</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              系統會掃描 Appwrite Storage 中的所有檔案，找出資料庫中未引用的多餘檔案（圖片、影片、音樂、文件、播客）。
+            </p>
+            {storageStats && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">總檔案數</span>
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{storageStats.totalFiles}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">已引用</span>
+                    <p className="text-lg font-bold text-green-600">{storageStats.referencedFiles}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">多餘檔案</span>
+                    <p className="text-lg font-bold text-red-600">{storageStats.orphanedFiles}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button
+                onClick={handleCountOrphanedFiles}
+                disabled={cleaningStorage}
+                className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {cleaningStorage ? (
+                  <><Loader2 size={16} className="animate-spin" /> 統計中...</>
+                ) : (
+                  <><HardDrive size={16} /> 統計多餘檔案</>
+                )}
+              </Button>
+              <Button
+                onClick={handleDeleteOrphanedFiles}
+                disabled={cleaningStorage || !storageStats || storageStats.orphanedFiles === 0}
+                variant="outline"
+                className="flex-1 flex items-center justify-center gap-2 text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                {cleaningStorage ? (
+                  <><Loader2 size={16} className="animate-spin" /> 刪除中...</>
+                ) : (
+                  <><Trash2 size={16} /> 刪除多餘檔案</>
+                )}
+              </Button>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                <span className="text-base">💡</span>
+                <span>
+                  <strong>使用步驟：</strong>1. 點擊「統計多餘檔案」查看數量  2. 確認後點擊「刪除多餘檔案」清理儲存空間
+                </span>
+              </p>
+            </div>
           </div>
         </DataCard>
       </div>
