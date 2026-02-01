@@ -55,7 +55,7 @@ async function getAllReferencedFileIds(databases, databaseId) {
   // 所有可能使用檔案的集合與對應欄位
   // bank, commonaccount, subscription 不會使用到 storage 檔案
   const collectionFields = {
-    'article': ['file1', 'file2', 'file3'],  // 筆記 - file1, file2, file3
+    // 'article': ['file1', 'file2', 'file3'],  // 筆記 - file1, file2, file3 (collection 不存在，已註解)
     'food': ['photo'],                        // 食物 - photo
     'music': ['file', 'cover'],               // 音樂 - file, cover
     'podcast': ['file'],                      // 播客 - file
@@ -66,7 +66,7 @@ async function getAllReferencedFileIds(databases, databaseId) {
   };
   
   const fileIdSet = new Set();
-  console.log('  📋 掃描 8 個集合...');
+  console.log(`  📋 掃描 ${Object.keys(collectionFields).length} 個集合...`);
 
   for (const [collectionName, fields] of Object.entries(collectionFields)) {
     try {
@@ -105,7 +105,11 @@ async function getAllReferencedFileIds(databases, databaseId) {
 
       console.log(`    📊 ${collectionName}: ${collectionTotal} 筆資料, ${filesFound} 個檔案引用`);
     } catch (error) {
-      console.error(`    ❌ 錯誤 ${collectionName}:`, error.message);
+      if (error.message && error.message.includes('could not be found')) {
+        console.log(`    ⚠️ 跳過 ${collectionName}: Collection 不存在`);
+      } else {
+        console.error(`    ❌ 錯誤 ${collectionName}:`, error.message);
+      }
     }
   }
 
