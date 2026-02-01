@@ -4,6 +4,13 @@ import { useState, useMemo, useEffect } from "react";
 import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle } from "lucide-react";
 import { CommonAccount, CommonAccountFormData } from "@/types";
 import { Input, Textarea, DataCard, Button, SectionHeader, FormCard, FormActions } from "@/components/ui";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { FaviconImage } from "@/components/ui/favicon-image";
 import { useCrud } from "@/hooks/useApi";
 import { API_ENDPOINTS } from "@/lib/constants";
@@ -17,8 +24,43 @@ const SITE_URL_MAP: Record<string, string> = {
   "GitHub": "https://github.com/",
   "Gmail": "https://mail.google.com/",
   "Outlook": "https://outlook.live.com/",
+  "Google": "https://www.google.com/",
+  "Facebook": "https://www.facebook.com/",
+  "YouTube": "https://www.youtube.com/",
+  "Twitter": "https://twitter.com/",
+  "LinkedIn": "https://www.linkedin.com/",
+  "Amazon": "https://www.amazon.com/",
+  "Netflix": "https://www.netflix.com/",
+  "Apple": "https://www.apple.com/",
+  "Microsoft": "https://www.microsoft.com/",
+  "Dropbox": "https://www.dropbox.com/",
+  "Evernote": "https://evernote.com/",
+  "Slack": "https://slack.com/",
+  "Discord": "https://discord.com/",
+  "Trello": "https://trello.com/",
+  "Notion": "https://www.notion.so/",
+  "Canva": "https://www.canva.com/",
+  "Pinterest": "https://www.pinterest.com/",
+  "Instagram": "https://www.instagram.com/",
+  "TikTok": "https://www.tiktok.com/",
+  "Reddit": "https://www.reddit.com/",
+  "Spotify": "https://www.spotify.com/",
+  "SoundCloud": "https://soundcloud.com/",
+  "Medium": "https://medium.com/",
+  "Quora": "https://www.quora.com/",
+  "StackOverflow": "https://stackoverflow.com/",
+  "Behance": "https://www.behance.net/",
+  "Dribbble": "https://dribbble.com/",
+  "Adobe": "https://www.adobe.com/",
+  "Figma": "https://www.figma.com/",
+  "Zoom": "https://zoom.us/",
+  "Skype": "https://www.skype.com/",
+  "WhatsApp": "https://www.whatsapp.com/",
   "TRAE": "https://www.trae.ai/",
 };
+
+// Array of common site names for the select dropdown
+const COMMON_SITES = Object.keys(SITE_URL_MAP).sort();
 
 const INITIAL_FORM: CommonAccountFormData = {
   name: "",
@@ -40,6 +82,8 @@ export default function CommonAccountManagement() {
   const [siteFilter, setSiteFilter] = useState<string | null>(null);
   // Name search state
   const [searchQuery, setSearchQuery] = useState("");
+  // Sort order state
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   // Error state for duplicate name
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
@@ -63,7 +107,7 @@ export default function CommonAccountManagement() {
 
   // Filter accounts based on selected site filter and search query
   const filteredAccounts = useMemo(() => {
-    return accounts.filter(account => {
+    let filtered = accounts.filter(account => {
       // Filter by search query (name)
       const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
@@ -76,7 +120,15 @@ export default function CommonAccountManagement() {
         return siteName?.trim() === siteFilter.trim();
       });
     });
-  }, [accounts, siteFilter, searchQuery]);
+
+    // Sort alphabetically by name
+    filtered = filtered.sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name);
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [accounts, siteFilter, searchQuery, sortOrder]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,12 +172,37 @@ export default function CommonAccountManagement() {
     // 找出重複的名稱
     const duplicates = siteNames.filter((name, index) => siteNames.indexOf(name) !== index);
     if (duplicates.length > 0) {
-      setDuplicateError(`常用網站名稱重複: 「${duplicates[0]}」，請檢查 01~15 欄位`);
+      setDuplicateError(`常用網站名稱重複: 「${duplicates[0]}」，請檢查 01~37 欄位`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     setDuplicateError(null);
+
+    // 根據字母排序站點與備註 (不包含空值)
+    const sortedPairs = [...Array(37)].map((_, i) => {
+      const idx = (i + 1).toString().padStart(2, '0');
+      return {
+        site: (form as any)[`site${idx}`] || "",
+        note: (form as any)[`note${idx}`] || ""
+      };
+    }).filter(pair => pair.site.trim() !== "");
+
+    // 排序
+    sortedPairs.sort((a, b) => a.site.localeCompare(b.site, 'zh-TW', { sensitivity: 'base' }));
+
+    // 建立新的表單物件，將排序後的內容填入前段，後段清空
+    const sortedForm = { ...form };
+    [...Array(37)].forEach((_, i) => {
+      const idx = (i + 1).toString().padStart(2, '0');
+      if (i < sortedPairs.length) {
+        (sortedForm as any)[`site${idx}`] = sortedPairs[i].site;
+        (sortedForm as any)[`note${idx}`] = sortedPairs[i].note;
+      } else {
+        (sortedForm as any)[`site${idx}`] = "";
+        (sortedForm as any)[`note${idx}`] = "";
+      }
+    });
 
     // 清理 payload，移除後端 metadata，並根據操作決定是否保留空值
     const getPayload = (data: any, isUpdate: boolean) => {
@@ -148,7 +225,7 @@ export default function CommonAccountManagement() {
     };
 
     const isUpdate = !!editingId;
-    const payload = getPayload(form, isUpdate);
+    const payload = getPayload(sortedForm, isUpdate);
 
     try {
       if (editingId) {
@@ -330,13 +407,28 @@ export default function CommonAccountManagement() {
                       <div className="space-y-1">
                         <div className="flex gap-2 items-center">
                           <span className="w-8 h-10 flex items-center justify-center text-xs text-gray-400 font-mono shrink-0">{idx}</span>
-                          <Input
-                            placeholder={`網站名稱 / Site Name (${idx})`}
-                            value={(form as any)[siteKey] || ""}
-                            onChange={(e) => setForm({ ...form, [siteKey]: e.target.value } as any)}
-                            className="rounded-xl flex-1 h-12"
-                            maxLength={100}
-                          />
+                          <div className="flex-1 flex gap-2">
+                            <Input
+                              placeholder={`網站名稱 / Site Name (${idx})`}
+                              value={(form as any)[siteKey] || ""}
+                              onChange={(e) => setForm({ ...form, [siteKey]: e.target.value } as any)}
+                              className="rounded-xl flex-1 h-12"
+                              maxLength={100}
+                            />
+                            <Select
+                              value=""
+                              onValueChange={(val) => setForm({ ...form, [siteKey]: val } as any)}
+                            >
+                              <SelectTrigger className="h-12 w-12 rounded-xl px-0 justify-center shrink-0">
+                                <ChevronDown className="h-4 w-4" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {allSiteNames.map(site => (
+                                  <SelectItem key={site} value={site}>{site}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
@@ -386,23 +478,43 @@ export default function CommonAccountManagement() {
 
       {/* Search and Site Filter */}
       <div className="space-y-4">
-        {/* Search Input */}
-        <div className="relative group">
-          <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-          <Input
-            placeholder="搜尋帳號名稱 (例如: activist949...)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/20 transition-all text-lg"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X size={18} />
-            </button>
-          )}
+        {/* Search Input and Sort */}
+        <div className="flex gap-3">
+          <div className="relative group flex-1">
+            <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            <Input
+              placeholder="搜尋帳號名稱 (例如: activist949...)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/20 transition-all text-lg"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+          <Button
+            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            variant="outline"
+            className="h-12 px-4 rounded-xl flex items-center gap-2 shrink-0"
+            title={sortOrder === 'asc' ? '依字母順序 (A-Z)' : '依字母倒序 (Z-A)'}
+          >
+            {sortOrder === 'asc' ? (
+              <>
+                <ChevronUp size={18} />
+                A-Z
+              </>
+            ) : (
+              <>
+                <ChevronDown size={18} />
+                Z-A
+              </>
+            )}
+          </Button>
         </div>
 
         {allSiteNames.length > 0 && (
@@ -516,14 +628,29 @@ export default function CommonAccountManagement() {
                               // Inline Edit Mode
                               <div className="space-y-3">
                                 <div className="flex gap-2 items-center">
-                                  <Input
-                                    placeholder={`網站名稱/${idx}`}
-                                    value={inlineEdit.siteName}
-                                    onChange={(e) => setInlineEdit({ ...inlineEdit, siteName: e.target.value })}
-                                    className="rounded-lg flex-1 h-9 text-sm"
-                                    autoFocus
-                                    maxLength={100}
-                                  />
+                            <div className="flex-1 flex gap-2">
+                              <Input
+                                placeholder={`網站名稱/${idx}`}
+                                value={inlineEdit.siteName}
+                                onChange={(e) => setInlineEdit({ ...inlineEdit, siteName: e.target.value })}
+                                className="rounded-lg flex-1 h-9 text-sm"
+                                autoFocus
+                                maxLength={100}
+                              />
+                              <Select
+                                value=""
+                                onValueChange={(val) => setInlineEdit({ ...inlineEdit, siteName: val })}
+                              >
+                                <SelectTrigger className="h-9 w-9 rounded-lg px-0 justify-center shrink-0">
+                                  <ChevronDown className="h-4 w-4" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {COMMON_SITES.map(site => (
+                                    <SelectItem key={site} value={site}>{site}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                                 </div>
                                 <Textarea
                                   placeholder={`備註內容 (上限100個字)`}
