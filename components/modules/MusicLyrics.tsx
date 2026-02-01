@@ -1812,25 +1812,122 @@ export default function MusicLyrics() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleFavorite(selectedSong.id)}
-                    >
-                      <Heart
-                        size={16}
-                        className={selectedSong.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}
-                      />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={togglePlay}>
-                      {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={stopPlay}>
-                      <Volume2 size={16} />
-                    </Button>
+                  
+                  {/* 桌面版播放控制 - 增強版 */}
+                  <div className="flex flex-col items-end gap-2">
+                    {/* 時間顯示 */}
+                    {currentAudio && duration > 0 && (
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-purple-600 dark:text-purple-400 font-mono">
+                          {formatTime(currentTime)}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          / {formatTime(duration)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 播放按鈕組 */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFavorite(selectedSong.id)}
+                      >
+                        <Heart
+                          size={16}
+                          className={selectedSong.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}
+                        />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={skipBackward}
+                        disabled={!currentAudio}
+                      >
+                        <SkipBack size={16} />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={togglePlay}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                        <span className="ml-1">{isPlaying ? '暫停' : '播放'}</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={skipForward}
+                        disabled={!currentAudio}
+                      >
+                        <SkipForward size={16} />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={stopPlay}
+                        disabled={!currentAudio}
+                      >
+                        <Volume2 size={16} />
+                      </Button>
+                    </div>
                   </div>
                 </div>
+                
+                {/* 桌面版時間軸 - 在 Header 中 */}
+                {currentAudio && duration > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <div className="relative">
+                      {/* 進度條背景 */}
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        {/* 已播放進度 */}
+                        <div 
+                          className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300 ease-out"
+                          style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                        />
+                      </div>
+                      
+                      {/* 可拖動的滑塊 */}
+                      <div className="absolute top-0 left-0 w-full h-2">
+                        <Slider
+                          value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
+                          onValueChange={handleProgressChange}
+                          max={100}
+                          step={0.1}
+                          className="w-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                          disabled={!currentAudio || duration === 0}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* 時間標記 */}
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
+                      <span>0:00</span>
+                      <span>{formatTime(duration / 4)}</span>
+                      <span>{formatTime(duration / 2)}</span>
+                      <span>{formatTime(duration * 3 / 4)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                    
+                    {/* 音量控制 */}
+                    <div className="flex items-center gap-3 pt-2">
+                      <Volume2 size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <div className="flex-1 max-w-xs">
+                        <Slider
+                          value={[volume * 100]}
+                          onValueChange={handleVolumeChange}
+                          max={100}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-10 text-right font-mono">
+                        {Math.round(volume * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <Tabs value={currentLanguage} onValueChange={(value) => handleLanguageChange(value as 'zh' | 'en' | 'ja' | 'yue' | 'ko')}>
