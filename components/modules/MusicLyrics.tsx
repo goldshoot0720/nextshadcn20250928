@@ -1367,8 +1367,29 @@ export default function MusicLyrics() {
       if (variation) return variation.url;
     }
     
-    // 否则返回默认音频
-    return selectedSong.audioFiles[currentLanguage];
+    // 嘗試獲取當前語言的音頻文件
+    const audioUrl = selectedSong.audioFiles[currentLanguage];
+    if (audioUrl) {
+      console.log(`[getCurrentAudioUrl] Using ${currentLanguage} audio:`, audioUrl);
+      return audioUrl;
+    }
+    
+    // 如果當前語言沒有音頻，回退到中文
+    const fallbackUrl = selectedSong.audioFiles.zh;
+    if (fallbackUrl) {
+      console.log(`[getCurrentAudioUrl] Fallback to zh audio:`, fallbackUrl);
+      return fallbackUrl;
+    }
+    
+    // 嘗試任何可用的音頻文件
+    const availableAudio = Object.values(selectedSong.audioFiles).find(url => url);
+    if (availableAudio) {
+      console.log(`[getCurrentAudioUrl] Using any available audio:`, availableAudio);
+      return availableAudio;
+    }
+    
+    console.warn('[getCurrentAudioUrl] No audio file available');
+    return null;
   }, [selectedSong, currentLanguage, currentVariation]);
 
   // 当变体改变时停止播放
@@ -1715,7 +1736,11 @@ export default function MusicLyrics() {
                     className={`p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                       selectedSong?.id === song.id ? "bg-purple-50 dark:bg-purple-900/20" : ""
                     }`}
-                    onClick={() => setSelectedSong(song)}
+                    onClick={() => {
+                      console.log('[Song Selected]', song.title);
+                      console.log('[Song Audio Files]', song.audioFiles);
+                      setSelectedSong(song);
+                    }}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -1970,9 +1995,15 @@ export default function MusicLyrics() {
                 </Tabs>
                 
                 {/* 音樂播放器控制界面 - 手機優化 */}
-                {selectedSong.audioFiles[currentLanguage] && (
+                {selectedSong.audioFiles && (selectedSong.audioFiles[currentLanguage] || selectedSong.audioFiles.zh) ? (
                   <div className="mt-6 p-3 sm:p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
                     
+                    {/* 調試信息 */}
+                    {!selectedSong.audioFiles[currentLanguage] && (
+                      <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs text-yellow-800 dark:text-yellow-200">
+                        ⚠️ 當前語言（{currentLanguage}）沒有音頻文件，使用中文版本
+                      </div>
+                    )}
                     {/* 播放信息 - 手機優化 */}
                     <div className="mb-4 space-y-3">
                       <div className="flex items-start justify-between gap-3">
@@ -2080,6 +2111,14 @@ export default function MusicLyrics() {
                           {Math.round(volume * 100)}%
                         </span>
                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 p-3 sm:p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div className="text-center text-red-600 dark:text-red-400">
+                      <p className="font-medium">❌ 無法播放</p>
+                      <p className="text-sm mt-1">此歌曲沒有可用的音頻文件</p>
+                      <p className="text-xs mt-2">請檢查 Appwrite Storage 中的音頻文件</p>
                     </div>
                   </div>
                 )}
