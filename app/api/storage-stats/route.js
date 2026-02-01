@@ -52,7 +52,18 @@ async function getAllStorageFiles(storage, bucketId) {
 
 // Helper function to get all referenced file IDs from database
 async function getAllReferencedFileIds(databases, databaseId) {
-  const collections = ['image', 'video', 'music', 'commondocument', 'podcast'];
+  // 所有可能使用檔案的集合
+  // bank, commonaccount, subscription 不會使用到 storage 檔案
+  const collections = [
+    'article',      // 筆記 - 可能有圖片
+    'food',         // 食物 - 可能有圖片
+    'music',        // 音樂 - audio, cover
+    'podcast',      // 播客 - audio, cover
+    'commondocument', // 文件 - file
+    'routine',      // 行程 - 可能有附件
+    'video',        // 影片 - video, cover
+    'image'         // 圖片 - file
+  ];
   const fileIdSet = new Set();
 
   for (const collectionName of collections) {
@@ -68,10 +79,12 @@ async function getAllReferencedFileIds(databases, databaseId) {
 
         response.documents.forEach(doc => {
           // Extract file IDs from various fields
-          if (doc.cover) fileIdSet.add(doc.cover);
-          if (doc.file) fileIdSet.add(doc.file);
-          if (doc.audio) fileIdSet.add(doc.audio);
-          if (doc.video) fileIdSet.add(doc.video);
+          if (doc.cover) fileIdSet.add(doc.cover);      // 封面圖
+          if (doc.file) fileIdSet.add(doc.file);        // 檔案
+          if (doc.audio) fileIdSet.add(doc.audio);      // 音訊檔
+          if (doc.video) fileIdSet.add(doc.video);      // 影片檔
+          if (doc.image) fileIdSet.add(doc.image);      // 圖片檔
+          if (doc.attachment) fileIdSet.add(doc.attachment); // 附件
         });
 
         if (response.documents.length < limit) {
