@@ -68,6 +68,14 @@ export default function SettingsManagement() {
     total: number;
     message: string;
   } | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<{
+    stage: string;
+    current: number;
+    total: number;
+    message: string;
+    deleted?: number;
+    failed?: number;
+  } | null>(null);
 
   // 計算待處理表格數量
   const missingTablesCount = useMemo(() => 
@@ -478,17 +486,26 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
     const confirmed = confirm(
       `⚠️ 警告：即將刪除 ${storageStats.orphanedFiles} 個多餘檔案！\n\n` +
       `分類明細：\n` +
-      `- 圖片：${storageStats.orphanedByType.images || 0} 個\n` +
-      `- 影片：${storageStats.orphanedByType.videos || 0} 個\n` +
-      `- 音樂：${storageStats.orphanedByType.music || 0} 個\n` +
-      `- 文件：${storageStats.orphanedByType.documents || 0} 個\n` +
-      `- 播客：${storageStats.orphanedByType.podcasts || 0} 個\n\n` +
+      `- 圖片：${storageStats.orphanedByType?.images || 0} 個\n` +
+      `- 影片：${storageStats.orphanedByType?.videos || 0} 個\n` +
+      `- 音樂：${storageStats.orphanedByType?.music || 0} 個\n` +
+      `- 文件：${storageStats.orphanedByType?.documents || 0} 個\n` +
+      `- 播客：${storageStats.orphanedByType?.podcasts || 0} 個\n\n` +
       `這個操作不可逆轉！確定要繼續嗎？`
     );
 
     if (!confirmed) return;
 
     setCleaningStorage(true);
+    setDeleteProgress({ 
+      stage: '準備刪除', 
+      current: 0, 
+      total: storageStats.orphanedFiles, 
+      message: '正在連接到 Appwrite...', 
+      deleted: 0, 
+      failed: 0 
+    });
+    
     try {
       const config = getAppwriteConfig();
       const params = new URLSearchParams();
@@ -499,6 +516,15 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
       if (config.apiKey) params.set('_key', config.apiKey);
       params.set('action', 'delete');
 
+      setDeleteProgress({ 
+        stage: '刪除中', 
+        current: 0, 
+        total: storageStats.orphanedFiles, 
+        message: `正在刪除 0/${storageStats.orphanedFiles} 個檔案...`, 
+        deleted: 0, 
+        failed: 0 
+      });
+
       const response = await fetch(`/api/storage-stats?${params.toString()}`, {
         method: 'POST'
       });
@@ -508,15 +534,35 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
         throw new Error(data.error || '刪除失敗');
       }
 
+      setDeleteProgress({ 
+        stage: '完成', 
+        current: data.deletedCount, 
+        total: storageStats.orphanedFiles, 
+        message: `刪除完成！成功 ${data.deletedCount} 個，失敗 ${data.failedCount} 個`, 
+        deleted: data.deletedCount, 
+        failed: data.failedCount 
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       alert(`✅ 刪除完成！\n\n` +
         `成功刪除：${data.deletedCount} 個檔案\n` +
         `失敗：${data.failedCount} 個`);
       
       setStorageStats(null);
     } catch (error) {
+      setDeleteProgress({ 
+        stage: '錯誤', 
+        current: 0, 
+        total: storageStats.orphanedFiles, 
+        message: '刪除失敗', 
+        deleted: 0, 
+        failed: 0 
+      });
       alert('❗ 刪除失敗：' + (error instanceof Error ? error.message : '未知錯誤'));
     } finally {
       setCleaningStorage(false);
+      setTimeout(() => setDeleteProgress(null), 1000);
     }
   };
 
@@ -846,7 +892,7 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
               系統會掃描 Appwrite Storage 中的所有檔案，找出資料庫中未引用的多餘檔案（圖片、影片、音樂、文件、播客）。
             </p>
             
-            {/* 進度条 */}
+            {/* 進度条 - 掃描 */}
             {scanProgress && (
               <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between mb-2">
@@ -866,6 +912,36 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
                 <p className="text-xs text-blue-700 dark:text-blue-300">
                   {scanProgress.message}
                 </p>
+              </div>
+            )}
+            
+            {/* 進度条 - 刪除 */}
+            {deleteProgress && (
+              <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-red-900 dark:text-red-100">
+                    {deleteProgress.stage}
+                  </span>
+                  <span className="text-xs text-red-700 dark:text-red-300">
+                    {deleteProgress.current}/{deleteProgress.total}
+                  </span>
+                </div>
+                <div className="w-full bg-red-200 dark:bg-red-900 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-red-600 dark:bg-red-400 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(deleteProgress.current / deleteProgress.total) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-red-700 dark:text-red-300">
+                    {deleteProgress.message}
+                  </p>
+                  {deleteProgress.deleted !== undefined && deleteProgress.failed !== undefined && (
+                    <span className="text-xs text-red-700 dark:text-red-300">
+                      ✅ {deleteProgress.deleted} | ❌ {deleteProgress.failed}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
             
