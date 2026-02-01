@@ -102,6 +102,7 @@ export default function CommonDocumentManagement() {
   const [editingDocument, setEditingDocument] = useState<CommonDocumentData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [previewDocument, setPreviewDocument] = useState<CommonDocumentData | null>(null);
+  const [openInEditMode, setOpenInEditMode] = useState(false);
 
   // 搜尋過濾
   const filteredDocuments = useMemo(() => {
@@ -154,10 +155,15 @@ export default function CommonDocumentManagement() {
     loadCommonDocument(true);
   };
 
-  const handlePreview = (doc: CommonDocumentData) => {
+  const handlePreview = (doc: CommonDocumentData, editMode = false) => {
     if (doc.file && canPreviewFile(doc.name || doc.file)) {
       setPreviewDocument(doc);
+      setOpenInEditMode(editMode);
     }
+  };
+
+  const handleEditContent = (doc: CommonDocumentData) => {
+    handlePreview(doc, true);
   };
 
   if (loading) {
@@ -228,7 +234,7 @@ export default function CommonDocumentManagement() {
               onEdit={() => handleEdit(doc)}
               onDelete={() => handleDelete(doc)}
               onPreview={() => handlePreview(doc)}
-              onEditContent={() => handlePreview(doc)}
+              onEditContent={() => handleEditContent(doc)}
             />
           ))}
         </div>
@@ -251,7 +257,11 @@ export default function CommonDocumentManagement() {
       {previewDocument && (
         <DocumentPreviewModal
           document={previewDocument}
-          onClose={() => setPreviewDocument(null)}
+          onClose={() => {
+            setPreviewDocument(null);
+            setOpenInEditMode(false);
+          }}
+          openInEditMode={openInEditMode}
         />
       )}
     </div>
@@ -685,13 +695,13 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
 }
 
 // 文件預覽模態框
-function DocumentPreviewModal({ document, onClose }: { document: CommonDocumentData; onClose: () => void }) {
+function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { document: CommonDocumentData; onClose: () => void; openInEditMode?: boolean }) {
   const ext = getFileExtension(document.name || document.file || '');
   const [txtContent, setTxtContent] = useState<string>('');
   const [txtLoading, setTxtLoading] = useState(false);
   const [zipEntries, setZipEntries] = useState<{ name: string; isDir: boolean; size: number }[]>([]);
   const [zipLoading, setZipLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(openInEditMode);
   const [editedContent, setEditedContent] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
@@ -702,6 +712,9 @@ function DocumentPreviewModal({ document, onClose }: { document: CommonDocumentD
         .then(res => res.text())
         .then(text => {
           setTxtContent(text);
+          if (openInEditMode) {
+            setEditedContent(text);
+          }
           setTxtLoading(false);
         })
         .catch(() => {
