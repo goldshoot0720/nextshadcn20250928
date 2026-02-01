@@ -16,6 +16,13 @@ interface PlyrPlayerProps {
   poster?: string;
   loop?: boolean;
   className?: string;
+  tracks?: Array<{
+    kind: 'captions' | 'subtitles';
+    label: string;
+    srclang: string;
+    src: string;
+    default?: boolean;
+  }>;
 }
 
 export function PlyrPlayer({ 
@@ -23,7 +30,8 @@ export function PlyrPlayer({
   src, 
   poster, 
   loop = false,
-  className = ""
+  className = "",
+  tracks = []
 }: PlyrPlayerProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -39,7 +47,8 @@ export function PlyrPlayer({
           src: src,
           ...(type === 'video' && poster ? { poster } : {})
         }
-      ]
+      ],
+      ...(tracks.length > 0 ? { tracks } : {})
     },
     options: {
       controls: [
@@ -50,23 +59,35 @@ export function PlyrPlayer({
         'duration',
         'mute',
         'volume',
+        'captions',
         'settings',
         'fullscreen'
       ],
-      settings: ['quality', 'speed', 'loop'],
+      settings: ['captions', 'quality', 'speed', 'loop'],
+      captions: { active: true, update: true, language: 'auto' },
       loop: { active: loop },
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
       keyboard: { focused: true, global: true },
       tooltips: { controls: true, seek: true }
     }
-  }), [type, src, poster, loop]);
+  }), [type, src, poster, loop, tracks]);
 
   if (!isMounted) {
     return (
       <div className={className}>
-        <div className="w-full aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">Loading player...</p>
-        </div>
+        {type === 'video' ? (
+          <video 
+            controls 
+            poster={poster}
+            className="w-full rounded-lg"
+          >
+            <source src={src} />
+          </video>
+        ) : (
+          <audio controls className="w-full">
+            <source src={src} />
+          </audio>
+        )}
       </div>
     );
   }
