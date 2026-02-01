@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import "plyr-react/plyr.css";
 
@@ -34,10 +34,35 @@ export function PlyrPlayer({
   tracks = []
 }: PlyrPlayerProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<'landscape' | 'portrait' | 'square'>('landscape');
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Detect video aspect ratio
+  useEffect(() => {
+    if (type === 'video' && videoRef.current) {
+      const video = videoRef.current;
+      const handleLoadedMetadata = () => {
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+        const ratio = width / height;
+        
+        if (ratio > 1.2) {
+          setAspectRatio('landscape'); // Wide video
+        } else if (ratio < 0.8) {
+          setAspectRatio('portrait'); // Vertical video
+        } else {
+          setAspectRatio('square');
+        }
+      };
+      
+      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      return () => video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    }
+  }, [type, src]);
 
   const plyrProps = useMemo(() => ({
     source: {
@@ -77,6 +102,7 @@ export function PlyrPlayer({
       <div className={className}>
         {type === 'video' ? (
           <video 
+            ref={videoRef}
             controls 
             poster={poster}
             className="w-full rounded-lg"
@@ -92,8 +118,17 @@ export function PlyrPlayer({
     );
   }
 
+  // Apply styling based on aspect ratio
+  const containerClass = type === 'video' 
+    ? aspectRatio === 'portrait' 
+      ? 'max-w-md mx-auto' // Vertical video: narrower container, centered
+      : aspectRatio === 'square'
+      ? 'max-w-2xl mx-auto' // Square video: medium container, centered
+      : 'w-full' // Landscape video: full width
+    : '';
+
   return (
-    <div className={className}>
+    <div className={`${className} ${containerClass}`}>
       <Plyr {...plyrProps} />
     </div>
   );

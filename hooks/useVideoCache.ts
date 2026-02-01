@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface VideoItem {
   id: string;
@@ -357,10 +357,10 @@ export function useVideoCache() {
   };
 
   // 更新快取統計
-  const updateCacheStats = async () => {
+  const updateCacheStats = useCallback(async () => {
     const stats = await getCacheStats();
     setCacheStats(stats);
-  };
+  }, []);
 
   // 格式化文件大小
   const formatFileSize = (bytes: number): string => {
