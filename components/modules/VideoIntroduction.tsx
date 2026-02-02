@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { VideoItem } from "@/types";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
-import { getAppwriteHeaders, getProxiedMediaUrl } from "@/lib/utils";
+import { getAppwriteHeaders, getProxiedMediaUrl, getAppwriteDownloadUrl } from "@/lib/utils";
 import { uploadToAppwriteStorage } from "@/lib/appwriteStorage";
 import { useVideoQueue, VideoQueueItem } from "@/hooks/useVideoQueue";
 import { VideoQueuePanel } from "@/components/ui/video-queue-panel";
@@ -949,6 +949,26 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
                 <ListPlus className="w-4 h-4" />
               </button>
             )}
+            {/* 直接下載按鈕 */}
+            {video.file && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const downloadUrl = getAppwriteDownloadUrl(video.file);
+                  const link = document.createElement('a');
+                  link.href = downloadUrl;
+                  link.download = `${video.name}.mp4`;
+                  link.target = '_blank';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors text-green-600 dark:text-green-400"
+                title="下載影片"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={onEdit} className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors text-blue-600 dark:text-blue-400">
               <Edit className="w-4 h-4" />
             </button>
@@ -961,8 +981,8 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
                   <HardDrive className="w-4 h-4" />
                 </button>
               ) : (
-                <button onClick={onDownload} disabled={cacheStatus?.downloading} className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors text-gray-600 dark:text-gray-400">
-                  <Download className="w-4 h-4" />
+                <button onClick={onDownload} disabled={cacheStatus?.downloading} className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors text-gray-600 dark:text-gray-400" title="快取到本地">
+                  <HardDrive className="w-4 h-4" />
                 </button>
               )
             )}
