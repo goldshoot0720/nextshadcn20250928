@@ -14,8 +14,24 @@ export function getFaviconUrl(siteUrl: string): string {
     const url = new URL(siteUrl);
     const domain = url.hostname;
     
-    // 使用 Google 的 favicon 服務作為備選方案
-    // sz 參數可以設定大小，但最大支援 128
+    // 使用 DuckDuckGo 的 favicon 服務（更可靠）
+    return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * 獲取 Google favicon URL
+ * @param siteUrl 網站 URL
+ * @returns favicon URL
+ */
+export function getGoogleFaviconUrl(siteUrl: string): string {
+  if (!siteUrl) return '';
+  
+  try {
+    const url = new URL(siteUrl);
+    const domain = url.hostname;
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
   } catch {
     return '';

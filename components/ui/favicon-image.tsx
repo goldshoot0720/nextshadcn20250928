@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { getFaviconUrl } from "@/lib/faviconUtils";
+import { getFaviconUrl, getGoogleFaviconUrl } from "@/lib/faviconUtils";
 
 interface FaviconImageProps {
   siteUrl: string;
@@ -13,8 +13,10 @@ interface FaviconImageProps {
 
 export function FaviconImage({ siteUrl, siteName, size = 20, className = "" }: FaviconImageProps) {
   const [faviconUrl, setFaviconUrl] = useState<string>("");
+  const [fallbackUrl, setFallbackUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
     if (!siteUrl) {
@@ -22,20 +24,33 @@ export function FaviconImage({ siteUrl, siteName, size = 20, className = "" }: F
       return;
     }
 
-    const favicon = getFaviconUrl(siteUrl);
-    setFaviconUrl(favicon);
+    // Primary: DuckDuckGo, Fallback: Google
+    const primary = getFaviconUrl(siteUrl);
+    const fallback = getGoogleFaviconUrl(siteUrl);
+    setFaviconUrl(primary);
+    setFallbackUrl(fallback);
     setIsLoading(false);
+    setHasError(false);
+    setUseFallback(false);
   }, [siteUrl]);
 
   const handleError = () => {
-    setHasError(true);
+    if (!useFallback && fallbackUrl) {
+      // Try fallback URL (Google)
+      setUseFallback(true);
+    } else {
+      // Both failed, show default icon
+      setHasError(true);
+    }
   };
 
   const handleLoad = () => {
     setHasError(false);
   };
 
-  if (isLoading || !faviconUrl || hasError) {
+  const currentUrl = useFallback ? fallbackUrl : faviconUrl;
+
+  if (isLoading || !currentUrl || hasError) {
     // 顯示預設圖示
     return (
       <div 
@@ -49,7 +64,7 @@ export function FaviconImage({ siteUrl, siteName, size = 20, className = "" }: F
 
   return (
     <Image
-      src={faviconUrl}
+      src={currentUrl}
       alt={`${siteName} favicon`}
       width={size}
       height={size}
