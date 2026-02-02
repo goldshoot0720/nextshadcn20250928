@@ -223,30 +223,64 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLooping, setIsLooping] = useState(false);
   
-  // 計算封面圖回退邏輯：優先使用中文版封面，其次使用任意有封面的版本
-  const getFallbackCover = () => {
-    // 先找中文版的封面
+  // 提取基礎語言（例如：從 "中文(女聲)" 提取 "中文"）
+  const getBaseLanguage = (language: string | undefined) => {
+    if (!language) return '';
+    // 移除括號及其內容，例如 "中文(女聲)" -> "中文"
+    return language.replace(/\(.*?\)/g, '').trim();
+  };
+  
+  // 計算封面圖回退邏輯：
+  // 1. 優先使用同基礎語言的封面（例如：中文(女聲) -> 中文）
+  // 2. 其次使用中文版封面
+  // 3. 最後使用任意有封面的版本
+  const getFallbackCover = (currentLanguage: string | undefined) => {
+    const baseLanguage = getBaseLanguage(currentLanguage);
+    
+    // 先找同基礎語言且沒有括號的版本（純語言版本）
+    if (baseLanguage) {
+      const sameBasePure = items.find(item => 
+        item.language === baseLanguage && item.cover
+      );
+      if (sameBasePure?.cover) return sameBasePure.cover;
+    }
+    
+    // 再找中文版的封面
     const chineseVersion = items.find(item => item.language === '中文' && item.cover);
     if (chineseVersion?.cover) return chineseVersion.cover;
     
-    // 再找任意有封面的版本
+    // 最後找任意有封面的版本
     const anyWithCover = items.find(item => item.cover);
     return anyWithCover?.cover || null;
   };
   
-  // 計算歌詞回退邏輯：優先使用中文版歌詞，其次使用任意有歌詞的版本
-  const getFallbackLyrics = () => {
-    // 先找中文版的歌詞
-    const chineseVersion = items.find(item => item.language === '中文' && item.lyrics);
-    if (chineseVersion?.lyrics) return { lyrics: chineseVersion.lyrics, language: chineseVersion.language };
+  // 計算歌詞回退邏輯：
+  // 1. 優先使用同基礎語言的歌詞（例如：中文(女聲) -> 中文）
+  // 2. 其次使用中文版歌詞
+  // 3. 最後使用任意有歌詞的版本
+  const getFallbackLyrics = (currentLanguage: string | undefined) => {
+    const baseLanguage = getBaseLanguage(currentLanguage);
     
-    // 再找任意有歌詞的版本
+    // 先找同基礎語言且沒有括號的版本（純語言版本）
+    if (baseLanguage) {
+      const sameBasePure = items.find(item => 
+        item.language === baseLanguage && item.lyrics
+      );
+      if (sameBasePure?.lyrics) {
+        return { lyrics: sameBasePure.lyrics, language: sameBasePure.language };
+      }
+    }
+    
+    // 再找中文版的歌詞
+    const chineseVersion = items.find(item => item.language === '中文' && item.lyrics);
+    if (chineseVersion?.lyrics) {
+      return { lyrics: chineseVersion.lyrics, language: chineseVersion.language };
+    }
+    
+    // 最後找任意有歌詞的版本
     const anyWithLyrics = items.find(item => item.lyrics);
     return anyWithLyrics ? { lyrics: anyWithLyrics.lyrics, language: anyWithLyrics.language } : null;
   };
-  
-  const fallbackCover = getFallbackCover();
-  const fallbackLyricsInfo = getFallbackLyrics();
   
   // 單個項目直接顯示原本的卡片樣式
   if (items.length === 1) {
@@ -265,6 +299,10 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   // 多個同名項目顯示合併卡片
   const activeMusic = items[activeIndex];
   const isExpanded = expandedMusicId === activeMusic.$id;
+  
+  // 計算當前版本的回退封面和歌詞
+  const fallbackCover = getFallbackCover(activeMusic.language);
+  const fallbackLyricsInfo = getFallbackLyrics(activeMusic.language);
   
   // 使用自己的封面，沒有則使用回退封面
   const displayCover = activeMusic.cover || fallbackCover;
