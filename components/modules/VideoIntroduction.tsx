@@ -507,13 +507,49 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
   const { videos } = useVideos();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const [currentVideo, setCurrentVideo] = useState<VideoData>(video);
   const modalRef = useRef<HTMLDivElement>(null);
 
   const recommendedVideos = useMemo(() => {
-    return videos.filter(v => v.$id !== video.$id).slice(0, 10);
-  }, [videos, video.$id]);
+    return videos.filter(v => v.$id !== currentVideo.$id && v.file).slice(0, 10);
+  }, [videos, currentVideo.$id]);
 
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
+
+  // 監聽影片播放結束事件 - 自動播放下一個
+  useEffect(() => {
+    const handleVideoEnded = () => {
+      if (autoPlay && recommendedVideos.length > 0) {
+        console.log('影片播放結束，自動播放下一個:', recommendedVideos[0].name);
+        setCurrentVideo(recommendedVideos[0]);
+      }
+    };
+
+    // 監聽 Plyr 播放器的 ended 事件
+    const checkForPlyr = () => {
+      const plyrVideo = document.querySelector('.plyr video') as HTMLVideoElement;
+      if (plyrVideo) {
+        plyrVideo.addEventListener('ended', handleVideoEnded);
+        return () => plyrVideo.removeEventListener('ended', handleVideoEnded);
+      }
+    };
+
+    const timer = setTimeout(checkForPlyr, 500);
+    const cleanup = checkForPlyr();
+
+    return () => {
+      clearTimeout(timer);
+      if (cleanup) cleanup();
+    };
+  }, [autoPlay, recommendedVideos, currentVideo]);
+
+  // 當 currentVideo 變化時，更新 videoRef
+  useEffect(() => {
+    if (videoRef.current && currentVideo.file) {
+      videoRef.current.src = currentVideo.file;
+    }
+  }, [currentVideo, videoRef]);
 
   // 偵測影片是否為直式
   useEffect(() => {
@@ -531,7 +567,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, [video]);
+  }, [currentVideo]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -550,7 +586,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
         </button>
         <div className={`flex items-center justify-center ${isPortrait ? 'h-full w-auto' : 'w-full h-full'}`}>
           <div className={`${isPortrait ? 'h-full max-h-screen' : 'w-full h-full'} [&_video]:object-contain`}>
-            <PlyrPlayer type="video" src={getProxiedMediaUrl(videoRef.current?.src || video.file || '')} poster={video.cover} className="w-full h-full" />
+            <PlyrPlayer type="video" src={getProxiedMediaUrl(videoRef.current?.src || currentVideo.file || '')} poster={currentVideo.cover} className="w-full h-full" />
           </div>
         </div>
       </div>
@@ -571,8 +607,8 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
           <div className="h-[calc(100vh-32px)] max-h-[90vh] aspect-[9/16] bg-black rounded-xl overflow-hidden shadow-2xl [&_video]:object-contain [&_video]:w-full [&_video]:h-full">
             <PlyrPlayer
               type="video"
-              src={getProxiedMediaUrl(videoRef.current?.src || video.file || '')}
-              poster={video.cover}
+              src={getProxiedMediaUrl(videoRef.current?.src || currentVideo.file || '')}
+              poster={currentVideo.cover}
               className="w-full h-full"
             />
           </div>
@@ -587,21 +623,21 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
                 FX
               </div>
               <div>
-                <div className="font-bold text-white">{video.name}</div>
+                <div className="font-bold text-white">{currentVideo.name}</div>
                 <div className="text-xs text-gray-400">鋒兄 (Feng Xiong)</div>
               </div>
             </div>
             
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Calendar className="w-4 h-4" />
-              <span>{formatLocalDate(video.$createdAt)}</span>
-              {video.category && (
-                <span className="px-2 py-0.5 bg-white/10 rounded text-xs">{video.category}</span>
+              <span>{formatLocalDate(currentVideo.$createdAt)}</span>
+              {currentVideo.category && (
+                <span className="px-2 py-0.5 bg-white/10 rounded text-xs">{currentVideo.category}</span>
               )}
             </div>
             
-            {video.note && (
-              <p className="text-sm text-gray-300 leading-relaxed">{video.note}</p>
+            {currentVideo.note && (
+              <p className="text-sm text-gray-300 leading-relaxed">{currentVideo.note}</p>
             )}
             
             {/* 互動按鈕 */}
@@ -656,15 +692,15 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
             <div className="bg-black rounded-xl overflow-hidden shadow-2xl aspect-video ring-1 dark:ring-white/10 [&_video]:object-contain">
               <PlyrPlayer
                 type="video"
-                src={getProxiedMediaUrl(videoRef.current?.src || video.file || '')}
-                poster={video.cover}
+                src={getProxiedMediaUrl(videoRef.current?.src || currentVideo.file || '')}
+                poster={currentVideo.cover}
                 className="w-full h-full"
               />
             </div>
 
             {/* 影片標題 */}
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-              {video.name}
+              {currentVideo.name}
             </h1>
 
             {/* 作者與互動區 */}
@@ -698,16 +734,16 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
             {/* 影片描述區 (YouTube 樣式) */}
             <div className="bg-gray-100 dark:bg-white/5 rounded-xl p-4 space-y-2 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
               <div className="flex gap-3 text-sm font-bold dark:text-white">
-                <span>{formatLocalDate(video.$createdAt)}</span>
-                {video.category && <span className="text-blue-600 dark:text-blue-400">#{video.category}</span>}
+                <span>{formatLocalDate(currentVideo.$createdAt)}</span>
+                {currentVideo.category && <span className="text-blue-600 dark:text-blue-400">#{currentVideo.category}</span>}
               </div>
               <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                {video.note || "暫無詳細描述。"}
+                {currentVideo.note || "暫無詳細描述。"}
               </p>
-              {video.ref && (
+              {currentVideo.ref && (
                 <div className="pt-2">
-                  <a href={video.ref} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all">
-                    {video.ref}
+                  <a href={currentVideo.ref} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all">
+                    {currentVideo.ref}
                   </a>
                 </div>
               )}
@@ -718,17 +754,23 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
           <aside className="w-full lg:w-[400px] space-y-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-gray-900 dark:text-white">接下來播放</h3>
-              <div className="text-xs text-blue-600 dark:text-blue-400 font-medium cursor-pointer">自動播放</div>
+              <button 
+                onClick={() => setAutoPlay(!autoPlay)}
+                className={`text-xs font-medium cursor-pointer px-3 py-1 rounded-full transition-colors ${
+                  autoPlay 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }`}
+              >
+                自動播放 {autoPlay ? '開' : '關'}
+              </button>
             </div>
             <div className="space-y-3">
               {recommendedVideos.map((recVideo) => (
                 <RecommendedVideoCard
                   key={recVideo.$id}
                   video={recVideo}
-                  onClick={() => {
-                    onClose();
-                    // 在真實環境中這裡應跳轉至新影片
-                  }}
+                  onClick={() => setCurrentVideo(recVideo)}
                 />
               ))}
             </div>
