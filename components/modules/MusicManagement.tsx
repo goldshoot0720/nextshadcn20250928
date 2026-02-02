@@ -52,6 +52,186 @@ export default function MusicManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedMusicId, setExpandedMusicId] = useState<string | null>(null);
 
+  // CSV 匯入/匯出功能
+  const [importPreview, setImportPreview] = useState<{data: MusicFormData[], errors: string[]} | null>(null);
+  const CSV_HEADERS = ['name', 'category', 'language', 'lyrics', 'note', 'ref'];
+  const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length;
+
+  interface MusicFormData {
+    name: string;
+    category: string;
+    language: string;
+    lyrics: string;
+    note: string;
+    ref: string;
+  }
+
+  const exportToCSV = () => {
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
+      return str;
+    };
+    const rows = [CSV_HEADERS.join(',')];
+    music.forEach(item => {
+      rows.push([
+        escapeCSV(item.name),
+        escapeCSV(item.category || ''),
+        escapeCSV(item.language || ''),
+        escapeCSV(item.lyrics || ''),
+        escapeCSV(item.note || ''),
+        escapeCSV(item.ref || '')
+      ].join(','));
+    });
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'music-appwrite.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = []; let current = ''; let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (inQuotes) { 
+        if (char === '"') { 
+          if (line[i + 1] === '"') { current += '"'; i++; } 
+          else { inQuotes = false; } 
+        } else { current += char; } 
+      } else { 
+        if (char === '"') { inQuotes = true; } 
+        else if (char === ',') { result.push(current); current = ''; } 
+        else { current += char; } 
+      }
+    }
+    result.push(current); 
+    return result;
+  };
+
+  const parseCSV = (text: string): {data: MusicFormData[], errors: string[]} => {
+    const errors: string[] = []; 
+    const data: MusicFormData[] = [];
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const lines = cleanText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) { 
+      errors.push('CSV 檔案至少需要表頭和一行資料'); 
+      return { data, errors }; 
+    }
+    const headerValues = parseCSVLine(lines[0]);
+    if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
+      errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
+      return { data, errors };
+    }
+    for (let i = 0; i < CSV_HEADERS.length; i++) {
+      if (headerValues[i]?.trim() !== CSV_HEADERS[i]) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]?.trim()}"`);
+        if (errors.length >= 5) { errors.push('...更多錯誤已省略'); break; }
+      }
+    }
+    if (errors.length > 0) return { data, errors };
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]); 
+      const lineNum = i + 1;
+      if (values.length !== EXPECTED_COLUMN_COUNT) { 
+        errors.push(`第 ${lineNum} 行: 欄位數量錯誤 (預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${values.length} 欄)`); 
+        continue; 
+      }
+      if (!values[0]?.trim()) { 
+        errors.push(`第 ${lineNum} 行: name 欄位不能為空`); 
+        continue; 
+      }
+      data.push({ 
+        name: values[0].trim(), 
+        category: values[1]?.trim() || '', 
+        language: values[2]?.trim() || '', 
+        lyrics: values[3]?.trim() || '',
+        note: values[4]?.trim() || '',
+        ref: values[5]?.trim() || ''
+      });
+    }
+    return { data, errors };
+  };
+
+  const handleCsvFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; 
+    if (!file) return;
+    if (!file.name.endsWith('.csv')) { 
+      alert('請選擇 CSV 檔案'); 
+      return; 
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => { 
+      setImportPreview(parseCSV(event.target?.result as string)); 
+    };
+    reader.readAsText(file, 'UTF-8'); 
+    e.target.value = '';
+  };
+
+  const executeImport = async () => {
+    if (!importPreview || importPreview.data.length === 0) return;
+    let successCount = 0, failCount = 0;
+    for (const formData of importPreview.data) {
+      try {
+        // 查找是否已存在相同 name + language 的記錄
+        const existing = music.find(m => m.name === formData.name && m.language === formData.language);
+        const apiUrl = existing 
+          ? addAppwriteConfigToUrl(`${API_ENDPOINTS.MUSIC}/${existing.$id}`)
+          : addAppwriteConfigToUrl(API_ENDPOINTS.MUSIC);
+        const method = existing ? 'PUT' : 'POST';
+        
+        // 準備資料，不包含 file, cover, hash（因為 Appwrite Storage 綁定帳號）
+        const submitData = {
+          name: formData.name,
+          category: formData.category,
+          language: formData.language,
+          lyrics: formData.lyrics,
+          note: formData.note,
+          ref: formData.ref,
+          // 如果是更新，保留原有的 file, cover, hash
+          ...(existing && {
+            file: existing.file,
+            cover: existing.cover,
+            hash: existing.hash
+          }),
+          // 如果是新增，設定空值
+          ...(!existing && {
+            file: '',
+            cover: '',
+            hash: `csv_import_${Date.now()}_${Math.random().toString(36).substring(7)}`
+          })
+        };
+        
+        const response = await fetch(apiUrl, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAppwriteHeaders(),
+          },
+          body: JSON.stringify(submitData),
+        });
+        
+        if (response.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch { 
+        failCount++; 
+      }
+    }
+    setImportPreview(null);
+    loadMusic(); // 重新載入資料
+    alert(`匯入完成！
+成功: ${successCount} 筆
+失敗: ${failCount} 筆
+
+注意：音樂檔案和封面圖需要另行上傳（因為 Appwrite Storage 綁定帳號）`);
+  };
+
   // 搜尋過濾
   const filteredMusic = useMemo(() => {
     if (!searchQuery.trim()) return music;
@@ -139,10 +319,19 @@ export default function MusicManagement() {
         title="鋒兄音樂"
         subtitle="管理音樂收藏，支援歌詞和多語言"
         action={
-          <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
-            <Plus size={16} />
-            新增音樂
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={() => document.getElementById('csv-import-music')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">
+              <Upload size={18} /> 匯入
+            </Button>
+            <input id="csv-import-music" type="file" accept=".csv" className="hidden" onChange={handleCsvFileSelect} />
+            <Button onClick={exportToCSV} variant="outline" className="rounded-xl flex items-center gap-2" title="匯出 CSV">
+              <Download size={18} /> 匯出
+            </Button>
+            <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
+              <Plus size={16} />
+              新增音樂
+            </Button>
+          </div>
         }
       />
 
@@ -204,6 +393,74 @@ export default function MusicManagement() {
           }}
           onSuccess={handleFormSuccess}
         />
+      )}
+
+      {/* CSV 匯入預覽模態框 */}
+      {importPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">匯入預覽</h3>
+              <button onClick={() => setImportPreview(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-auto flex-1">
+              {importPreview.errors.length > 0 ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2">錯誤</h4>
+                  <ul className="list-disc list-inside text-sm text-red-600 dark:text-red-300 space-y-1">
+                    {importPreview.errors.map((err, i) => <li key={i}>{err}</li>)}
+                  </ul>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                      ⚠️ <strong>注意：</strong>匯入不包含音樂檔案和封面圖（因為 Appwrite Storage 綁定帳號），這些需要另行上傳。
+                    </p>
+                  </div>
+                  <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">將匯入 {importPreview.data.length} 筆資料:</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-100 dark:bg-gray-700">
+                          <th className="px-3 py-2 text-left">名稱</th>
+                          <th className="px-3 py-2 text-left">分類</th>
+                          <th className="px-3 py-2 text-left">語言</th>
+                          <th className="px-3 py-2 text-left">歌詞</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.data.slice(0, 10).map((item, i) => (
+                          <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
+                            <td className="px-3 py-2 font-medium">{item.name}</td>
+                            <td className="px-3 py-2">{item.category || '-'}</td>
+                            <td className="px-3 py-2">{item.language || '-'}</td>
+                            <td className="px-3 py-2 max-w-[200px] truncate">{item.lyrics ? '有' : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importPreview.data.length > 10 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">...還有 {importPreview.data.length - 10} 筆</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
+              <Button 
+                onClick={executeImport} 
+                disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                確認匯入 ({importPreview.data.length} 筆)
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
