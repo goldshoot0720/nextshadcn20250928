@@ -1281,11 +1281,16 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         body: JSON.stringify(finalFormData),
       });
 
-      if (!response.ok) throw new Error(music ? '更新失敗' : '新增失敗');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error || (music ? '更新失敗' : '新增失敗');
+        throw new Error(errorMsg);
+      }
 
       onSuccess();
       onClose();
     } catch (error) {
+      console.error('Music form error:', error);
       alert(error instanceof Error ? error.message : '操作失敗');
     } finally {
       setSubmitting(false);
