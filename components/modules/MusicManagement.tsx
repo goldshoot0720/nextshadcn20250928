@@ -112,16 +112,69 @@ export default function MusicManagement() {
     return result;
   };
 
+  // RFC 4180 compliant CSV parser that handles multi-line quoted fields (for lyrics)
   const parseCSV = (text: string): {data: MusicFormData[], errors: string[]} => {
     const errors: string[] = []; 
     const data: MusicFormData[] = [];
     const cleanText = text.replace(/^\uFEFF/, '');
-    const lines = cleanText.split('\n').filter(line => line.trim());
-    if (lines.length < 2) { 
+    
+    // Parse CSV properly handling multi-line quoted fields
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      const nextChar = cleanText[i + 1];
+      
+      if (inQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') {
+            // Escaped quote
+            currentField += '"';
+            i++;
+          } else {
+            // End of quoted field
+            inQuotes = false;
+          }
+        } else {
+          // Character inside quotes (including newlines)
+          currentField += char;
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true;
+        } else if (char === ',') {
+          currentRow.push(currentField);
+          currentField = '';
+        } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+          currentRow.push(currentField);
+          currentField = '';
+          if (currentRow.length > 0 && currentRow.some(f => f.trim())) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          if (char === '\r') i++; // Skip \n after \r
+        } else if (char !== '\r') {
+          currentField += char;
+        }
+      }
+    }
+    // Push last field and row
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim())) {
+        rows.push(currentRow);
+      }
+    }
+    
+    if (rows.length < 2) { 
       errors.push('CSV 檔案至少需要表頭和一行資料'); 
       return { data, errors }; 
     }
-    const headerValues = parseCSVLine(lines[0]);
+    
+    const headerValues = rows[0];
     if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
       errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
       return { data, errors };
@@ -133,8 +186,9 @@ export default function MusicManagement() {
       }
     }
     if (errors.length > 0) return { data, errors };
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]); 
+    
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i]; 
       const lineNum = i + 1;
       if (values.length !== EXPECTED_COLUMN_COUNT) { 
         errors.push(`第 ${lineNum} 行: 欄位數量錯誤 (預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${values.length} 欄)`); 
