@@ -885,10 +885,10 @@ function RecommendedVideoCard({ video, onClick }: { video: VideoData; onClick: (
         </div>
       </div>
       <div className="flex-1 min-w-0 py-0.5">
-        <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        <h4 className="font-bold text-white text-sm line-clamp-2 leading-snug group-hover:text-blue-300 transition-colors">
           {video.name}
         </h4>
-        <div className="mt-1 flex flex-col text-[12px] text-gray-500 dark:text-gray-400">
+        <div className="mt-1 flex flex-col text-[12px] text-gray-400">
           <span>鋒兄 (Feng Xiong)</span>
           <span>{formatLocalDate(video.$createdAt)}</span>
         </div>
