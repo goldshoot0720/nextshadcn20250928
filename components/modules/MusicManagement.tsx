@@ -399,7 +399,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     ref: music?.ref || '',
     category: music?.category || '',
     hash: music?.hash || '',
-    language: music?.language || '',
+    language: music?.language || '中文',
     cover: music?.cover || '',
   });
   const [submitting, setSubmitting] = useState(false);
