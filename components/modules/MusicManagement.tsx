@@ -621,6 +621,8 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const [coverPreviewLoading, setCoverPreviewLoading] = useState(false);
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [coverFileHash, setCoverFileHash] = useState<string>(''); // 封面圖 hash
+  const [coverDuplicateInfo, setCoverDuplicateInfo] = useState<{ found: boolean; existingUrl: string; musicName: string } | null>(null); // 重複封面資訊
   const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
   const [useNameSelect, setUseNameSelect] = useState(!music); // 新增時預設顯示選擇框，編輯時顯示輸入框
   const [useLanguageSelect, setUseLanguageSelect] = useState(true); // 語言選擇框
@@ -743,14 +745,43 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     setCoverPreviewLoading(true);
     setCoverUploadStatus('idle');
     setCoverUploadProgress(0);
+    setCoverDuplicateInfo(null);
     
     // 儲存檔案並產生預覽 URL
     setSelectedCoverFile(file);
     const objectUrl = URL.createObjectURL(file);
     setCoverPreviewUrl(objectUrl);
     
-    // 模擬預覽載入完成
-    setTimeout(() => setCoverPreviewLoading(false), 300);
+    // 計算封面圖 hash
+    const hash = await calculateFileHash(file);
+    setCoverFileHash(hash);
+    
+    // 檢查是否有重複的封面圖（從 localStorage 取得已上傳封面圖的 hash map）
+    const coverHashMap = JSON.parse(localStorage.getItem('coverHashMap') || '{}');
+    if (coverHashMap[hash]) {
+      // 找到重複的封面圖
+      const existingUrl = coverHashMap[hash].url;
+      const musicName = coverHashMap[hash].musicName || '其他音樂';
+      setCoverDuplicateInfo({ found: true, existingUrl, musicName });
+    } else {
+      // 也檢查現有音樂的封面是否相同（基於檔案名稱和大小的簡單比較）
+      const existingWithSameCover = existingMusic.find(m => {
+        if (!m.cover) return false;
+        // 簡單比較：如果 URL 包含相同的檔案名
+        const fileName = file.name.replace(/[^a-zA-Z0-9]/g, '');
+        return m.cover.includes(fileName);
+      });
+      
+      if (existingWithSameCover) {
+        setCoverDuplicateInfo({ 
+          found: true, 
+          existingUrl: existingWithSameCover.cover, 
+          musicName: existingWithSameCover.name 
+        });
+      }
+    }
+    
+    setCoverPreviewLoading(false);
   };
 
   const uploadCoverFileToAppwrite = async (file: File): Promise<{ url: string; fileId: string }> => {
@@ -803,13 +834,30 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
         finalFormData.hash = `no_file_${Date.now()}`;
       }
 
-      // 如果有選擇封面圖檔案，上傳到 Appwrite
+      // 如果有選擇封面圖檔案，上傳到 Appwrite（或使用已存在的）
       if (selectedCoverFile) {
-        try {
-          const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
-          finalFormData.cover = url;
-        } catch (coverError) {
-          throw new Error(`封面圖上傳失敗: ${coverError instanceof Error ? coverError.message : '未知錯誤'}`);
+        // 如果發現重複且用戶選擇使用已存在的封面
+        if (coverDuplicateInfo?.found && coverDuplicateInfo.existingUrl && formData.cover === coverDuplicateInfo.existingUrl) {
+          // 已經設定為使用現有封面，不需要上傳
+          finalFormData.cover = coverDuplicateInfo.existingUrl;
+        } else if (coverDuplicateInfo?.found) {
+          // 發現重複但用戶沒有選擇使用已存在的，阻止上傳
+          throw new Error(`此封面圖已被「${coverDuplicateInfo.musicName}」使用，請使用現有封面或選擇其他圖片`);
+        } else {
+          // 沒有重複，正常上傳
+          try {
+            const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
+            finalFormData.cover = url;
+            
+            // 儲存封面圖 hash 到 localStorage
+            if (coverFileHash) {
+              const coverHashMap = JSON.parse(localStorage.getItem('coverHashMap') || '{}');
+              coverHashMap[coverFileHash] = { url, musicName: finalFormData.name };
+              localStorage.setItem('coverHashMap', JSON.stringify(coverHashMap));
+            }
+          } catch (coverError) {
+            throw new Error(`封面圖上傳失敗: ${coverError instanceof Error ? coverError.message : '未知錯誤'}`);
+          }
         }
       }
 
@@ -1150,6 +1198,29 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                 <div className="mt-2">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">封面圖預覽：</p>
                   <img src={coverPreviewUrl} alt="Cover Preview" className="max-h-32 rounded-lg border border-gray-200 dark:border-gray-700" />
+                </div>
+              )}
+              {/* 重複封面圖警告 */}
+              {coverDuplicateInfo?.found && (
+                <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium mb-2">
+                    ⚠️ 此封面圖已被「{coverDuplicateInfo.musicName}」使用
+                  </p>
+                  <p className="text-xs text-yellow-600 dark:text-yellow-500 mb-2">
+                    為避免重複上傳，建議使用已存在的封面圖
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, cover: coverDuplicateInfo.existingUrl });
+                      setSelectedCoverFile(null);
+                      setCoverPreviewUrl('');
+                      setCoverDuplicateInfo(null);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/30 dark:hover:bg-yellow-800/50 text-yellow-700 dark:text-yellow-400 rounded-lg transition-colors"
+                  >
+                    使用已存在的封面圖
+                  </button>
                 </div>
               )}
               {coverUploadStatus === 'uploading' && (
