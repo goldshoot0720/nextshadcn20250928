@@ -3,7 +3,34 @@
  */
 
 /**
- * 從 URL 獲取 favicon URL
+ * 從 URL 獲取多個可能的 favicon URL（按優先順序）
+ * @param siteUrl 網站 URL
+ * @returns favicon URL 陣列
+ */
+export function getFaviconUrlsOrdered(siteUrl: string): string[] {
+  if (!siteUrl) return [];
+  
+  try {
+    const url = new URL(siteUrl);
+    const domain = url.hostname;
+    const origin = url.origin;
+    
+    // 優先順序：
+    // 1. 直接從網站獲取 favicon.ico
+    // 2. DuckDuckGo favicon 服務
+    // 3. Google favicon 服務
+    return [
+      `${origin}/favicon.ico`,
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+    ];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 從 URL 獲取 favicon URL（預設使用 DuckDuckGo）
  * @param siteUrl 網站 URL
  * @returns favicon URL
  */

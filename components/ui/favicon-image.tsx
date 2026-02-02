@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { getFaviconUrl, getGoogleFaviconUrl } from "@/lib/faviconUtils";
+import { getFaviconUrlsOrdered } from "@/lib/faviconUtils";
 
 interface FaviconImageProps {
   siteUrl: string;
@@ -12,45 +12,44 @@ interface FaviconImageProps {
 }
 
 export function FaviconImage({ siteUrl, siteName, size = 20, className = "" }: FaviconImageProps) {
-  const [faviconUrl, setFaviconUrl] = useState<string>("");
-  const [fallbackUrl, setFallbackUrl] = useState<string>("");
+  const [faviconUrls, setFaviconUrls] = useState<string[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [useFallback, setUseFallback] = useState(false);
+  const [allFailed, setAllFailed] = useState(false);
 
   useEffect(() => {
     if (!siteUrl) {
       setIsLoading(false);
+      setAllFailed(true);
       return;
     }
 
-    // Primary: DuckDuckGo, Fallback: Google
-    const primary = getFaviconUrl(siteUrl);
-    const fallback = getGoogleFaviconUrl(siteUrl);
-    setFaviconUrl(primary);
-    setFallbackUrl(fallback);
+    // Get ordered list of favicon URLs to try
+    const urls = getFaviconUrlsOrdered(siteUrl);
+    setFaviconUrls(urls);
+    setCurrentIndex(0);
+    setAllFailed(false);
     setIsLoading(false);
-    setHasError(false);
-    setUseFallback(false);
   }, [siteUrl]);
 
   const handleError = () => {
-    if (!useFallback && fallbackUrl) {
-      // Try fallback URL (Google)
-      setUseFallback(true);
+    // Try next URL in the list
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < faviconUrls.length) {
+      setCurrentIndex(nextIndex);
     } else {
-      // Both failed, show default icon
-      setHasError(true);
+      // All URLs failed, show default icon
+      setAllFailed(true);
     }
   };
 
   const handleLoad = () => {
-    setHasError(false);
+    // Successfully loaded, keep current URL
   };
 
-  const currentUrl = useFallback ? fallbackUrl : faviconUrl;
+  const currentUrl = faviconUrls[currentIndex];
 
-  if (isLoading || !currentUrl || hasError) {
+  if (isLoading || !currentUrl || allFailed) {
     // 顯示預設圖示
     return (
       <div 
@@ -64,6 +63,7 @@ export function FaviconImage({ siteUrl, siteName, size = 20, className = "" }: F
 
   return (
     <Image
+      key={currentUrl} // Force re-render when URL changes
       src={currentUrl}
       alt={`${siteName} favicon`}
       width={size}
