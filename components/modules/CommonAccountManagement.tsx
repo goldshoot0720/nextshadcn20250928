@@ -14,6 +14,17 @@ import {
 import { useCrud } from "@/hooks/useApi";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
+import { FaviconImage } from "@/components/ui/favicon-image";
+
+// Helper function to check if string is a valid URL
+const isValidUrl = (str: string): boolean => {
+  try {
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 const INITIAL_FORM: CommonAccountFormData = {
   name: "",
@@ -695,8 +706,24 @@ export default function CommonAccountManagement() {
                               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 {siteName && (
                                   <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
-                                    <LinkIcon size={16} className="text-gray-400" />
-                                    <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
+                                    {isValidUrl(siteName) ? (
+                                      <>
+                                        <FaviconImage siteUrl={siteName} siteName={siteName} size={16} />
+                                        <a 
+                                          href={siteName} 
+                                          target="_blank" 
+                                          rel="noreferrer"
+                                          className="truncate max-w-[150px] sm:max-w-[200px] text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                          {new URL(siteName).hostname.replace('www.', '')}
+                                        </a>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <LinkIcon size={16} className="text-gray-400" />
+                                        <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
+                                      </>
+                                    )}
                                   </span>
                                 )}
                                 <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
