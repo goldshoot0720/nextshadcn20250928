@@ -468,19 +468,17 @@ export default function BankManagement() {
                         ) : (
                           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{bank.name}</h3>
                         )}
-                        {bank.account && (
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <User size={14} />
-                            <span>{bank.account}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(bank.deposit || 0)}
-                      </div>
-                      <span className="text-xs text-gray-400">資產餘額</span>
+                      {Number(bank.deposit) > 0 && (
+                        <>
+                          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                            {formatCurrency(bank.deposit)}
+                          </div>
+                          <span className="text-xs text-gray-400">資產餘額</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -501,16 +499,24 @@ export default function BankManagement() {
                       </div>
                     )}
 
-                    {/* 額度資訊 */}
-                    {(bank.withdrawals || bank.transfer) && (
+                    {/* 帳號 */}
+                    {bank.account && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <User size={16} className="text-gray-400" />
+                        <span>{bank.account}</span>
+                      </div>
+                    )}
+
+                    {/* 額度資訊 - 只顯示大於 0 的值 */}
+                    {(Number(bank.withdrawals) > 0 || Number(bank.transfer) > 0) && (
                       <div className="flex items-center gap-4 text-xs">
-                        {bank.withdrawals !== undefined && (
+                        {Number(bank.withdrawals) > 0 && (
                           <div className="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">
                             <ArrowDownLeft size={12} />
                             <span>提款: {formatCurrency(bank.withdrawals)}</span>
                           </div>
                         )}
-                        {bank.transfer !== undefined && (
+                        {Number(bank.transfer) > 0 && (
                           <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-1 rounded">
                             <ArrowUpRight size={12} />
                             <span>轉帳: {formatCurrency(bank.transfer)}</span>
