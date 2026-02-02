@@ -11,7 +11,7 @@ const KNOWN_FAVICON_URLS: Record<string, string> = {
   'outlook.live.com': 'https://outlook.live.com/favicon.ico',
   'suno.com': 'https://suno.com/favicon.ico',
   'sora.com': 'https://sora.com/favicon.ico',
-  'qoder.com': 'https://qoder.com/favicon.ico',
+  'qoder.com': 'https://img.alicdn.com/imgextra/i3/O1CN01KliT1u1jEq947NlKH_!!6000000004517-55-tps-180-180.svg',
 };
 
 /**
