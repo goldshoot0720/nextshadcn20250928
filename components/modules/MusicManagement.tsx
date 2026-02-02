@@ -234,7 +234,19 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
     return anyWithCover?.cover || null;
   };
   
+  // 計算歌詞回退邏輯：優先使用中文版歌詞，其次使用任意有歌詞的版本
+  const getFallbackLyrics = () => {
+    // 先找中文版的歌詞
+    const chineseVersion = items.find(item => item.language === '中文' && item.lyrics);
+    if (chineseVersion?.lyrics) return { lyrics: chineseVersion.lyrics, language: chineseVersion.language };
+    
+    // 再找任意有歌詞的版本
+    const anyWithLyrics = items.find(item => item.lyrics);
+    return anyWithLyrics ? { lyrics: anyWithLyrics.lyrics, language: anyWithLyrics.language } : null;
+  };
+  
   const fallbackCover = getFallbackCover();
+  const fallbackLyricsInfo = getFallbackLyrics();
   
   // 單個項目直接顯示原本的卡片樣式
   if (items.length === 1) {
@@ -256,6 +268,11 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   
   // 使用自己的封面，沒有則使用回退封面
   const displayCover = activeMusic.cover || fallbackCover;
+  
+  // 使用自己的歌詞，沒有則使用回退歌詞
+  const displayLyrics = activeMusic.lyrics || fallbackLyricsInfo?.lyrics || null;
+  const lyricsSource = activeMusic.lyrics ? activeMusic.language : fallbackLyricsInfo?.language;
+  const isUsingFallbackLyrics = !activeMusic.lyrics && displayLyrics;
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700">
@@ -298,7 +315,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate max-w-[120px] sm:max-w-none">{name}</h3>
-              {activeMusic.lyrics && (
+              {displayLyrics && (
                 <button
                   onClick={() => onToggleExpand(activeMusic.$id)}
                   className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all duration-200 flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ${
@@ -306,9 +323,11 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                       ? 'bg-purple-600 text-white' 
                       : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50'
                   }`}
+                  title={isUsingFallbackLyrics ? `使用${lyricsSource}版歌詞` : undefined}
                 >
                   <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   <span>歌詞</span>
+                  {isUsingFallbackLyrics && <span className="opacity-70">({lyricsSource})</span>}
                 </button>
               )}
             </div>
@@ -377,7 +396,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
       </div>
 
       {/* 展開的歌詞 */}
-      {isExpanded && activeMusic.lyrics && (
+      {isExpanded && displayLyrics && (
         <div className="px-3 sm:px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
           <div className="pt-4">
             <div className="flex justify-center mb-4">
@@ -396,10 +415,15 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
               {activeMusic.language && (
                 <span className="text-sm text-gray-500 dark:text-gray-400">{activeMusic.language}</span>
               )}
+              {isUsingFallbackLyrics && (
+                <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
+                  (使用 {lyricsSource} 版歌詞)
+                </p>
+              )}
             </div>
             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
               <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
-                {activeMusic.lyrics}
+                {displayLyrics}
               </pre>
             </div>
           </div>
