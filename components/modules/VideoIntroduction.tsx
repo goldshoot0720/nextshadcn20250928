@@ -517,10 +517,31 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
     return videos.filter(v => v.file);
   }, [videos]);
 
-  // 推薦影片列表（排除當前影片）
+  // 推薦影片列表（排除當前影片，按播放順序排列，未播放的在前面）
   const recommendedVideos = useMemo(() => {
-    return allVideosWithFile.filter(v => v.$id !== currentVideo.$id).slice(0, 10);
-  }, [allVideosWithFile, currentVideo.$id]);
+    const currentIndex = allVideosWithFile.findIndex(v => v.$id === currentVideo.$id);
+    const result: VideoData[] = [];
+    
+    // 從當前位置往後排序，未播放的先顯示
+    for (let i = 1; i < allVideosWithFile.length; i++) {
+      const nextIndex = (currentIndex + i) % allVideosWithFile.length;
+      const video = allVideosWithFile[nextIndex];
+      if (!playedIds.has(video.$id)) {
+        result.push(video);
+      }
+    }
+    
+    // 已播放的放後面
+    for (let i = 1; i < allVideosWithFile.length; i++) {
+      const nextIndex = (currentIndex + i) % allVideosWithFile.length;
+      const video = allVideosWithFile[nextIndex];
+      if (playedIds.has(video.$id)) {
+        result.push(video);
+      }
+    }
+    
+    return result.slice(0, 10);
+  }, [allVideosWithFile, currentVideo.$id, playedIds]);
 
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
