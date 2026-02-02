@@ -771,10 +771,11 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
-    const maxSize = 50 * 1024 * 1024;
+    // 檢查檔案大小 (4MB = 4 * 1024 * 1024 bytes)
+    // Note: Next.js dev server has a ~4MB body limit
+    const maxSize = 4 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('檔案大小不能超過 50MB');
+      alert('影片檔案大小不能超過 4MB\n建議：\n1. 使用影片壓縮工具\n2. 或使用 URL 方式引用外部影片檔案');
       return;
     }
 
@@ -1064,7 +1065,7 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳影片 (最大 50MB) / Upload (Max 50MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳影片 (最大 4MB) / Upload (Max 4MB)'}
                     </span>
                   </div>
                   <input
