@@ -623,6 +623,16 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
   const [useNameSelect, setUseNameSelect] = useState(!music); // 新增時預設顯示選擇框，編輯時顯示輸入框
+  const [useLanguageSelect, setUseLanguageSelect] = useState(true); // 語言選擇框
+
+  // 預設語言選項
+  const defaultLanguages = ['中文', '英語', '日語', '粵語', '韓語'];
+  
+  // 獲取所有已存在的語言（包括自訂的）
+  const existingLanguages = Array.from(new Set([
+    ...defaultLanguages,
+    ...existingMusic.map(m => m.language).filter(Boolean)
+  ]));
 
   // 獲取所有已存在的分類
   const existingCategories = Array.from(new Set(existingMusic.map(m => m.category).filter(Boolean)));
@@ -995,21 +1005,49 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 語言 / Language
               </label>
-              <Select
-                value={formData.language}
-                onValueChange={(value) => setFormData({ ...formData, language: value })}
-              >
-                <SelectTrigger className="h-12 rounded-xl">
-                  <SelectValue placeholder="選擇語言 / Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="中文">中文</SelectItem>
-                  <SelectItem value="英語">英語</SelectItem>
-                  <SelectItem value="日語">日語</SelectItem>
-                  <SelectItem value="粵語">粵語</SelectItem>
-                  <SelectItem value="韓語">韓語</SelectItem>
-                </SelectContent>
-              </Select>
+              {useLanguageSelect ? (
+                <div className="space-y-2">
+                  <Select
+                    value={formData.language}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setUseLanguageSelect(false);
+                        setFormData({ ...formData, language: '' });
+                      } else {
+                        setFormData({ ...formData, language: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="選擇語言 / Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingLanguages.map((lang) => (
+                        <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                      ))}
+                      <SelectItem value="__custom__">自行輸入... / Custom input...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={formData.language}
+                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                    placeholder="輸入語言 / Enter language"
+                    className="h-12 rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUseLanguageSelect(true)}
+                    className="text-xs h-7"
+                  >
+                    從預設選項中選擇 / Select from options
+                  </Button>
+                </div>
+              )}
               <div className="px-1 h-4">
                 {formData.language ? (
                   <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已選擇 / Selected</span>
