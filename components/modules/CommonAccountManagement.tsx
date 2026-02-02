@@ -260,10 +260,10 @@ export default function CommonAccountManagement() {
   const handleCopyNote = async (text: string, accountId?: string) => {
     try {
       // Try modern Clipboard API first
-      if (navigator.clipboard && window.isSecureContext) {
+      try {
         await navigator.clipboard.writeText(text);
-      } else {
-        // Fallback method for non-secure contexts
+      } catch (clipboardError) {
+        // Fallback method for non-secure contexts or blocked Clipboard API
         const textArea = document.createElement('textarea');
         textArea.value = text;
         textArea.style.position = 'fixed';
@@ -274,7 +274,10 @@ export default function CommonAccountManagement() {
         textArea.select();
         
         try {
-          document.execCommand('copy');
+          const successful = document.execCommand('copy');
+          if (!successful) {
+            throw new Error('execCommand copy failed');
+          }
         } finally {
           textArea.remove();
         }
@@ -293,7 +296,7 @@ export default function CommonAccountManagement() {
       }
     } catch (err) {
       console.error('Failed to copy:', err);
-      alert('❌ 複製失敗');
+      alert('❌ 複製失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
     }
   };
 
