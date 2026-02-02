@@ -17,7 +17,7 @@ import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { MusicQueuePanel } from "@/components/ui/music-queue-panel";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
-import { getAppwriteHeaders, getProxiedMediaUrl } from "@/lib/utils";
+import { getAppwriteHeaders, getProxiedMediaUrl, getAppwriteDownloadUrl } from "@/lib/utils";
 import { uploadToAppwriteStorage } from "@/lib/appwriteStorage";
 
 // Helper function to add Appwrite config to URL
@@ -769,14 +769,22 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                   </button>
                 )}
                 {selectedItem.file && (
-                  <a
-                    href={selectedItem.file}
-                    download={`${selectedItem.name}-${selectedItem.language}.mp3`}
+                  <button
+                    onClick={() => {
+                      const downloadUrl = getAppwriteDownloadUrl(selectedItem.file);
+                      const link = document.createElement('a');
+                      link.href = downloadUrl;
+                      link.download = `${selectedItem.name}-${selectedItem.language}.mp3`;
+                      link.target = '_blank';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
                     className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 transition-all"
                     title="下載"
                   >
                     <Download className="w-4 h-4" />
-                  </a>
+                  </button>
                 )}
                 {selectedItem.file && (
                   <button
@@ -1006,14 +1014,22 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
                 >
                   <ListPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
-                <a
-                  href={music.file}
-                  download={`${music.name}${music.language ? `-${music.language}` : ''}.mp3`}
+                <button
+                  onClick={() => {
+                    const downloadUrl = getAppwriteDownloadUrl(music.file);
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = `${music.name}${music.language ? `-${music.language}` : ''}.mp3`;
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
                   className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200"
                   title="下載"
                 >
                   <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </a>
+                </button>
               </>
             )}
             <button
