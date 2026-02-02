@@ -73,6 +73,67 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function HEAD(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get('url');
+    
+    if (!url) {
+      return NextResponse.json({ error: 'Missing URL parameter' }, { status: 400 });
+    }
+
+    // Parse Appwrite config from query params to add to headers if needed
+    const apiKey = searchParams.get('_key');
+    
+    const fetchHeaders: Record<string, string> = {};
+    
+    if (apiKey && apiKey !== 'undefined' && apiKey !== 'null') {
+      fetchHeaders['x-appwrite-key'] = apiKey;
+    }
+
+    // Forward some common browser headers to be more transparent
+    const userAgent = request.headers.get('user-agent');
+    if (userAgent) fetchHeaders['user-agent'] = userAgent;
+
+    const response = await fetch(url, {
+      method: 'HEAD',
+      headers: fetchHeaders,
+      cache: 'no-store',
+      redirect: 'follow',
+    });
+
+    // Return the response with same status code and headers
+    const responseHeaders = new Headers();
+    
+    // Copy essential headers
+    const headersToCopy = [
+      'content-type',
+      'content-length',
+      'accept-ranges',
+      'last-modified',
+      'etag',
+      'cache-control',
+      'content-disposition'
+    ];
+
+    headersToCopy.forEach(header => {
+      const value = response.headers.get(header);
+      if (value) {
+        responseHeaders.set(header, value);
+      }
+    });
+
+    return new NextResponse(null, {
+      status: response.status,
+      headers: responseHeaders,
+    });
+
+  } catch (error) {
+    console.error('Media proxy HEAD error:', error);
+    return NextResponse.json({ error: 'Failed to proxy media HEAD request' }, { status: 500 });
+  }
+}
+
 function createProxiedResponse(response: Response, url: string) {
   const responseHeaders = new Headers();
   

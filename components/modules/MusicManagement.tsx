@@ -1168,10 +1168,25 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     // 檢查是否有重複的封面圖（從 localStorage 取得已上傳封面圖的 hash map）
     const coverHashMap = JSON.parse(localStorage.getItem('coverHashMap') || '{}');
     if (coverHashMap[hash]) {
-      // 找到重複的封面圖
+      // 找到重複的封面圖，先檢查是否可訪問
       const existingUrl = coverHashMap[hash].url;
       const musicName = coverHashMap[hash].musicName || '其他音樂';
-      setCoverDuplicateInfo({ found: true, existingUrl, musicName });
+      
+      try {
+        // 使用代理 URL 來檢查圖片是否可訪問
+        const proxiedUrl = getProxiedMediaUrl(existingUrl);
+        const response = await fetch(proxiedUrl, { method: 'HEAD' });
+        if (response.ok) {
+          // 圖片可訪問，顯示重複警告
+          setCoverDuplicateInfo({ found: true, existingUrl, musicName });
+        } else {
+          // 圖片不可訪問，允許重新上傳
+          setCoverDuplicateInfo(null);
+        }
+      } catch {
+        // 無法檢查，假設圖片不存在，允許重新上傳
+        setCoverDuplicateInfo(null);
+      }
     } else {
       // 也檢查現有音樂的封面是否相同（基於檔案名稱和大小的簡單比較）
       const existingWithSameCover = existingMusic.find(m => {
@@ -1182,11 +1197,26 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
       });
       
       if (existingWithSameCover) {
-        setCoverDuplicateInfo({ 
-          found: true, 
-          existingUrl: existingWithSameCover.cover, 
-          musicName: existingWithSameCover.name 
-        });
+        // 檢查現有封面是否可訪問
+        try {
+          // 使用代理 URL 來檢查圖片是否可訪問
+          const proxiedUrl = getProxiedMediaUrl(existingWithSameCover.cover);
+          const response = await fetch(proxiedUrl, { method: 'HEAD' });
+          if (response.ok) {
+            // 圖片可訪問，顯示重複警告
+            setCoverDuplicateInfo({ 
+              found: true, 
+              existingUrl: existingWithSameCover.cover, 
+              musicName: existingWithSameCover.name 
+            });
+          } else {
+            // 圖片不可訪問，允許重新上傳
+            setCoverDuplicateInfo(null);
+          }
+        } catch {
+          // 無法檢查，假設圖片不存在，允許重新上傳
+          setCoverDuplicateInfo(null);
+        }
       }
     }
     
