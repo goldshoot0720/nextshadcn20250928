@@ -663,9 +663,9 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
           <X className="w-6 h-6" />
         </button>
         
-        {/* 左側：直式影片播放器 - 置中顯示完整影片 */}
+        {/* 左側：直式影片播放器 - 使用橫向容器以完整顯示時間軸 */}
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="h-[calc(100vh-80px)] max-h-[85vh] aspect-[9/16] bg-black rounded-xl shadow-2xl [&_.plyr]:h-full [&_.plyr]:rounded-xl [&_video]:object-contain [&_video]:w-full [&_video]:h-full">
+          <div className="w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl [&_.plyr]:h-full [&_.plyr]:rounded-xl [&_video]:object-contain [&_video]:w-full [&_video]:h-full">
             <PlyrPlayer
               key={currentVideo.$id}
               type="video"
