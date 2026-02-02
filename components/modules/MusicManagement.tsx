@@ -421,9 +421,13 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [useCategorySelect, setUseCategorySelect] = useState(true); // 是否使用選擇框
+  const [useNameSelect, setUseNameSelect] = useState(!music); // 新增時預設顯示選擇框，編輯時顯示輸入框
 
   // 獲取所有已存在的分類
   const existingCategories = Array.from(new Set(existingMusic.map(m => m.category).filter(Boolean)));
+  
+  // 獲取所有已存在的音樂名稱
+  const existingNames = Array.from(new Set(existingMusic.map(m => m.name).filter(Boolean)));
 
   // 計算檔案 SHA-256 hash
   const calculateFileHash = async (file: File): Promise<string> => {
@@ -637,13 +641,52 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               音樂名稱 / Music Name <span className="text-red-500">*</span>
             </label>
-            <Input
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="請輸入音樂名稱 / Music Name"
-              required
-              className="h-12 rounded-xl"
-            />
+            {useNameSelect && existingNames.length > 0 ? (
+              <div className="space-y-2">
+                <Select
+                  value={formData.name}
+                  onValueChange={(value) => {
+                    if (value === '__custom__') {
+                      setUseNameSelect(false);
+                      setFormData({ ...formData, name: '' });
+                    } else {
+                      setFormData({ ...formData, name: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-12 rounded-xl">
+                    <SelectValue placeholder="選擇已有音樂名稱 / Select existing name" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {existingNames.map((name) => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">自行輸入新名稱... / Enter new name...</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="請輸入音樂名稱 / Music Name"
+                  required
+                  className="h-12 rounded-xl"
+                />
+                {existingNames.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUseNameSelect(true)}
+                    className="text-xs h-7"
+                  >
+                    從已有名稱中選擇 / Select from existing
+                  </Button>
+                )}
+              </div>
+            )}
             <div className="px-1 h-4">
               {formData.name ? (
                 <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
