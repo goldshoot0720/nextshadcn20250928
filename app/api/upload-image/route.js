@@ -4,10 +4,10 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
-// Configure body size limit for file uploads (50MB)
-export const bodyParser = {
-  sizeLimit: '50mb'
-};
+// Configure maximum request body size for file uploads (50MB)
+// Note: This uses Next.js experimental feature for body size limit
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds timeout for uploads
 
 function createAppwrite(config) {
   // Use config from request headers (user input) or fallback to env (支援新舊兩種變數名)

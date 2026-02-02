@@ -520,10 +520,11 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
-    const maxSize = 50 * 1024 * 1024;
+    // 檢查檔案大小 (4MB = 4 * 1024 * 1024 bytes)
+    // Note: Next.js dev server has a ~4MB body limit
+    const maxSize = 4 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('檔案大小不能超過 50MB');
+      alert('封面圖大小不能超過 4MB（建議使用壓縮過的圖片）');
       return;
     }
 
@@ -845,7 +846,7 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB)'}
+                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 4MB)'}
                     </span>
                   </div>
                   <input
