@@ -60,13 +60,21 @@ export function useBanks() {
   // 更新銀行
   const updateBank = useCallback(async (id: string, formData: BankFormData): Promise<Bank | null> => {
     try {
-      // 清理 URL 欄位，空值或非 URL 格式處理為 null
+      // 對於更新操作，保留空字串以便清除欄位內容
       const sanitizedData = { ...formData };
-      if (!sanitizedData.activity || sanitizedData.activity.trim() === '') {
-        delete (sanitizedData as any).activity; // 刪除空值以避免驗證錯誤
+      
+      // 僅對 activity 進行 URL 驗證檢查（Appwrite 要求 URL 格式）
+      // 空字串可以用於清除現有值
+      if (sanitizedData.activity && sanitizedData.activity.trim() !== '') {
+        // 有值時保留
+      } else {
+        // 空字串保留，讓後端清除該欄位
+        sanitizedData.activity = '';
       }
-      if (!sanitizedData.site || sanitizedData.site.trim() === '') {
-        delete (sanitizedData as any).site; // 刪除空值以避免驗證錯誤
+      
+      // site 欄位允許空字串以清除內容
+      if (sanitizedData.site === undefined || sanitizedData.site === null) {
+        sanitizedData.site = '';
       }
       
       const updatedBank = await fetchApi<Bank>(`${API_ENDPOINTS.BANK}/${id}`, {

@@ -58,11 +58,13 @@ export async function PUT(req, context) {
     const payload = {};
     if (name !== undefined) payload.name = name;
     if (deposit !== undefined) payload.deposit = parseInt(deposit, 10);
-    if (site !== undefined) payload.site = site;
+    // site 欄位：空字串表示清除，否則保留值
+    if (site !== undefined) payload.site = site || null;
     if (address !== undefined) payload.address = address;
     if (withdrawals !== undefined) payload.withdrawals = parseInt(withdrawals, 10);
     if (transfer !== undefined) payload.transfer = parseInt(transfer, 10);
-    if (activity !== undefined) payload.activity = activity;
+    // activity 欄位：Appwrite 要求 URL 格式，空字串設為 null
+    if (activity !== undefined) payload.activity = activity || null;
     if (card !== undefined) payload.card = card;
     if (account !== undefined) payload.account = account;
 
