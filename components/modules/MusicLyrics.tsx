@@ -911,21 +911,28 @@ export default function MusicLyrics() {
         // 多層次歌詞匹配函數
         const findLyrics = (targetLang: 'zh' | 'en' | 'ja' | 'yue' | 'ko'): string => {
           // 1. 優先使用自己的歌詞
-          if (parsedLyrics[targetLang]) return parsedLyrics[targetLang];
-          if (targetLang === 'zh' && music.lyrics) return music.lyrics;
+          if (parsedLyrics[targetLang]) {
+            console.log(`[findLyrics] ${music.name} - ${targetLang}: Using own lyrics`);
+            return parsedLyrics[targetLang];
+          }
+          if (targetLang === 'zh' && music.lyrics) {
+            console.log(`[findLyrics] ${music.name} - zh: Using direct lyrics`);
+            return music.lyrics;
+          }
           
-          // 2. 找同語言的基礎版本（去除括號）
-          // 僅搜索相同語言的基礎版本，不跨語言搜索
-          const sameLanguageBase = appwriteMusic.find(m => {
+          // 2. 找基礎版本（去除括號後的版本）
+          // 不檢查 language 欄位，只要歌名匹配即可
+          const baseVersion = appwriteMusic.find(m => {
             const mBaseName = m.name.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
-            return mBaseName === baseName && m.language === targetLang && m.name === baseName;
+            return mBaseName === baseName && m.name === baseName;
           });
-          if (sameLanguageBase?.lyrics) {
+          
+          if (baseVersion?.lyrics) {
             try {
-              const baseLyrics = JSON.parse(sameLanguageBase.lyrics);
+              const baseLyrics = JSON.parse(baseVersion.lyrics);
               if (baseLyrics[targetLang]) return baseLyrics[targetLang];
             } catch {
-              if (targetLang === 'zh' && sameLanguageBase.lyrics) return sameLanguageBase.lyrics;
+              if (targetLang === 'zh' && baseVersion.lyrics) return baseVersion.lyrics;
             }
           }
           

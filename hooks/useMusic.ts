@@ -17,6 +17,7 @@ export interface MusicData {
   cover: string;
   $createdAt: string;
   $updatedAt: string;
+  computedLyrics?: string; // Lyrics with fallback logic
 }
 
 // 全域快取

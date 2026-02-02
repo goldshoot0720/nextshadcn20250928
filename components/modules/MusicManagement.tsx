@@ -288,13 +288,35 @@ export default function MusicManagement() {
 注意：音樂檔案和封面圖需要另行上傳（因為 Appwrite Storage 綁定帳號）`);
   };
 
-  // 搜尋過濾
+  // 搜尋過濾 + Lyrics Fallback
   const filteredMusic = useMemo(() => {
-    if (!searchQuery.trim()) return music;
+    // 首先添加 computedLyrics 到所有音樂
+    const musicWithComputedLyrics = music.map(item => {
+      // 如果已經有歌詞，直接使用
+      if (item.lyrics) {
+        return { ...item, computedLyrics: item.lyrics };
+      }
+      
+      // 如果沒有歌詞，找基礎語言版本（去除括號）
+      const baseLanguage = item.language?.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
+      const baseVersion = music.find(m => 
+        m.name === item.name && 
+        m.language === baseLanguage
+      );
+      
+      return { 
+        ...item, 
+        computedLyrics: baseVersion?.lyrics || '' 
+      };
+    });
+    
+    // 然後進行搜尋過濾
+    if (!searchQuery.trim()) return musicWithComputedLyrics;
     const query = searchQuery.toLowerCase();
-    return music.filter(item => 
+    return musicWithComputedLyrics.filter(item => 
       item.name?.toLowerCase().includes(query) ||
-      item.lyrics?.toLowerCase().includes(query)
+      item.lyrics?.toLowerCase().includes(query) ||
+      item.computedLyrics?.toLowerCase().includes(query)
     );
   }, [music, searchQuery]);
 
@@ -755,7 +777,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                 {selectedItem.language || '未指定'}
               </span>
               <div className="flex items-center gap-1">
-                {selectedItem.lyrics && (
+                {selectedItem.computedLyrics && (
                   <button
                     onClick={() => setExpandedLyricsId(expandedLyricsId === selectedItem.$id ? null : selectedItem.$id)}
                     className={`p-1.5 rounded-lg transition-all ${
@@ -862,7 +884,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
       {/* 展開的歌詞 */}
       {expandedLyricsId && (() => {
         const lyricsItem = items.find(item => item.$id === expandedLyricsId);
-        if (!lyricsItem?.lyrics) return null;
+        if (!lyricsItem?.computedLyrics) return null;
         
         return (
           <div className="px-3 sm:px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
@@ -886,7 +908,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
               </div>
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
                 <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
-                  {lyricsItem.lyrics}
+                  {lyricsItem.computedLyrics}
                 </pre>
               </div>
               <div className="flex justify-center mt-4">
@@ -942,7 +964,7 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate max-w-[120px] sm:max-w-none">{music.name}</h3>
               {/* 歌詞按鈕 */}
-              {music.lyrics && (
+              {music.computedLyrics && (
                 <button
                   onClick={onToggleExpand}
                   className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all duration-200 flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ${
@@ -1111,10 +1133,10 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
               <MusicIcon className="w-4 h-4" />
               歌詞
             </h4>
-            {music.lyrics ? (
+            {music.computedLyrics ? (
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 max-h-96 overflow-y-auto">
                 <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                  {music.lyrics}
+                  {music.computedLyrics}
                 </p>
               </div>
             ) : (
