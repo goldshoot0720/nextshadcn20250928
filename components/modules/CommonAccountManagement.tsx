@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy, Download } from "lucide-react";
+import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy, Download, Upload } from "lucide-react";
 import { CommonAccount, CommonAccountFormData } from "@/types";
 import { Input, Textarea, DataCard, Button, SectionHeader, FormCard, FormActions } from "@/components/ui";
 import { 
@@ -349,6 +349,164 @@ export default function CommonAccountManagement() {
     URL.revokeObjectURL(link.href);
   };
 
+  // 匯入狀態
+  const [importPreview, setImportPreview] = useState<{data: CommonAccountFormData[], errors: string[]} | null>(null);
+  const fileInputRef = useState<HTMLInputElement | null>(null);
+
+  // 解析 CSV
+  const parseCSV = (text: string): {data: CommonAccountFormData[], errors: string[]} => {
+    const errors: string[] = [];
+    const data: CommonAccountFormData[] = [];
+    
+    // 移除 BOM
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const lines = cleanText.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      errors.push('CSV 檔案至少需要表頭和一行資料');
+      return { data, errors };
+    }
+    
+    // 檢查表頭
+    const headers = lines[0].split(',').map(h => h.trim());
+    if (headers[0] !== 'name') {
+      errors.push('第一欄必須是 "name"');
+      return { data, errors };
+    }
+    
+    // 檢查 site/note 欄位
+    const expectedHeaders = ['name'];
+    for (let i = 1; i <= 37; i++) {
+      const idx = i.toString().padStart(2, '0');
+      expectedHeaders.push(`site${idx}`, `note${idx}`);
+    }
+    
+    // 驗證表頭數量（至少要有 name）
+    if (headers.length < 1) {
+      errors.push('表頭欄位數量不足');
+      return { data, errors };
+    }
+    
+    // 解析資料行
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      
+      if (!values[0] || !values[0].trim()) {
+        errors.push(`第 ${i + 1} 行: name 欄位不能為空`);
+        continue;
+      }
+      
+      const formData: CommonAccountFormData = { name: values[0].trim() };
+      
+      // 填充 site/note 欄位
+      for (let j = 1; j <= 37; j++) {
+        const idx = j.toString().padStart(2, '0');
+        const siteIndex = j * 2 - 1; // 1, 3, 5, ...
+        const noteIndex = j * 2;     // 2, 4, 6, ...
+        
+        (formData as any)[`site${idx}`] = values[siteIndex]?.trim() || '';
+        (formData as any)[`note${idx}`] = values[noteIndex]?.trim() || '';
+      }
+      
+      data.push(formData);
+    }
+    
+    return { data, errors };
+  };
+
+  // 解析單行 CSV（處理引號內的逗號）
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (inQuotes) {
+        if (char === '"') {
+          if (line[i + 1] === '"') {
+            current += '"';
+            i++; // 跳過轉義的引號
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          current += char;
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true;
+        } else if (char === ',') {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+    }
+    result.push(current);
+    
+    return result;
+  };
+
+  // 處理檔案選擇
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.csv')) {
+      alert('請選擇 CSV 檔案');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const result = parseCSV(text);
+      setImportPreview(result);
+    };
+    reader.readAsText(file, 'UTF-8');
+    
+    // 清除 input 以便可以重複選擇同一檔案
+    e.target.value = '';
+  };
+
+  // 執行匯入
+  const executeImport = async () => {
+    if (!importPreview || importPreview.data.length === 0) return;
+    
+    try {
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const formData of importPreview.data) {
+        try {
+          // 檢查是否已存在同名帳號
+          const existing = accounts.find(a => a.name === formData.name);
+          if (existing) {
+            // 更新現有
+            await update(existing.$id, formData);
+          } else {
+            // 新增
+            await create(formData);
+          }
+          successCount++;
+        } catch (err) {
+          console.error(`匯入 ${formData.name} 失敗:`, err);
+          failCount++;
+        }
+      }
+      
+      await fetchAll();
+      setImportPreview(null);
+      alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
+    } catch (err) {
+      console.error('匯入失敗:', err);
+      alert('匯入過程中發生錯誤');
+    }
+  };
+
   const handleDelete = async (account: CommonAccount) => {
     if (!confirm(`確定要刪除「${account.name}」嗎？`)) return;
 
@@ -435,6 +593,22 @@ export default function CommonAccountManagement() {
         subtitle={`共 ${accounts.length} 組帳號設定`}
         action={
           <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="csv-import-input"
+            />
+            <Button 
+              onClick={() => document.getElementById('csv-import-input')?.click()}
+              variant="outline"
+              className="rounded-xl flex items-center gap-2"
+              title="匯入 CSV"
+            >
+              <Upload size={18} />
+              匯入
+            </Button>
             <Button 
               onClick={exportToCSV}
               variant="outline"
@@ -454,6 +628,75 @@ export default function CommonAccountManagement() {
           </div>
         }
       />
+
+      {/* 匯入預覽對話框 */}
+      {importPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">匯入預覽</h3>
+              <p className="text-sm text-gray-500 mt-1">請確認以下資料是否正確</p>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[50vh]">
+              {/* 錯誤訊息 */}
+              {importPreview.errors.length > 0 && (
+                <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                  <h4 className="font-semibold text-red-600 dark:text-red-400 mb-2">格式錯誤:</h4>
+                  <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
+                    {importPreview.errors.map((err, i) => (
+                      <li key={i}>• {err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* 資料預覽 */}
+              {importPreview.data.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-700 dark:text-gray-300">
+                    將匯入 {importPreview.data.length} 筆資料:
+                  </h4>
+                  <div className="space-y-2">
+                    {importPreview.data.map((item, i) => {
+                      const existing = accounts.find(a => a.name === item.name);
+                      const siteCount = Object.keys(item).filter(k => k.startsWith('site') && (item as any)[k]).length;
+                      return (
+                        <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
+                          <span className="text-xs text-gray-500">{siteCount} 個網站</span>
+                          {existing ? (
+                            <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded">更新</span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded">新增</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setImportPreview(null)}
+                className="rounded-xl"
+              >
+                取消
+              </Button>
+              <Button
+                onClick={executeImport}
+                disabled={importPreview.data.length === 0}
+                className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+              >
+                確認匯入 ({importPreview.data.length} 筆)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isFormOpen && (
         <div className="space-y-4">
