@@ -595,33 +595,20 @@ export default function SubscriptionManagement() {
                 )}
               </div>
               <div className="space-y-1">
-                <div className="flex gap-1 items-center">
-                  <Input 
-                    placeholder="價錢 / Price" 
-                    type="number" 
-                    min="0" 
-                    step="0.01"
-                    value={form.price ?? ""} 
-                    onChange={(e) => setForm({ ...form, price: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })} 
-                    className="h-12 rounded-xl flex-1" 
-                  />
-                  <div className="px-1 h-4">
-                    {(form.price !== undefined && form.price !== null && form.price > 0) ? (
-                      <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
-                    ) : (
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入價格 / (Optional) Please enter price</span>
-                    )}
-                  </div>
-                </div>
+                <Input 
+                  placeholder="價錢 / Price" 
+                  type="number" 
+                  min="0" 
+                  step="0.01"
+                  value={form.price ?? ""} 
+                  onChange={(e) => setForm({ ...form, price: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })} 
+                  className="h-12 rounded-xl" 
+                />
                 <div className="px-1 h-4">
-                  {(form.price || 0) > 0 ? (
-                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">
-                      可以 + 或 - / Can use + or -
-                    </span>
+                  {(form.price !== undefined && form.price !== null && form.price > 0) ? (
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">已輸入 / Entered</span>
                   ) : (
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                      (選填) 請輸入數字 / (Optional) Please enter a number
-                    </span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">(選填) 請輸入價格 / (Optional) Please enter price</span>
                   )}
                 </div>
               </div>
