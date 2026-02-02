@@ -16,6 +16,24 @@ import { API_ENDPOINTS } from "@/lib/constants";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
 import { FaviconImage } from "@/components/ui/favicon-image";
 
+// 常見網站名稱到 URL 的映射（用於 favicon 顯示）
+const SITE_URL_MAP: Record<string, string> = {
+  'Github': 'https://github.com',
+  'GitHub': 'https://github.com',
+  'gmail': 'https://mail.google.com',
+  'Gmail': 'https://mail.google.com',
+  'MindVideo': 'https://www.mindvideo.ai',
+  'mindvideo': 'https://www.mindvideo.ai',
+  'Outlook': 'https://outlook.live.com',
+  'outlook': 'https://outlook.live.com',
+  'Qoder': 'https://qoder.com',
+  'qoder': 'https://qoder.com',
+  'Sora': 'https://sora.com',
+  'sora': 'https://sora.com',
+  'Suno': 'https://suno.com',
+  'suno': 'https://suno.com',
+};
+
 // Helper function to check if string is a valid URL
 const isValidUrl = (str: string): boolean => {
   try {
@@ -24,6 +42,19 @@ const isValidUrl = (str: string): boolean => {
   } catch {
     return false;
   }
+};
+
+// 獲取網站的 URL（如果是已知名稱則返回映射 URL，否則檢查是否為有效 URL）
+const getSiteUrl = (siteName: string): string | null => {
+  // 先檢查映射表
+  if (SITE_URL_MAP[siteName]) {
+    return SITE_URL_MAP[siteName];
+  }
+  // 再檢查是否為有效 URL
+  if (isValidUrl(siteName)) {
+    return siteName;
+  }
+  return null;
 };
 
 const INITIAL_FORM: CommonAccountFormData = {
@@ -704,28 +735,31 @@ export default function CommonAccountManagement() {
                             ) : (
                               // Display Mode
                               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                                {siteName && (
-                                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
-                                    {isValidUrl(siteName) ? (
-                                      <>
-                                        <FaviconImage siteUrl={siteName} siteName={siteName} size={16} />
-                                        <a 
-                                          href={siteName} 
-                                          target="_blank" 
-                                          rel="noreferrer"
-                                          className="truncate max-w-[150px] sm:max-w-[200px] text-blue-600 dark:text-blue-400 hover:underline"
-                                        >
-                                          {new URL(siteName).hostname.replace('www.', '')}
-                                        </a>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <LinkIcon size={16} className="text-gray-400" />
-                                        <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
-                                      </>
-                                    )}
-                                  </span>
-                                )}
+                                {siteName && (() => {
+                                  const siteUrl = getSiteUrl(siteName);
+                                  return (
+                                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
+                                      {siteUrl ? (
+                                        <>
+                                          <FaviconImage siteUrl={siteUrl} siteName={siteName} size={16} />
+                                          <a 
+                                            href={siteUrl} 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="truncate max-w-[150px] sm:max-w-[200px] text-blue-600 dark:text-blue-400 hover:underline"
+                                          >
+                                            {siteName}
+                                          </a>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <LinkIcon size={16} className="text-gray-400" />
+                                          <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
+                                        </>
+                                      )}
+                                    </span>
+                                  );
+                                })()}
                                 <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
                                   {note && (
                                     <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-words line-clamp-2 sm:line-clamp-none">
