@@ -453,7 +453,7 @@ export default function BankManagement() {
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <FaviconImage siteUrl={bank.site || ""} siteName={bank.name} size={32} />
+                      {bank.site && <FaviconImage siteUrl={bank.site} siteName={bank.name} size={24} />}
                       <div>
                         {bank.site ? (
                           <a 
