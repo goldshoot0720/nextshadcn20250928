@@ -581,6 +581,7 @@ export default function CommonAccountManagement() {
                   return name?.trim() === siteName.trim();
                 });
               }).length;
+              const siteUrl = getSiteUrl(siteName);
               return (
                 <Button
                   key={siteName}
@@ -589,6 +590,7 @@ export default function CommonAccountManagement() {
                   onClick={() => setSiteFilter(siteFilter === siteName ? null : siteName)}
                   className={`h-8 px-3 rounded-lg text-sm flex items-center gap-1.5 shrink-0 ${siteFilter === siteName ? 'bg-blue-600 text-white' : ''}`}
                 >
+                  {siteUrl && <FaviconImage siteUrl={siteUrl} siteName={siteName} size={14} />}
                   {siteName} ({count})
                 </Button>
               );
