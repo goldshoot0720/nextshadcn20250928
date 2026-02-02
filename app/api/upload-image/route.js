@@ -50,10 +50,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // 檢查檔案大小 (50MB)
-    const maxSize = 50 * 1024 * 1024;
+    // 檢查檔案大小 (10MB for images - reasonable for web use)
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      return NextResponse.json({ error: '檔案大小不能超過 50MB' }, { status: 400 });
+      return NextResponse.json({ error: '檔案大小不能超過 10MB' }, { status: 400 });
     }
 
     // 檢查檔案類型

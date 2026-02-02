@@ -533,11 +533,11 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (4MB = 4 * 1024 * 1024 bytes)
-    // Note: Next.js dev server has a ~4MB body limit
-    const maxSize = 4 * 1024 * 1024;
+    // 檢查檔案大小 (10MB for cover images - reasonable for optimized images)
+    // Note: Appwrite Storage supports 50MB, but cover images should be optimized
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('封面圖大小不能超過 4MB（建議使用壓縮過的圖片）');
+      alert('封面圖大小不能超過 10MB（建議使用壓縮過的圖片，通常 1-2MB 最佳）');
       return;
     }
 
@@ -905,7 +905,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 4MB)'}
+                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 10MB)'}
                     </span>
                   </div>
                   <input
