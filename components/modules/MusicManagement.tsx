@@ -507,8 +507,15 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
       setUploadProgress(100);
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '上傳失敗');
+        let errorMessage = '上傳失敗';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON, use status text
+          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -579,8 +586,15 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
       setCoverUploadProgress(100);
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '封面圖上傳失敗');
+        let errorMessage = '封面圖上傳失敗';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON, use status text
+          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
