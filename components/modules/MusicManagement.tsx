@@ -625,25 +625,49 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700">
-      {/* 版本切換標籤 */}
-      <div className="flex items-center gap-1 px-3 pt-3 sm:px-4 sm:pt-4 overflow-x-auto">
-        <span className="text-xs text-gray-500 dark:text-gray-400 mr-1 flex-shrink-0">版本:</span>
-        {items.map((item, index) => (
-          <button
-            key={item.$id}
-            onClick={() => setActiveIndex(index)}
-            className={`px-2 py-1 text-xs font-medium rounded-lg transition-all flex-shrink-0 ${
-              activeIndex === index
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            {item.language || `版本${index + 1}`}
-          </button>
-        ))}
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto flex-shrink-0">
-          共 {items.length} 個版本
-        </span>
+      {/* 版本切換標籤 - 固定語言列 */}
+      <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-gray-500 dark:text-gray-400">版本:</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            共 {items.length} 個版本
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-1 sm:gap-2">
+          {['中文', '英文', '日語', '粵語', '韓語'].map((lang) => {
+            const matchingItems = items.filter(item => {
+              const baseLanguage = (item.language || '').replace(/\(.*?\)/g, '').trim();
+              return baseLanguage === lang || item.language === lang;
+            });
+            const hasVersion = matchingItems.length > 0;
+            const isActive = matchingItems.some((item, idx) => items.indexOf(item) === activeIndex);
+            
+            return (
+              <button
+                key={lang}
+                onClick={() => {
+                  if (hasVersion) {
+                    const targetIndex = items.findIndex(item => {
+                      const baseLanguage = (item.language || '').replace(/\(.*?\)/g, '').trim();
+                      return baseLanguage === lang || item.language === lang;
+                    });
+                    if (targetIndex !== -1) setActiveIndex(targetIndex);
+                  }
+                }}
+                disabled={!hasVersion}
+                className={`px-1.5 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-all text-center ${
+                  isActive
+                    ? 'bg-purple-600 text-white'
+                    : hasVersion
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                }`}
+              >
+                {lang}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 主要內容區 */}
