@@ -649,8 +649,8 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
           
           {/* 左側：主播放區 + 影片資訊 */}
           <div className="flex-1 lg:max-w-[calc(100%-420px)] space-y-4">
-            {/* 播放器容器 - 固定 16:9，影片用 contain 完整顯示 */}
-            <div className="bg-black rounded-xl shadow-2xl aspect-video ring-1 dark:ring-white/10">
+            {/* 播放器容器 - 固定 16:9，影片用 contain 完整顯示，確保時間軸可見 */}
+            <div className="bg-black rounded-xl shadow-2xl aspect-video ring-1 dark:ring-white/10 [&_.plyr]:!h-full [&_.plyr]:!w-full [&_.plyr]:rounded-xl">
               <PlyrPlayer
                 key={currentVideo.$id}
                 type="video"
