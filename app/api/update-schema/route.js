@@ -41,6 +41,17 @@ const TABLE_SCHEMAS = {
     { key: 'hash', type: 'string', size: 300 },
     { key: 'cover', type: 'string', size: 150 }
   ],
+  music: [
+    { key: 'name', type: 'string', size: 100 },
+    { key: 'file', type: 'string', size: 150 },
+    { key: 'lyrics', type: 'string', size: 3337 },
+    { key: 'note', type: 'string', size: 100 },
+    { key: 'ref', type: 'string', size: 100 },
+    { key: 'category', type: 'string', size: 100 },
+    { key: 'hash', type: 'string', size: 300 },
+    { key: 'language', type: 'string', size: 100 },
+    { key: 'cover', type: 'string', size: 150 }
+  ],
   // Add other schemas as needed
 };
 
