@@ -938,7 +938,7 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
             
             {storageStats && (
               <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm mb-4">
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">總檔案數</span>
                     <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{storageStats.totalFiles}</p>
@@ -952,6 +952,19 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
                     <p className="text-lg font-bold text-red-600">{storageStats.orphanedFiles}</p>
                   </div>
                 </div>
+                {storageStats.collectionCounts && (
+                  <div className="border-t border-amber-200 dark:border-amber-800 pt-3">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">表格引用明細：</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      {Object.entries(storageStats.collectionCounts as Record<string, number>).map(([collection, count]) => (
+                        <div key={collection} className="flex items-center justify-between px-2 py-1 bg-white dark:bg-gray-800 rounded">
+                          <span className="text-gray-600 dark:text-gray-400">{collection}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{count} 筆</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex gap-3">

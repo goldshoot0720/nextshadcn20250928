@@ -103,6 +103,7 @@ async function getAllReferencedFileIds(databases, databaseId) {
   };
   
   const fileIdSet = new Set();
+  const collectionCounts = {}; // Store document count per collection
   console.log(`  📋 掃描 ${Object.keys(collectionFields).length} 個集合...`);
 
   for (const [collectionName, fields] of Object.entries(collectionFields)) {
@@ -112,6 +113,7 @@ async function getAllReferencedFileIds(databases, databaseId) {
       
       if (!collectionId) {
         console.log(`    ⚠️ 跳過 ${collectionName}: Collection 不存在`);
+        collectionCounts[collectionName] = 0; // Set to 0 if collection doesn't exist
         continue;
       }
 
@@ -152,14 +154,16 @@ async function getAllReferencedFileIds(databases, databaseId) {
         offset += limit;
       }
 
+      collectionCounts[collectionName] = collectionTotal; // Store total documents
       console.log(`    📊 ${collectionName}: ${collectionTotal} 筆資料, ${filesFound} 個檔案引用`);
     } catch (error) {
       console.error(`    ❌ 錯誤 ${collectionName}:`, error.message);
+      collectionCounts[collectionName] = 0; // Set to 0 on error
     }
   }
 
   console.log(`\n  🎯 總計引用檔案: ${fileIdSet.size} 個`);
-  return fileIdSet;
+  return { fileIdSet, collectionCounts };
 }
 
 // Count orphaned files
@@ -176,7 +180,7 @@ async function countOrphanedFiles(appwriteConfig) {
 
     // Get all referenced file IDs
     console.log('\n步驟 2: 掃描資料庫引用...');
-    const referencedIds = await getAllReferencedFileIds(databases, databaseId);
+    const { fileIdSet: referencedIds, collectionCounts } = await getAllReferencedFileIds(databases, databaseId);
     console.log(`✅ 資料庫已引用 ${referencedIds.size} 個檔案`);
     
     // Validate: referenced should not exceed total files
@@ -263,6 +267,7 @@ async function countOrphanedFiles(appwriteConfig) {
       referencedFiles: referencedIds.size,
       orphanedFiles: orphanedFiles.length,
       orphanedByType,
+      collectionCounts, // Include document counts per collection
       orphanedFileIds: orphanedFiles.map(f => f.$id)
     });
   } catch (error) {
@@ -307,7 +312,7 @@ export async function POST(request) {
     const allFiles = await getAllStorageFiles(storage, bucketId);
 
     // Get all referenced file IDs
-    const referencedIds = await getAllReferencedFileIds(databases, databaseId);
+    const { fileIdSet: referencedIds } = await getAllReferencedFileIds(databases, databaseId);
 
     // Find orphaned files
     const orphanedFiles = allFiles.filter(file => !referencedIds.has(file.$id));
