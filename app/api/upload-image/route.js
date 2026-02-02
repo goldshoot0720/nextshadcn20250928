@@ -4,6 +4,11 @@ const sdk = require('node-appwrite');
 
 export const dynamic = 'force-dynamic';
 
+// Configure body size limit for file uploads (50MB)
+export const bodyParser = {
+  sizeLimit: '50mb'
+};
+
 function createAppwrite(config) {
   // Use config from request headers (user input) or fallback to env (支援新舊兩種變數名)
   const endpoint = config?.endpoint || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
