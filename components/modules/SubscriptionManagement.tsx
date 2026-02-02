@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Minus, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Plus, Minus, ChevronDown, ChevronUp, Search, Download, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -273,6 +273,150 @@ export default function SubscriptionManagement() {
     setIsFormOpen(false);
   };
 
+  // CSV 匯入/匯出功能
+  const [importPreview, setImportPreview] = useState<{data: SubscriptionFormData[], errors: string[]} | null>(null);
+
+  const CSV_HEADERS = ['name', 'site', 'price', 'nextdate', 'note', 'account', 'currency', 'continue'];
+  const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length; // 8 欄
+
+  // 匯出 CSV
+  const exportToCSV = () => {
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = [CSV_HEADERS.join(',')];
+    subscriptions.forEach(sub => {
+      const row = [
+        escapeCSV(sub.name),
+        escapeCSV(sub.site || ''),
+        escapeCSV(sub.price || 0),
+        escapeCSV(sub.nextdate || ''),
+        escapeCSV(sub.note || ''),
+        escapeCSV(sub.account || ''),
+        escapeCSV(sub.currency || 'TWD'),
+        escapeCSV(sub.continue !== false ? 'true' : 'false'),
+      ];
+      rows.push(row.join(','));
+    });
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'subscription-appwrite.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  // 解析單行 CSV
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (inQuotes) {
+        if (char === '"') {
+          if (line[i + 1] === '"') { current += '"'; i++; }
+          else { inQuotes = false; }
+        } else { current += char; }
+      } else {
+        if (char === '"') { inQuotes = true; }
+        else if (char === ',') { result.push(current); current = ''; }
+        else { current += char; }
+      }
+    }
+    result.push(current);
+    return result;
+  };
+
+  // 解析 CSV
+  const parseCSV = (text: string): {data: SubscriptionFormData[], errors: string[]} => {
+    const errors: string[] = [];
+    const data: SubscriptionFormData[] = [];
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const lines = cleanText.split('\n').filter(line => line.trim());
+
+    if (lines.length < 2) {
+      errors.push('CSV 檔案至少需要表頭和一行資料');
+      return { data, errors };
+    }
+
+    const headerValues = parseCSVLine(lines[0]);
+    if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
+      errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
+      if (headerValues.length > EXPECTED_COLUMN_COUNT) errors.push(`→ 多了 ${headerValues.length - EXPECTED_COLUMN_COUNT} 欄`);
+      else errors.push(`→ 少了 ${EXPECTED_COLUMN_COUNT - headerValues.length} 欄`);
+      return { data, errors };
+    }
+
+    for (let i = 0; i < CSV_HEADERS.length; i++) {
+      if (headerValues[i]?.trim() !== CSV_HEADERS[i]) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]?.trim()}"`);
+        if (errors.length >= 5) { errors.push('...更多錯誤已省略'); break; }
+      }
+    }
+    if (errors.length > 0) return { data, errors };
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      const lineNum = i + 1;
+      if (values.length !== EXPECTED_COLUMN_COUNT) {
+        errors.push(`第 ${lineNum} 行: 欄位數量錯誤 (預期 ${EXPECTED_COLUMN_COUNT}，實際 ${values.length})`);
+        continue;
+      }
+      if (!values[0]?.trim()) {
+        errors.push(`第 ${lineNum} 行: name 欄位不能為空`);
+        continue;
+      }
+      data.push({
+        name: values[0].trim(),
+        site: values[1]?.trim() || '',
+        price: parseFloat(values[2]) || 0,
+        nextdate: values[3]?.trim() || '',
+        note: values[4]?.trim() || '',
+        account: values[5]?.trim() || '',
+        currency: values[6]?.trim() || 'TWD',
+        continue: values[7]?.trim().toLowerCase() !== 'false',
+      });
+    }
+    return { data, errors };
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith('.csv')) { alert('請選擇 CSV 檔案'); return; }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setImportPreview(parseCSV(text));
+    };
+    reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
+  };
+
+  const executeImport = async () => {
+    if (!importPreview || importPreview.data.length === 0) return;
+    let successCount = 0, failCount = 0;
+    for (const formData of importPreview.data) {
+      try {
+        const existing = subscriptions.find(s => s.name === formData.name && s.site === formData.site);
+        if (existing) await updateSubscription(existing.$id, formData);
+        else await createSubscription(formData);
+        successCount++;
+      } catch { failCount++; }
+    }
+    setImportPreview(null);
+    alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
+  };
+
   if (loading) return <FullPageLoading text="載入訂閱資料中..." />;
 
   return (
@@ -303,7 +447,14 @@ export default function SubscriptionManagement() {
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <input type="file" accept=".csv" onChange={handleFileSelect} className="hidden" id="csv-import-subscription" />
+        <Button onClick={() => document.getElementById('csv-import-subscription')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">
+          <Upload size={18} /> 匯入
+        </Button>
+        <Button onClick={exportToCSV} variant="outline" className="rounded-xl flex items-center gap-2" title="匯出 CSV">
+          <Download size={18} /> 匯出
+        </Button>
         <Button
           onClick={() => setIsFormOpen(!isFormOpen)}
           variant="outline"
@@ -313,6 +464,55 @@ export default function SubscriptionManagement() {
           {isFormOpen ? "收起表單" : "新增訂閱"}
         </Button>
       </div>
+
+      {/* 匯入預覽對話框 */}
+      {importPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">匯入預覽</h3>
+              <p className="text-sm text-gray-500 mt-1">請確認以下資料是否正確</p>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[50vh]">
+              {importPreview.errors.length > 0 && (
+                <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                  <h4 className="font-semibold text-red-600 dark:text-red-400 mb-2">格式錯誤:</h4>
+                  <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
+                    {importPreview.errors.map((err, i) => <li key={i}>• {err}</li>)}
+                  </ul>
+                </div>
+              )}
+              {importPreview.data.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-700 dark:text-gray-300">將匯入 {importPreview.data.length} 筆資料:</h4>
+                  <div className="space-y-2">
+                    {importPreview.data.map((item, i) => {
+                      const existing = subscriptions.find(s => s.name === item.name && s.site === item.site);
+                      return (
+                        <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
+                          <span className="text-xs text-gray-500">{item.price} {item.currency}</span>
+                          {existing ? (
+                            <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded">更新</span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded">新增</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setImportPreview(null)} className="rounded-xl">取消</Button>
+              <Button onClick={executeImport} disabled={importPreview.data.length === 0 || importPreview.errors.length > 0} className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                確認匯入 ({importPreview.data.length} 筆)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isFormOpen && (
         <FormCard title={editingId ? "編輯訂閱" : "新增訂閱"} accentColor="from-green-500 to-green-600">
