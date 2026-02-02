@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle } from "lucide-react";
+import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy } from "lucide-react";
 import { CommonAccount, CommonAccountFormData } from "@/types";
 import { Input, Textarea, DataCard, Button, SectionHeader, FormCard, FormActions } from "@/components/ui";
 import { 
@@ -252,6 +252,17 @@ export default function CommonAccountManagement() {
     setEditingId(account.$id);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Copy note (account info) to clipboard
+  const handleCopyNote = async (note: string) => {
+    try {
+      await navigator.clipboard.writeText(note);
+      alert('✅ 已複製帳號資訊！');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('❌ 複製失敗');
+    }
   };
 
   const handleDelete = async (account: CommonAccount) => {
@@ -709,15 +720,28 @@ export default function CommonAccountManagement() {
                                       {note}
                                     </span>
                                   )}
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => startInlineEdit(account.$id, idx, siteName || '', note || '')}
-                                    className="h-7 w-7 p-0 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shrink-0"
-                                    title="編輯此項目"
-                                  >
-                                    <Edit2 size={14} />
-                                  </Button>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {note && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleCopyNote(note)}
+                                        className="h-7 w-7 p-0 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                        title="複製帳號"
+                                      >
+                                        <Copy size={14} />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => startInlineEdit(account.$id, idx, siteName || '', note || '')}
+                                      className="h-7 w-7 p-0 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                      title="編輯此項目"
+                                    >
+                                      <Edit2 size={14} />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             )}
