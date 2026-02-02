@@ -16,6 +16,7 @@ import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders, getProxiedMediaUrl } from "@/lib/utils";
+import { uploadToAppwriteStorage } from "@/lib/appwriteStorage";
 
 // Helper function to add Appwrite config to URL
 function addAppwriteConfigToUrl(url: string): string {
@@ -438,11 +439,11 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (4MB = 4 * 1024 * 1024 bytes)
-    // Note: Next.js dev server has a ~4MB body limit
-    const maxSize = 4 * 1024 * 1024;
+    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
+    // Note: Direct upload to Appwrite Storage, no Next.js 4MB limit!
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('音樂檔案大小不能超過 4MB\n建議：\n1. 使用音訊壓縮工具降低位元率\n2. 或使用 URL 方式引用外部音樂檔案');
+      alert('音樂檔案大小不能超過 50MB');
       return;
     }
 
@@ -486,44 +487,15 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     setUploadStatus('uploading');
     setUploadProgress(0);
 
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-
-    // 模擬上傳進度
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + 10;
-      });
-    }, 200);
-
     try {
-      const response = await fetch('/api/upload-music', {
-        method: 'POST',
-        headers: getAppwriteHeaders(),
-        body: formDataUpload,
+      // Direct upload to Appwrite Storage (bypasses Next.js API route)
+      const result = await uploadToAppwriteStorage(file, (progress) => {
+        setUploadProgress(progress);
       });
 
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      if (!response.ok) {
-        let errorMessage = '上傳失敗';
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch (parseError) {
-          // If response is not JSON, use status text
-          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
       setUploadStatus('success');
-      return { url: data.url, fileId: data.fileId || '' };
+      return result;
     } catch (error) {
-      clearInterval(progressInterval);
       setUploadStatus('error');
       throw error;
     }
@@ -533,11 +505,10 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (10MB for cover images - reasonable for optimized images)
-    // Note: Appwrite Storage supports 50MB, but cover images should be optimized
-    const maxSize = 10 * 1024 * 1024;
+    // 檢查檔案大小 (50MB for cover images via direct Appwrite Storage upload)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('封面圖大小不能超過 10MB（建議使用壓縮過的圖片，通常 1-2MB 最佳）');
+      alert('封面圖大小不能超過 50MB');
       return;
     }
 
@@ -566,44 +537,15 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
     setCoverUploadStatus('uploading');
     setCoverUploadProgress(0);
 
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-
-    // 模擬上傳進度
-    const progressInterval = setInterval(() => {
-      setCoverUploadProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + 10;
-      });
-    }, 200);
-
     try {
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        headers: getAppwriteHeaders(),
-        body: formDataUpload,
+      // Direct upload to Appwrite Storage (bypasses Next.js API route)
+      const result = await uploadToAppwriteStorage(file, (progress) => {
+        setCoverUploadProgress(progress);
       });
 
-      clearInterval(progressInterval);
-      setCoverUploadProgress(100);
-
-      if (!response.ok) {
-        let errorMessage = '封面圖上傳失敗';
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch (parseError) {
-          // If response is not JSON, use status text
-          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
       setCoverUploadStatus('success');
-      return { url: data.url, fileId: data.fileId || '' };
+      return result;
     } catch (error) {
-      clearInterval(progressInterval);
       setCoverUploadStatus('error');
       throw error;
     }
@@ -724,7 +666,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 4MB) / Upload (Max 4MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳音樂 (最大 50MB) / Upload (Max 50MB)'}
                     </span>
                   </div>
                   <input
@@ -905,7 +847,7 @@ function MusicFormModal({ music, existingMusic, onClose, onSuccess }: { music: M
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 10MB)'}
+                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB)'}
                     </span>
                   </div>
                   <input
