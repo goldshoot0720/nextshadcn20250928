@@ -255,10 +255,12 @@ export default function CommonAccountManagement() {
   };
 
   // Copy note (account info) to clipboard
-  const handleCopyNote = async (note: string) => {
+  const handleCopyNote = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(note);
-      alert('✅ 已複製備註！');
+      await navigator.clipboard.writeText(text);
+      // Check if it looks like an email (simple check)
+      const isEmail = text.includes('@') && text.includes('.');
+      alert(isEmail ? '✅ 已複製帳號！' : '✅ 已複製備註！');
     } catch (err) {
       console.error('Failed to copy:', err);
       alert('❌ 複製失敗');
@@ -588,6 +590,15 @@ export default function CommonAccountManagement() {
                   <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 truncate">
                     {account.name}
                   </h3>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleCopyNote(account.name)}
+                    className="h-7 w-7 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    title="複製帳號"
+                  >
+                    <Copy size={14} />
+                  </Button>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Button size="sm" variant="ghost" onClick={() => handleEdit(account)} className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shadow-sm bg-white/50 dark:bg-gray-800/50">
