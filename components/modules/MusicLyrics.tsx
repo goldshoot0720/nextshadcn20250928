@@ -899,6 +899,25 @@ export default function MusicLyrics() {
           parsedLyrics = { zh: music.lyrics || "" };
         }
 
+        // 提取基礎歌名（去除括號內容）用於歌詞匹配
+        // 例如："進行曲(女聲)" -> "進行曲"
+        const baseName = music.name.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
+        
+        // 嘗試從 SAMPLE_SONGS 中找到匹配的歌詞
+        const matchingSong = SAMPLE_SONGS.find(song => {
+          const songBaseName = song.title.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
+          return songBaseName === baseName;
+        });
+        
+        // 使用匹配到的歌詞，否則使用音樂自帶的歌詞
+        const finalLyrics = matchingSong ? matchingSong.lyrics : {
+          zh: parsedLyrics.zh || parsedLyrics[music.language as 'zh' | 'en' | 'ja' | 'yue' | 'ko'] || music.lyrics || "",
+          en: parsedLyrics.en,
+          ja: parsedLyrics.ja,
+          yue: parsedLyrics.yue,
+          ko: parsedLyrics.ko,
+        };
+
         // 根據 language 字段確定音頻文件的語言
         const lang = (music.language || 'zh') as 'zh' | 'en' | 'ja' | 'yue' | 'ko';
         
@@ -910,13 +929,7 @@ export default function MusicLyrics() {
           title: music.name,
           artist: "鋒兄 & 塗哥", // 默認藝術家
           album: "鋒兄音樂精選",
-          lyrics: {
-            zh: parsedLyrics.zh || parsedLyrics[lang] || music.lyrics || "",
-            en: parsedLyrics.en,
-            ja: parsedLyrics.ja,
-            yue: parsedLyrics.yue,
-            ko: parsedLyrics.ko,
-          },
+          lyrics: finalLyrics,
           audioFiles: {
             zh: audioUrl, // 所有語言都使用同一個音頻文件
             en: audioUrl,
