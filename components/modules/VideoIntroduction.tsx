@@ -654,12 +654,12 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
     );
   }
 
-  // 直式影片布局（參考 Sora）
+  // 直式影片布局（參考 Sora，與橫式布局背景一致）
   if (isPortrait) {
     return (
-      <div className="fixed inset-0 bg-[#0f0f0f] z-50 flex">
+      <div className="fixed inset-0 bg-white dark:bg-[#0f0f0f] z-50 flex">
         {/* 關閉按鈕 */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2 hover:bg-white/10 rounded-full transition-colors text-white">
+        <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors text-gray-900 dark:text-white">
           <X className="w-6 h-6" />
         </button>
         
@@ -678,37 +678,37 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
         </div>
         
         {/* 右側：影片資訊與推薦 */}
-        <aside className="hidden lg:flex flex-col w-[380px] bg-[#1a1a1a] border-l border-white/10 overflow-y-auto dark">
+        <aside className="hidden lg:flex flex-col w-[380px] bg-gray-50 dark:bg-[#1a1a1a] border-l border-gray-200 dark:border-white/10 overflow-y-auto">
           {/* 影片資訊 */}
-          <div className="p-6 space-y-4 border-b border-white/10">
+          <div className="p-6 space-y-4 border-b border-gray-200 dark:border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
                 FX
               </div>
               <div>
-                <div className="font-bold text-white">{currentVideo.name}</div>
-                <div className="text-xs text-gray-400">鋒兄 (Feng Xiong)</div>
+                <div className="font-bold text-gray-900 dark:text-white">{currentVideo.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">鋒兄 (Feng Xiong)</div>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Calendar className="w-4 h-4" />
               <span>{formatLocalDate(currentVideo.$createdAt)}</span>
               {currentVideo.category && (
-                <span className="px-2 py-0.5 bg-white/10 rounded text-xs">{currentVideo.category}</span>
+                <span className="px-2 py-0.5 bg-gray-200 dark:bg-white/10 rounded text-xs">{currentVideo.category}</span>
               )}
             </div>
             
             {currentVideo.note && (
-              <p className="text-sm text-gray-300 leading-relaxed">{currentVideo.note}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{currentVideo.note}</p>
             )}
             
             {/* 互動按鈕 */}
             <div className="flex items-center gap-3 pt-2">
-              <button className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 rounded-full text-gray-900 dark:text-white text-sm transition-colors">
                 <Play className="w-4 h-4" /> 點讚
               </button>
-              <button onClick={toggleFullscreen} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">
+              <button onClick={toggleFullscreen} className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 rounded-full text-gray-900 dark:text-white text-sm transition-colors">
                 <Plus className="w-4 h-4" /> 全螢幕
               </button>
             </div>
@@ -717,13 +717,13 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
           {/* 推薦影片 - 接下來播放 */}
           <div className="p-4 flex-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white">接下來播放</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">接下來播放</h3>
               <button 
                 onClick={() => setAutoPlay(!autoPlay)}
                 className={`text-xs font-medium cursor-pointer px-3 py-1 rounded-full transition-colors ${
                   autoPlay 
                     ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-600 text-gray-300'
+                    : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 自動播放 {autoPlay ? '開' : '關'}
