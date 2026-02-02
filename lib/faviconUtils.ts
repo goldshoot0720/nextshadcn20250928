@@ -4,6 +4,7 @@
 
 // 已知網站的 favicon URL 映射（從 <link rel="icon"> 標籤獲取）
 const KNOWN_FAVICON_URLS: Record<string, string> = {
+  // 常用網站
   'github.com': 'https://github.githubassets.com/favicons/favicon.svg',
   'gmail.com': 'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico',
   'mail.google.com': 'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico',
@@ -12,6 +13,12 @@ const KNOWN_FAVICON_URLS: Record<string, string> = {
   'suno.com': 'https://suno.com/favicon.ico',
   'sora.com': 'https://sora.com/favicon.ico',
   'qoder.com': 'https://img.alicdn.com/imgextra/i3/O1CN01KliT1u1jEq947NlKH_!!6000000004517-55-tps-180-180.svg',
+  // 銀行網站
+  'ebank.taipeifubon.com.tw': 'https://ebank.taipeifubon.com.tw/B2C/inc/img/icon/favicon.ico',
+  'www.esunbank.com.tw': 'https://www.esunbank.com.tw/bank/rwd/images/esun.ico',
+  'esunbank.com.tw': 'https://www.esunbank.com.tw/bank/rwd/images/esun.ico',
+  'www.cathaybk.com.tw': 'https://www.cathaybk.com.tw/etc.clientlibs/cub-aem-cs/clientlibs/clientlib-react/resources/favicon.ico',
+  'cathaybk.com.tw': 'https://www.cathaybk.com.tw/etc.clientlibs/cub-aem-cs/clientlibs/clientlib-react/resources/favicon.ico',
 };
 
 /**
