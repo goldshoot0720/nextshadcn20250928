@@ -62,7 +62,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { searchParams } = new URL(request.url);
-    const { databases, databaseId } = createAppwrite(searchParams);
+    const { databases, storage, databaseId, bucketId } = createAppwrite(searchParams);
     const { id } = await params;
     const body = await request.json();
     
@@ -75,6 +75,9 @@ export async function PUT(request, { params }) {
     }
     
     const collectionId = musicCollection.$id;
+    
+    // Get current document to compare old and new values
+    const currentDoc = await databases.getDocument(databaseId, collectionId, id);
     
     const document = await databases.updateDocument(
       databaseId,
@@ -92,6 +95,54 @@ export async function PUT(request, { params }) {
         cover: body.cover || ''
       }
     );
+    
+    // Handle file deletion if file was removed or changed
+    if (currentDoc.file && bucketId) {
+      const oldFileId = extractFileIdFromUrl(currentDoc.file);
+      const newFileId = extractFileIdFromUrl(body.file);
+      
+      if (oldFileId && oldFileId !== newFileId) {
+        try {
+          // Count how many documents reference the old file
+          const allDocs = await databases.listDocuments(databaseId, collectionId);
+          const fileRefCount = allDocs.documents.filter(d => d.$id !== id && d.file === currentDoc.file).length;
+          
+          // Only delete from storage if no other documents reference it
+          if (fileRefCount === 0) {
+            await storage.deleteFile(bucketId, oldFileId);
+            console.log(`Deleted old music file: ${oldFileId}`);
+          } else {
+            console.log(`Skipped deleting old music file ${oldFileId} - referenced by ${fileRefCount} other documents`);
+          }
+        } catch (fileErr) {
+          console.warn(`Failed to delete old music file ${oldFileId}:`, fileErr.message);
+        }
+      }
+    }
+    
+    // Handle cover deletion if cover was removed or changed
+    if (currentDoc.cover && bucketId) {
+      const oldCoverId = extractFileIdFromUrl(currentDoc.cover);
+      const newCoverId = extractFileIdFromUrl(body.cover);
+      
+      if (oldCoverId && oldCoverId !== newCoverId) {
+        try {
+          // Count how many documents reference the old cover
+          const allDocs = await databases.listDocuments(databaseId, collectionId);
+          const coverRefCount = allDocs.documents.filter(d => d.$id !== id && d.cover === currentDoc.cover).length;
+          
+          // Only delete from storage if no other documents reference it
+          if (coverRefCount === 0) {
+            await storage.deleteFile(bucketId, oldCoverId);
+            console.log(`Deleted old cover image: ${oldCoverId}`);
+          } else {
+            console.log(`Skipped deleting old cover image ${oldCoverId} - referenced by ${coverRefCount} other documents`);
+          }
+        } catch (coverErr) {
+          console.warn(`Failed to delete old cover image ${oldCoverId}:`, coverErr.message);
+        }
+      }
+    }
     
     return NextResponse.json(document);
   } catch (err) {
@@ -120,26 +171,44 @@ export async function DELETE(request, { params }) {
     // Get document to retrieve file URLs
     const doc = await databases.getDocument(databaseId, collectionId, id);
     
-    // Delete music file from storage if exists
+    // Check if music file is referenced by other documents
     if (doc.file && bucketId) {
       const fileId = extractFileIdFromUrl(doc.file);
       if (fileId) {
         try {
-          await storage.deleteFile(bucketId, fileId);
-          console.log(`Deleted music file: ${fileId}`);
+          // Count how many documents reference this file
+          const allDocs = await databases.listDocuments(databaseId, collectionId);
+          const fileRefCount = allDocs.documents.filter(d => d.$id !== id && d.file === doc.file).length;
+          
+          // Only delete from storage if no other documents reference it
+          if (fileRefCount === 0) {
+            await storage.deleteFile(bucketId, fileId);
+            console.log(`Deleted music file: ${fileId}`);
+          } else {
+            console.log(`Skipped deleting music file ${fileId} - referenced by ${fileRefCount} other documents`);
+          }
         } catch (fileErr) {
           console.warn(`Failed to delete music file ${fileId}:`, fileErr.message);
         }
       }
     }
     
-    // Delete cover image from storage if exists
+    // Check if cover image is referenced by other documents
     if (doc.cover && bucketId) {
       const coverId = extractFileIdFromUrl(doc.cover);
       if (coverId) {
         try {
-          await storage.deleteFile(bucketId, coverId);
-          console.log(`Deleted cover image: ${coverId}`);
+          // Count how many documents reference this cover
+          const allDocs = await databases.listDocuments(databaseId, collectionId);
+          const coverRefCount = allDocs.documents.filter(d => d.$id !== id && d.cover === doc.cover).length;
+          
+          // Only delete from storage if no other documents reference it
+          if (coverRefCount === 0) {
+            await storage.deleteFile(bucketId, coverId);
+            console.log(`Deleted cover image: ${coverId}`);
+          } else {
+            console.log(`Skipped deleting cover image ${coverId} - referenced by ${coverRefCount} other documents`);
+          }
         } catch (coverErr) {
           console.warn(`Failed to delete cover image ${coverId}:`, coverErr.message);
         }
