@@ -103,6 +103,132 @@ export default function CommonDocumentManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [previewDocument, setPreviewDocument] = useState<CommonDocumentData | null>(null);
   const [openInEditMode, setOpenInEditMode] = useState(false);
+  const [importPreview, setImportPreview] = useState<{ data: DocumentFormData[]; errors: string[] } | null>(null);
+
+  // CSV 匯出/匯入
+  const CSV_HEADERS = ['name', 'category', 'note', 'ref'];
+  const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length;
+
+  interface DocumentFormData {
+    name: string;
+    category: string;
+    note: string;
+    ref: string;
+  }
+
+  const exportToCSV = () => {
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
+      return str;
+    };
+    const rows = [CSV_HEADERS.join(',')];
+    commondocument.forEach(item => {
+      rows.push([
+        escapeCSV(item.name),
+        escapeCSV(item.category || ''),
+        escapeCSV(item.note || ''),
+        escapeCSV(item.ref || '')
+      ].join(','));
+    });
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'commondocument-appwrite.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const parseCSV = (text: string): { data: DocumentFormData[]; errors: string[] } => {
+    const errors: string[] = [];
+    const data: DocumentFormData[] = [];
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      const nextChar = cleanText[i + 1];
+      if (inQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') { currentField += '"'; i++; }
+          else { inQuotes = false; }
+        } else { currentField += char; }
+      } else {
+        if (char === '"') { inQuotes = true; }
+        else if (char === ',') { currentRow.push(currentField); currentField = ''; }
+        else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+          currentRow.push(currentField); currentField = '';
+          if (currentRow.length > 0 && currentRow.some(f => f.trim())) { rows.push(currentRow); }
+          currentRow = [];
+          if (char === '\r') i++;
+        } else if (char !== '\r') { currentField += char; }
+      }
+    }
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim())) { rows.push(currentRow); }
+    }
+    
+    if (rows.length < 2) { errors.push('CSV 檔案至少需要表頭和一行資料'); return { data, errors }; }
+    const headerValues = rows[0];
+    if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
+      errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
+      return { data, errors };
+    }
+    for (let i = 0; i < CSV_HEADERS.length; i++) {
+      if (headerValues[i]?.trim() !== CSV_HEADERS[i]) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]?.trim()}"`);
+      }
+    }
+    if (errors.length > 0) return { data, errors };
+    
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i];
+      if (values.length !== EXPECTED_COLUMN_COUNT) { errors.push(`第 ${i + 1} 行: 欄位數量錯誤`); continue; }
+      if (!values[0]?.trim()) { errors.push(`第 ${i + 1} 行: name 欄位不能為空`); continue; }
+      data.push({ name: values[0].trim(), category: values[1]?.trim() || '', note: values[2]?.trim() || '', ref: values[3]?.trim() || '' });
+    }
+    return { data, errors };
+  };
+
+  const handleCsvFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith('.csv')) { alert('請選擇 CSV 檔案'); return; }
+    const reader = new FileReader();
+    reader.onload = (event) => { setImportPreview(parseCSV(event.target?.result as string)); };
+    reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
+  };
+
+  const executeImport = async () => {
+    if (!importPreview || importPreview.data.length === 0) return;
+    let successCount = 0, failCount = 0;
+    for (const formData of importPreview.data) {
+      try {
+        const existing = commondocument.find(d => d.name === formData.name);
+        const apiUrl = existing
+          ? addAppwriteConfigToUrl(`${API_ENDPOINTS.COMMONDOCUMENT}/${existing.$id}`)
+          : addAppwriteConfigToUrl(API_ENDPOINTS.COMMONDOCUMENT);
+        const method = existing ? 'PUT' : 'POST';
+        const submitData = {
+          name: formData.name, category: formData.category, note: formData.note, ref: formData.ref,
+          ...(existing && { file: existing.file, cover: existing.cover, hash: existing.hash }),
+          ...(!existing && { file: '', cover: '', hash: `csv_import_${Date.now()}_${Math.random().toString(36).substring(7)}` })
+        };
+        const response = await fetch(apiUrl, { method, headers: { 'Content-Type': 'application/json', ...getAppwriteHeaders() }, body: JSON.stringify(submitData) });
+        if (response.ok) { successCount++; } else { failCount++; }
+      } catch { failCount++; }
+    }
+    setImportPreview(null);
+    loadCommonDocument(true);
+    alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
+  };
 
   // 搜尋過濾
   const filteredDocuments = useMemo(() => {
@@ -187,10 +313,19 @@ export default function CommonDocumentManagement() {
         title="鋒兄文件"
         subtitle="管理文件收藏，支援 PDF、Word、Excel、PowerPoint、TXT、MD、ZIP、影片"
         action={
-          <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
-            <Plus size={16} />
-            新增文件
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={() => document.getElementById('csv-import-document')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">
+              <Upload size={18} /> 匯入
+            </Button>
+            <input id="csv-import-document" type="file" accept=".csv" className="hidden" onChange={handleCsvFileSelect} />
+            <Button onClick={exportToCSV} variant="outline" className="rounded-xl flex items-center gap-2" title="匯出 CSV">
+              <Download size={18} /> 匯出
+            </Button>
+            <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
+              <Plus size={16} />
+              新增文件
+            </Button>
+          </div>
         }
       />
 
@@ -263,6 +398,72 @@ export default function CommonDocumentManagement() {
           }}
           openInEditMode={openInEditMode}
         />
+      )}
+
+      {/* CSV 匯入預覽模態框 */}
+      {importPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">匯入預覽</h3>
+              <button onClick={() => setImportPreview(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-auto flex-1">
+              {importPreview.errors.length > 0 ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2">錯誤</h4>
+                  <ul className="list-disc list-inside text-sm text-red-600 dark:text-red-300 space-y-1">
+                    {importPreview.errors.map((err, i) => <li key={i}>{err}</li>)}
+                  </ul>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                      ⚠️ <strong>注意：</strong>匯入不包含文件檔案和封面圖，這些需要另行上傳。
+                    </p>
+                  </div>
+                  <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">將匯入 {importPreview.data.length} 筆資料:</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-100 dark:bg-gray-700">
+                          <th className="px-3 py-2 text-left">名稱</th>
+                          <th className="px-3 py-2 text-left">分類</th>
+                          <th className="px-3 py-2 text-left">備註</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.data.slice(0, 10).map((item, i) => (
+                          <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
+                            <td className="px-3 py-2 font-medium">{item.name}</td>
+                            <td className="px-3 py-2">{item.category || '-'}</td>
+                            <td className="px-3 py-2 max-w-[200px] truncate">{item.note || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importPreview.data.length > 10 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">...還有 {importPreview.data.length - 10} 筆</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
+              <Button 
+                onClick={executeImport} 
+                disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                確認匯入 ({importPreview.data.length} 筆)
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState, useRef } from "react";
+import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import "plyr-react/plyr.css";
 
@@ -9,6 +9,28 @@ const Plyr = dynamic(
   () => import("plyr-react").then((mod) => mod.Plyr),
   { ssr: false }
 );
+
+// 全域單一播放管理：當一個媒體開始播放時，暂停所有其他媒體
+const setupSinglePlayback = () => {
+  if (typeof window === 'undefined') return;
+  
+  // 避免重複設置
+  if ((window as any).__singlePlaybackSetup) return;
+  (window as any).__singlePlaybackSetup = true;
+  
+  document.addEventListener('play', (e) => {
+    const target = e.target as HTMLMediaElement;
+    if (target.tagName === 'AUDIO' || target.tagName === 'VIDEO') {
+      // 暂停所有其他的 audio 和 video 元素
+      const allMedia = document.querySelectorAll('audio, video');
+      allMedia.forEach((media) => {
+        if (media !== target && !(media as HTMLMediaElement).paused) {
+          (media as HTMLMediaElement).pause();
+        }
+      });
+    }
+  }, true);
+};
 
 interface PlyrPlayerProps {
   type: "video" | "audio";
@@ -39,6 +61,8 @@ export function PlyrPlayer({
 
   useEffect(() => {
     setIsMounted(true);
+    // 設置全域單一播放
+    setupSinglePlayback();
   }, []);
 
   // Detect video aspect ratio

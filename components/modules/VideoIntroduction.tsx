@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar, Search } from "lucide-react";
+import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar, Search, ListPlus } from "lucide-react";
 import SimpleVideoPlayer from "@/components/ui/simple-video-player";
 import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { useVideoCache } from "@/hooks/useVideoCache";
@@ -20,6 +20,8 @@ import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders, getProxiedMediaUrl } from "@/lib/utils";
 import { uploadToAppwriteStorage } from "@/lib/appwriteStorage";
+import { useVideoQueue, VideoQueueItem } from "@/hooks/useVideoQueue";
+import { VideoQueuePanel } from "@/components/ui/video-queue-panel";
 
 // Helper function to add Appwrite config to URL
 function addAppwriteConfigToUrl(url: string): string {
@@ -57,7 +59,153 @@ export default function VideoIntroduction() {
   const [currentVideo, setCurrentVideo] = useState<string | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [importPreview, setImportPreview] = useState<{ data: VideoFormData[]; errors: string[] } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { addToQueue, isInQueue } = useVideoQueue();
+
+  // 接下來播放 - 加入佇列
+  const handleAddToQueue = useCallback((video: VideoData) => {
+    if (!video.file) {
+      alert('此影片尚未上傳影片檔案');
+      return;
+    }
+    const queueItem: VideoQueueItem = {
+      id: video.$id,
+      name: video.name,
+      category: video.category || '',
+      file: video.file,
+      cover: typeof video.cover === 'string' ? video.cover : '',
+    };
+    const added = addToQueue(queueItem);
+    if (!added) {
+      alert('此影片已在播放佇列中');
+    }
+  }, [addToQueue]);
+
+  // CSV 匹出/匯入
+  const CSV_HEADERS = ['name', 'category', 'note', 'ref'];
+  const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length;
+
+  interface VideoFormData {
+    name: string;
+    category: string;
+    note: string;
+    ref: string;
+  }
+
+  const exportToCSV = () => {
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
+      return str;
+    };
+    const rows = [CSV_HEADERS.join(',')];
+    videos.forEach(item => {
+      rows.push([
+        escapeCSV(item.name),
+        escapeCSV(item.category || ''),
+        escapeCSV(item.note || ''),
+        escapeCSV(item.ref || '')
+      ].join(','));
+    });
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'video-appwrite.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const parseCSV = (text: string): { data: VideoFormData[]; errors: string[] } => {
+    const errors: string[] = [];
+    const data: VideoFormData[] = [];
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      const nextChar = cleanText[i + 1];
+      if (inQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') { currentField += '"'; i++; }
+          else { inQuotes = false; }
+        } else { currentField += char; }
+      } else {
+        if (char === '"') { inQuotes = true; }
+        else if (char === ',') { currentRow.push(currentField); currentField = ''; }
+        else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+          currentRow.push(currentField); currentField = '';
+          if (currentRow.length > 0 && currentRow.some(f => f.trim())) { rows.push(currentRow); }
+          currentRow = [];
+          if (char === '\r') i++;
+        } else if (char !== '\r') { currentField += char; }
+      }
+    }
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim())) { rows.push(currentRow); }
+    }
+    
+    if (rows.length < 2) { errors.push('CSV 檔案至少需要表頭和一行資料'); return { data, errors }; }
+    const headerValues = rows[0];
+    if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
+      errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
+      return { data, errors };
+    }
+    for (let i = 0; i < CSV_HEADERS.length; i++) {
+      if (headerValues[i]?.trim() !== CSV_HEADERS[i]) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]?.trim()}"`);
+      }
+    }
+    if (errors.length > 0) return { data, errors };
+    
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i];
+      if (values.length !== EXPECTED_COLUMN_COUNT) { errors.push(`第 ${i + 1} 行: 欄位數量錯誤`); continue; }
+      if (!values[0]?.trim()) { errors.push(`第 ${i + 1} 行: name 欄位不能為空`); continue; }
+      data.push({ name: values[0].trim(), category: values[1]?.trim() || '', note: values[2]?.trim() || '', ref: values[3]?.trim() || '' });
+    }
+    return { data, errors };
+  };
+
+  const handleCsvFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith('.csv')) { alert('請選擇 CSV 檔案'); return; }
+    const reader = new FileReader();
+    reader.onload = (event) => { setImportPreview(parseCSV(event.target?.result as string)); };
+    reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
+  };
+
+  const executeImport = async () => {
+    if (!importPreview || importPreview.data.length === 0) return;
+    let successCount = 0, failCount = 0;
+    for (const formData of importPreview.data) {
+      try {
+        const existing = videos.find(v => v.name === formData.name);
+        const apiUrl = existing
+          ? addAppwriteConfigToUrl(`${API_ENDPOINTS.VIDEO}/${existing.$id}`)
+          : addAppwriteConfigToUrl(API_ENDPOINTS.VIDEO);
+        const method = existing ? 'PUT' : 'POST';
+        const submitData = {
+          name: formData.name, category: formData.category, note: formData.note, ref: formData.ref,
+          ...(existing && { file: existing.file, cover: existing.cover, hash: existing.hash }),
+          ...(!existing && { file: '', cover: '', hash: `csv_import_${Date.now()}_${Math.random().toString(36).substring(7)}` })
+        };
+        const response = await fetch(apiUrl, { method, headers: { 'Content-Type': 'application/json', ...getAppwriteHeaders() }, body: JSON.stringify(submitData) });
+        if (response.ok) { successCount++; } else { failCount++; }
+      } catch { failCount++; }
+    }
+    setImportPreview(null);
+    loadVideos(true);
+    alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
+  };
 
   // 搜尋過濾
   const filteredVideos = useMemo(() => {
@@ -183,10 +331,19 @@ export default function VideoIntroduction() {
         title="鋒兄影片"
         subtitle="觀看精彩影片內容，支援本地快取減少流量使用"
         action={
-          <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
-            <Plus size={16} />
-            新增影片
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={() => document.getElementById('csv-import-video')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">
+              <Upload size={18} /> 匯入
+            </Button>
+            <input id="csv-import-video" type="file" accept=".csv" className="hidden" onChange={handleCsvFileSelect} />
+            <Button onClick={exportToCSV} variant="outline" className="rounded-xl flex items-center gap-2" title="匯出 CSV">
+              <Download size={18} /> 匯出
+            </Button>
+            <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
+              <Plus size={16} />
+              新增影片
+            </Button>
+          </div>
         }
       />
 
@@ -244,6 +401,8 @@ export default function VideoIntroduction() {
               onDelete={() => handleDelete(video)}
               onDownload={() => handleDownload(video)}
               onDeleteCache={() => handleDeleteCache(video.$id)}
+              onAddToQueue={() => handleAddToQueue(video)}
+              isInQueue={isInQueue(video.$id)}
             />
           ))}
         </div>
@@ -270,6 +429,75 @@ export default function VideoIntroduction() {
           onSuccess={handleFormSuccess}
         />
       )}
+
+      {/* CSV 匯入預覽模態框 */}
+      {importPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">匯入預覽</h3>
+              <button onClick={() => setImportPreview(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-auto flex-1">
+              {importPreview.errors.length > 0 ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2">錯誤</h4>
+                  <ul className="list-disc list-inside text-sm text-red-600 dark:text-red-300 space-y-1">
+                    {importPreview.errors.map((err, i) => <li key={i}>{err}</li>)}
+                  </ul>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                      ⚠️ <strong>注意：</strong>匯入不包含影片檔案和封面圖，這些需要另行上傳。
+                    </p>
+                  </div>
+                  <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">將匯入 {importPreview.data.length} 筆資料:</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-100 dark:bg-gray-700">
+                          <th className="px-3 py-2 text-left">名稱</th>
+                          <th className="px-3 py-2 text-left">分類</th>
+                          <th className="px-3 py-2 text-left">備註</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.data.slice(0, 10).map((item, i) => (
+                          <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
+                            <td className="px-3 py-2 font-medium">{item.name}</td>
+                            <td className="px-3 py-2">{item.category || '-'}</td>
+                            <td className="px-3 py-2 max-w-[200px] truncate">{item.note || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importPreview.data.length > 10 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">...還有 {importPreview.data.length - 10} 筆</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
+              <Button 
+                onClick={executeImport} 
+                disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                確認匯入 ({importPreview.data.length} 筆)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 影片播放佇列面板 */}
+      <VideoQueuePanel />
     </div>
   );
 }
@@ -549,10 +777,12 @@ interface VideoManagementCardProps {
   onDelete: () => void;
   onDownload: () => void;
   onDeleteCache: () => void;
+  onAddToQueue?: () => void;
+  isInQueue?: boolean;
 }
 
 // 影片管理卡片 (模仿首頁瀑布流)
-function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onDownload, onDeleteCache }: VideoManagementCardProps) {
+function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onDownload, onDeleteCache, onAddToQueue, isInQueue }: VideoManagementCardProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -654,6 +884,18 @@ function VideoManagementCard({ video, cacheStatus, onPlay, onEdit, onDelete, onD
 
           {/* 管理按鈕列 */}
           <div className="flex items-center gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* 接下來播放按鈕 */}
+            {video.file && onAddToQueue && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAddToQueue(); }}
+                className={`p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors ${
+                  isInQueue ? 'text-green-600 dark:text-green-400' : 'text-purple-600 dark:text-purple-400'
+                }`}
+                title={isInQueue ? '已在佇列中' : '接下來播放'}
+              >
+                <ListPlus className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={onEdit} className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors text-blue-600 dark:text-blue-400">
               <Edit className="w-4 h-4" />
             </button>

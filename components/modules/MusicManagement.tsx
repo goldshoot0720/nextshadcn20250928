@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText, Download } from "lucide-react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText, Download, ListPlus } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
+import { useMusicQueue, QueueItem } from "@/hooks/useMusicQueue";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -13,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PlyrPlayer } from "@/components/ui/plyr-player";
+import { MusicQueuePanel } from "@/components/ui/music-queue-panel";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders, getProxiedMediaUrl } from "@/lib/utils";
@@ -516,6 +518,9 @@ export default function MusicManagement() {
           </div>
         </div>
       )}
+
+      {/* 音樂佇列面板 */}
+      <MusicQueuePanel />
     </div>
   );
 }
@@ -535,6 +540,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   const [expandedLyricsId, setExpandedLyricsId] = useState<string | null>(null);
   const [selectedBaseLanguage, setSelectedBaseLanguage] = useState<string | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const { addToQueue, isInQueue } = useMusicQueue();
   
   // 第一層：基礎語言類別
   const BASE_LANGUAGES = ['中文', '英語', '日語', '韓語', '粵語', '其他'];
@@ -574,20 +580,23 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
     return groups;
   }, [items]);
   
-  // 獲取封面（優先中文版）
-  const getCover = () => {
-    const chineseVersion = items.find(item => item.language === '中文' && item.cover);
-    if (chineseVersion?.cover) return chineseVersion.cover;
-    const anyWithCover = items.find(item => item.cover);
-    return anyWithCover?.cover || null;
+  // 獲取封面（根據語言優先順序：中文 > 英語 > 日語 > 韓語 > 粵語 > 其他）
+  const getDefaultCover = () => {
+    for (const lang of BASE_LANGUAGES) {
+      const versionWithCover = items.find(item => getBaseLanguage(item.language) === lang && item.cover);
+      if (versionWithCover?.cover) return versionWithCover.cover;
+    }
+    return null;
   };
-  
-  const displayCover = getCover();
-  const category = items[0]?.category;
-  const createdAt = items[0]?.$createdAt;
   
   // 當前選中的版本
   const selectedItem = selectedVersionId ? items.find(item => item.$id === selectedVersionId) : null;
+  
+  // 當選中特定版本時，顯示該版本的封面；否則顯示預設封面
+  const displayCover = selectedItem?.cover || getDefaultCover();
+  
+  const category = items[0]?.category;
+  const createdAt = items[0]?.$createdAt;
   
   // 單個項目直接顯示原本的卡片樣式
   if (items.length === 1) {
@@ -670,8 +679,19 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                   key={lang}
                   onClick={() => {
                     if (hasVersions) {
-                      setSelectedBaseLanguage(isSelected ? null : lang);
-                      setSelectedVersionId(null);
+                      if (isSelected) {
+                        // 點擊已選中的語言，取消選擇
+                        setSelectedBaseLanguage(null);
+                        setSelectedVersionId(null);
+                      } else {
+                        setSelectedBaseLanguage(lang);
+                        // 如果該語言只有一個版本，自動選擇
+                        if (versionsInLang.length === 1) {
+                          setSelectedVersionId(versionsInLang[0].$id);
+                        } else {
+                          setSelectedVersionId(null);
+                        }
+                      }
                     }
                   }}
                   disabled={!hasVersions}
@@ -697,8 +717,8 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
           </div>
         </div>
 
-        {/* 第二層：子版本選擇 */}
-        {selectedBaseLanguage && groupedByBaseLanguage[selectedBaseLanguage]?.length > 0 && (
+        {/* 第二層：子版本選擇（只有多個版本時才顯示） */}
+        {selectedBaseLanguage && groupedByBaseLanguage[selectedBaseLanguage]?.length > 1 && (
           <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-medium text-purple-600 dark:text-purple-400">{selectedBaseLanguage} 版本:</span>
@@ -758,6 +778,31 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                     <Download className="w-4 h-4" />
                   </a>
                 )}
+                {selectedItem.file && (
+                  <button
+                    onClick={() => {
+                      const added = addToQueue({
+                        id: selectedItem.$id,
+                        name: selectedItem.name,
+                        language: selectedItem.language,
+                        file: getProxiedMediaUrl(selectedItem.file),
+                        cover: selectedItem.cover || displayCover || undefined,
+                      });
+                      if (!added) {
+                        alert('該歌曲已在播放佇列中');
+                      }
+                    }}
+                    disabled={isInQueue(selectedItem.$id)}
+                    className={`p-1.5 rounded-lg transition-all ${
+                      isInQueue(selectedItem.$id)
+                        ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-200'
+                    }`}
+                    title={isInQueue(selectedItem.$id) ? '已在佇列中' : '接下來播放'}
+                  >
+                    <ListPlus className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => onEdit(selectedItem)}
                   className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 transition-all"
@@ -799,7 +844,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
           </div>
         )}
         
-        {selectedBaseLanguage && !selectedVersionId && (
+        {selectedBaseLanguage && !selectedVersionId && groupedByBaseLanguage[selectedBaseLanguage]?.length > 1 && (
           <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
             請選擇具體版本
           </div>
@@ -864,6 +909,7 @@ interface MusicCardProps {
 
 function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: MusicCardProps) {
   const [isLooping, setIsLooping] = useState(false);
+  const { addToQueue, isInQueue } = useMusicQueue();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700">
@@ -936,6 +982,29 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
                   title={isLooping ? '重複播放' : '單次播放'}
                 >
                   <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    const added = addToQueue({
+                      id: music.$id,
+                      name: music.name,
+                      language: music.language,
+                      file: getProxiedMediaUrl(music.file),
+                      cover: music.cover,
+                    });
+                    if (!added) {
+                      alert('該歌曲已在播放佇列中');
+                    }
+                  }}
+                  disabled={isInQueue(music.$id)}
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                    isInQueue(music.$id)
+                      ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-100 dark:bg-gray-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                  }`}
+                  title={isInQueue(music.$id) ? '已在佇列中' : '接下來播放'}
+                >
+                  <ListPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 <a
                   href={music.file}
