@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText } from "lucide-react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText, Download } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
@@ -385,17 +385,27 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
           {/* 操作按鈕 */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {activeMusic.file && (
-              <button
-                onClick={() => setIsLooping(!isLooping)}
-                className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
-                  isLooping 
-                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-                title={isLooping ? '重複播放' : '單次播放'}
-              >
-                <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
+              <>
+                <button
+                  onClick={() => setIsLooping(!isLooping)}
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                    isLooping 
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                  title={isLooping ? '重複播放' : '單次播放'}
+                >
+                  <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+                <a
+                  href={activeMusic.file}
+                  download={`${activeMusic.name}${activeMusic.language ? `-${activeMusic.language}` : ''}.mp3`}
+                  className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200"
+                  title="下載"
+                >
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </a>
+              </>
             )}
             <button
               onClick={() => onEdit(activeMusic)}
@@ -543,17 +553,27 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
           {/* 操作按鈕 - 手機更緊湊 */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {music.file && (
-              <button
-                onClick={() => setIsLooping(!isLooping)}
-                className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
-                  isLooping 
-                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-                title={isLooping ? '重複播放' : '單次播放'}
-              >
-                <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
+              <>
+                <button
+                  onClick={() => setIsLooping(!isLooping)}
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                    isLooping 
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                  title={isLooping ? '重複播放' : '單次播放'}
+                >
+                  <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+                <a
+                  href={music.file}
+                  download={`${music.name}${music.language ? `-${music.language}` : ''}.mp3`}
+                  className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200"
+                  title="下載"
+                >
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </a>
+              </>
             )}
             <button
               onClick={onEdit}
