@@ -423,10 +423,10 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (100MB = 100 * 1024 * 1024 bytes)
-    const maxSize = 100 * 1024 * 1024;
+    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('檔案大小不能超過 100MB');
+      alert('檔案大小不能超過 50MB');
       return;
     }
 
@@ -702,7 +702,7 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳播客 (最大 100MB) / Upload (Max 100MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳播客 (最大 50MB) / Upload (Max 50MB)'}
                     </span>
                   </div>
                   <input
