@@ -693,12 +693,31 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
             </div>
           </div>
           
-          {/* 推薦影片 */}
+          {/* 推薦影片 - 接下來播放 */}
           <div className="p-4 flex-1">
-            <h3 className="font-bold text-white mb-4">更多影片</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-white">接下來播放</h3>
+              <button 
+                onClick={() => setAutoPlay(!autoPlay)}
+                className={`text-xs font-medium cursor-pointer px-3 py-1 rounded-full transition-colors ${
+                  autoPlay 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-600 text-gray-300'
+                }`}
+              >
+                自動播放 {autoPlay ? '開' : '關'}
+              </button>
+            </div>
             <div className="space-y-3">
               {recommendedVideos.slice(0, 6).map((recVideo) => (
-                <RecommendedVideoCard key={recVideo.$id} video={recVideo} onClick={onClose} />
+                <RecommendedVideoCard 
+                  key={recVideo.$id} 
+                  video={recVideo} 
+                  onClick={() => {
+                    setPlayedIds(prev => new Set([...prev, recVideo.$id]));
+                    setCurrentVideo(recVideo);
+                  }} 
+                />
               ))}
             </div>
           </div>
@@ -814,7 +833,10 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
                 <RecommendedVideoCard
                   key={recVideo.$id}
                   video={recVideo}
-                  onClick={() => setCurrentVideo(recVideo)}
+                  onClick={() => {
+                    setPlayedIds(prev => new Set([...prev, recVideo.$id]));
+                    setCurrentVideo(recVideo);
+                  }}
                 />
               ))}
             </div>
