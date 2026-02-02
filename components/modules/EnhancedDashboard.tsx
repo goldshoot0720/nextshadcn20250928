@@ -127,17 +127,6 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
   }
 
   const error = dashboardError || mediaError;
-  
-  // Filter out podcast and commondocument errors since these tables now exist
-  const filteredError = error ? error
-    .split('\n')
-    .filter(line => {
-      // Check if line contains podcast or commondocument (case-insensitive)
-      const lowerLine = line.toLowerCase();
-      return !lowerLine.includes('podcast') && !lowerLine.includes('commondocument');
-    })
-    .join('\n')
-    .trim() : null;
 
   if (loading || mediaLoading) return <FullPageLoading text="載入統計數據中..." />;
 
@@ -145,9 +134,9 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      {filteredError && (
+      {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400 whitespace-pre-line">
-          {filteredError}
+          {error}
         </div>
       )}
 
