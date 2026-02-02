@@ -905,20 +905,48 @@ export default function MusicLyrics() {
         // 確保音頻文件 URL 存在且有效
         const audioUrl = music.file || '';
         
+        // 提取基礎歌名（去除括號內容）
+        const baseName = music.name.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
+        
+        // 多層次歌詞匹配函數
+        const findLyrics = (targetLang: 'zh' | 'en' | 'ja' | 'yue' | 'ko'): string => {
+          // 1. 優先使用自己的歌詞
+          if (parsedLyrics[targetLang]) return parsedLyrics[targetLang];
+          if (targetLang === 'zh' && music.lyrics) return music.lyrics;
+          
+          // 2. 找同語言的基礎版本（去除括號）
+          // 僅搜索相同語言的基礎版本，不跨語言搜索
+          const sameLanguageBase = appwriteMusic.find(m => {
+            const mBaseName = m.name.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
+            return mBaseName === baseName && m.language === targetLang && m.name === baseName;
+          });
+          if (sameLanguageBase?.lyrics) {
+            try {
+              const baseLyrics = JSON.parse(sameLanguageBase.lyrics);
+              if (baseLyrics[targetLang]) return baseLyrics[targetLang];
+            } catch {
+              if (targetLang === 'zh' && sameLanguageBase.lyrics) return sameLanguageBase.lyrics;
+            }
+          }
+          
+          return "";
+
+        };
+        
         return {
           id: music.$id,
           title: music.name,
-          artist: "鋒兄 & 塗哥", // 默認藝術家
+          artist: "鋒兄 & 塗哥",
           album: "鋒兄音樂精選",
           lyrics: {
-            zh: parsedLyrics.zh || parsedLyrics[lang] || music.lyrics || "",
-            en: parsedLyrics.en,
-            ja: parsedLyrics.ja,
-            yue: parsedLyrics.yue,
-            ko: parsedLyrics.ko,
+            zh: findLyrics('zh'),
+            en: findLyrics('en'),
+            ja: findLyrics('ja'),
+            yue: findLyrics('yue'),
+            ko: findLyrics('ko'),
           },
           audioFiles: {
-            zh: audioUrl, // 所有語言都使用同一個音頻文件
+            zh: audioUrl,
             en: audioUrl,
             ja: audioUrl,
             yue: audioUrl,
