@@ -678,7 +678,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
         </div>
         
         {/* 右側：影片資訊與推薦 */}
-        <aside className="hidden lg:flex flex-col w-[380px] bg-[#1a1a1a] border-l border-white/10 overflow-y-auto">
+        <aside className="hidden lg:flex flex-col w-[380px] bg-[#1a1a1a] border-l border-white/10 overflow-y-auto dark">
           {/* 影片資訊 */}
           <div className="p-6 space-y-4 border-b border-white/10">
             <div className="flex items-center gap-3">
@@ -885,10 +885,10 @@ function RecommendedVideoCard({ video, onClick }: { video: VideoData; onClick: (
         </div>
       </div>
       <div className="flex-1 min-w-0 py-0.5">
-        <h4 className="font-bold text-white text-sm line-clamp-2 leading-snug group-hover:text-blue-300 transition-colors">
+        <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors">
           {video.name}
         </h4>
-        <div className="mt-1 flex flex-col text-[12px] text-gray-400">
+        <div className="mt-1 flex flex-col text-[12px] text-gray-500 dark:text-gray-400">
           <span>鋒兄 (Feng Xiong)</span>
           <span>{formatLocalDate(video.$createdAt)}</span>
         </div>
