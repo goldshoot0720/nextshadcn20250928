@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat, FileText } from "lucide-react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
@@ -163,11 +163,6 @@ export default function MusicManagement() {
         />
       ) : (
         <div className="space-y-3">
-          {/* 操作提示 */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
-            <MusicIcon className="w-3.5 h-3.5" />
-            <span>點擊封面圖或卡片顯示歌詞</span>
-          </div>
           {filteredMusic.map((musicItem) => (
             <MusicCard
               key={musicItem.$id}
@@ -211,110 +206,110 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-4 p-4">
-        {/* 封面 */}
-        <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
-          {music.cover ? (
-            <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <MusicIcon className="text-white w-10 h-10 drop-shadow-lg" />
-            </div>
-          )}
-        </div>
+      {/* 主要內容區 - 手機垂直排列，桌面水平排列 */}
+      <div className="p-3 sm:p-4">
+        {/* 頂部：封面 + 資訊 + 操作按鈕 */}
+        <div className="flex items-start gap-3 sm:gap-4">
+          {/* 封面 - 手機較小 */}
+          <div className="relative w-14 h-14 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
+            {music.cover ? (
+              <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <MusicIcon className="text-white w-7 h-7 sm:w-10 sm:h-10 drop-shadow-lg" />
+              </div>
+            )}
+          </div>
 
-        {/* 資訊區 */}
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate">{music.name}</h3>
-                {/* 歌詞按鈕 */}
-                {music.lyrics && (
-                  <button
-                    onClick={onToggleExpand}
-                    className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-200 flex items-center gap-1 ${
-                      isExpanded 
-                        ? 'bg-purple-600 text-white' 
-                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50'
-                    }`}
-                    title="顯示歌詞"
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>歌詞</span>
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                <Calendar className="w-3 h-3" />
-                {formatLocalDate(music.$createdAt)}
-              </div>
+          {/* 資訊區 */}
+          <div className="flex-1 min-w-0">
+            {/* 標題行：名稱 + 歌詞按鈕 */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate max-w-[120px] sm:max-w-none">{music.name}</h3>
+              {/* 歌詞按鈕 */}
+              {music.lyrics && (
+                <button
+                  onClick={onToggleExpand}
+                  className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all duration-200 flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ${
+                    isExpanded 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+                  }`}
+                  title="顯示歌詞"
+                >
+                  <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <span>歌詞</span>
+                </button>
+              )}
             </div>
             
-            {/* 標籤 */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* 標籤 - 手機顯示在標題下方 */}
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {music.category && (
-                <span className="px-2.5 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
+                <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
                   {music.category}
                 </span>
               )}
               {music.language && (
-                <span className="px-2.5 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
                   {music.language}
                 </span>
               )}
+              <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+                {formatLocalDate(music.$createdAt)}
+              </span>
             </div>
           </div>
 
-          {/* 播放器或占位 */}
-          {music.file ? (
-            <div className="space-y-2">
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
-                <PlyrPlayer 
-                  type="audio"
-                  src={getProxiedMediaUrl(music.file)}
-                  loop={isLooping}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="text-xs text-gray-400 dark:text-gray-500">
-              尚未上傳音樂檔案
-            </div>
-          )}
+          {/* 操作按鈕 - 手機更緊湊 */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {music.file && (
+              <button
+                onClick={() => setIsLooping(!isLooping)}
+                className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                  isLooping 
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+                title={isLooping ? '重複播放' : '單次播放'}
+              >
+                <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+            <button
+              onClick={onEdit}
+              className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+              title="編輯"
+            >
+              <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+              title="刪除"
+            >
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* 操作按鈕 */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {music.file && (
-            <button
-              onClick={() => setIsLooping(!isLooping)}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isLooping 
-                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-              title={isLooping ? '重複播放' : '單次播放'}
-            >
-              <Repeat className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={onEdit}
-            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
-            title="編輯"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
-            title="刪除"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        {/* 播放器 - 獨立一行 */}
+        {music.file ? (
+          <div className="mt-2 sm:mt-3">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-1.5 sm:p-2">
+              <PlyrPlayer 
+                type="audio"
+                src={getProxiedMediaUrl(music.file)}
+                loop={isLooping}
+                className="w-full"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+            尚未上傳音樂檔案
+          </div>
+        )}
       </div>
 
       {/* 展開的詳細資訊 */}
