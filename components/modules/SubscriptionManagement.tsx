@@ -646,7 +646,7 @@ export default function SubscriptionManagement() {
                                 <span className="text-sm text-gray-500 dark:text-gray-400">{sub.account}</span>
                               )}
                               {sub.note && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400 italic">📝 {sub.note}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 italic whitespace-pre-wrap">📝 {sub.note}</span>
                               )}
                             </div>
                           </div>
@@ -708,7 +708,7 @@ export default function SubscriptionManagement() {
                                 <span className="text-sm text-gray-500 dark:text-gray-400">{sub.account}</span>
                               )}
                               {sub.note && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400 italic">📝 {sub.note}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 italic whitespace-pre-wrap">📝 {sub.note}</span>
                               )}
                               {sub.name.length > 37 && (
                                 <Button
