@@ -259,7 +259,27 @@ export default function CommonAccountManagement() {
   // Copy note (account info) to clipboard
   const handleCopyNote = async (text: string, accountId?: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      // Try modern Clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback method for non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+        } finally {
+          textArea.remove();
+        }
+      }
+      
       // Check if it looks like an email (simple check)
       const isEmail = text.includes('@') && text.includes('.');
       const message = isEmail ? '✅ 已複製帳號！' : '✅ 已複製備註！';
