@@ -50,10 +50,8 @@ export async function uploadToAppwriteStorage(
       file,
       undefined, // permissions (use bucket default)
       onProgress ? (progress) => {
-        // Appwrite progress is in bytes, convert to percentage
-        const total = file.size;
-        const uploaded = progress.chunksUploaded * progress.chunksTotal;
-        const percentage = Math.min(100, Math.round((uploaded / total) * 100));
+        // Appwrite progress callback receives upload progress
+        const percentage = Math.min(100, Math.round(progress.progress || 0));
         onProgress(percentage);
       } : undefined
     );
