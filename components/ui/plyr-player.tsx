@@ -37,6 +37,7 @@ interface PlyrPlayerProps {
   src: string;
   poster?: string;
   loop?: boolean;
+  autoplay?: boolean;
   className?: string;
   tracks?: Array<{
     kind: 'captions' | 'subtitles';
@@ -52,6 +53,7 @@ export function PlyrPlayer({
   src, 
   poster, 
   loop = false,
+  autoplay = false,
   className = "",
   tracks = []
 }: PlyrPlayerProps) {
@@ -115,11 +117,12 @@ export function PlyrPlayer({
       settings: ['captions', 'quality', 'speed', 'loop'],
       captions: { active: true, update: true, language: 'auto' },
       loop: { active: loop },
+      autoplay: autoplay,
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
       keyboard: { focused: true, global: true },
       tooltips: { controls: true, seek: true }
     }
-  }), [type, src, poster, loop, tracks]);
+  }), [type, src, poster, loop, autoplay, tracks]);
 
   if (!isMounted) {
     return (

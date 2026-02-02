@@ -586,7 +586,14 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
         </button>
         <div className={`flex items-center justify-center ${isPortrait ? 'h-full w-auto' : 'w-full h-full'}`}>
           <div className={`${isPortrait ? 'h-full max-h-screen' : 'w-full h-full'} [&_video]:object-contain`}>
-            <PlyrPlayer type="video" src={getProxiedMediaUrl(videoRef.current?.src || currentVideo.file || '')} poster={currentVideo.cover} className="w-full h-full" />
+            <PlyrPlayer 
+              key={currentVideo.$id}
+              type="video" 
+              src={getProxiedMediaUrl(currentVideo.file || '')} 
+              poster={currentVideo.cover} 
+              autoplay={true}
+              className="w-full h-full" 
+            />
           </div>
         </div>
       </div>
@@ -606,9 +613,11 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="h-[calc(100vh-32px)] max-h-[90vh] aspect-[9/16] bg-black rounded-xl overflow-hidden shadow-2xl [&_video]:object-contain [&_video]:w-full [&_video]:h-full">
             <PlyrPlayer
+              key={currentVideo.$id}
               type="video"
-              src={getProxiedMediaUrl(videoRef.current?.src || currentVideo.file || '')}
+              src={getProxiedMediaUrl(currentVideo.file || '')}
               poster={currentVideo.cover}
+              autoplay={true}
               className="w-full h-full"
             />
           </div>
@@ -691,9 +700,11 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
             {/* 播放器容器 - 固定 16:9，影片用 contain 完整顯示 */}
             <div className="bg-black rounded-xl overflow-hidden shadow-2xl aspect-video ring-1 dark:ring-white/10 [&_video]:object-contain">
               <PlyrPlayer
+                key={currentVideo.$id}
                 type="video"
-                src={getProxiedMediaUrl(videoRef.current?.src || currentVideo.file || '')}
+                src={getProxiedMediaUrl(currentVideo.file || '')}
                 poster={currentVideo.cover}
+                autoplay={true}
                 className="w-full h-full"
               />
             </div>
