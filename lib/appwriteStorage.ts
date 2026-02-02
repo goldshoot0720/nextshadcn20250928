@@ -1,4 +1,4 @@
-import { Client, Storage, ID } from 'appwrite';
+import { Client, Storage, ID, Permission, Role } from 'appwrite';
 import { getAppwriteConfig } from './utils';
 
 /**
@@ -43,12 +43,12 @@ export async function uploadToAppwriteStorage(
     // Generate unique file ID
     const fileId = ID.unique();
 
-    // Upload file with progress tracking
+    // Upload file with progress tracking and public read permissions
     const response = await storage.createFile(
       config.bucketId,
       fileId,
       file,
-      undefined, // permissions (use bucket default)
+      [Permission.read(Role.any())], // Public read access
       onProgress ? (progress) => {
         // Appwrite progress callback receives upload progress
         const percentage = Math.min(100, Math.round(progress.progress || 0));
