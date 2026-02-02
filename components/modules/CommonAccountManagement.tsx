@@ -258,7 +258,7 @@ export default function CommonAccountManagement() {
   const handleCopyNote = async (note: string) => {
     try {
       await navigator.clipboard.writeText(note);
-      alert('✅ 已複製帳號資訊！');
+      alert('✅ 已複製備註！');
     } catch (err) {
       console.error('Failed to copy:', err);
       alert('❌ 複製失敗');
@@ -727,7 +727,7 @@ export default function CommonAccountManagement() {
                                         variant="ghost"
                                         onClick={() => handleCopyNote(note)}
                                         className="h-7 w-7 p-0 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                                        title="複製帳號"
+                                        title="複製備註"
                                       >
                                         <Copy size={14} />
                                       </Button>
