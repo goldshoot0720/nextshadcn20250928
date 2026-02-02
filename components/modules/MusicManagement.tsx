@@ -533,23 +533,46 @@ interface GroupedMusicCardProps {
 function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit, onDelete }: GroupedMusicCardProps) {
   const [isLooping, setIsLooping] = useState(false);
   const [expandedLyricsId, setExpandedLyricsId] = useState<string | null>(null);
+  const [selectedBaseLanguage, setSelectedBaseLanguage] = useState<string | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   
-  // 固定語言順序
-  const LANGUAGES = ['中文', '英文', '日語', '粵語', '韓語'];
+  // 第一層：基礎語言類別
+  const BASE_LANGUAGES = ['中文', '英語', '日語', '韓語', '粵語', '其他'];
   
   // 提取基礎語言（例如：從 "中文(女聲)" 提取 "中文"）
   const getBaseLanguage = (language: string | undefined) => {
-    if (!language) return '';
-    return language.replace(/\(.*?\)/g, '').trim();
+    if (!language) return '其他';
+    const base = language.replace(/\(.*?\)/g, '').trim();
+    // 檢查是否屬於已知的基礎語言
+    const knownBases = ['中文', '英文', '英語', '日文', '日語', '韓文', '韓語', '粵語', '粵文'];
+    if (knownBases.some(kb => base.includes(kb.charAt(0)))) {
+      if (base.includes('中')) return '中文';
+      if (base.includes('英')) return '英語';
+      if (base.includes('日')) return '日語';
+      if (base.includes('韓')) return '韓語';
+      if (base.includes('粵')) return '粵語';
+    }
+    return '其他';
   };
   
-  // 按語言分組
-  const getItemByLanguage = (lang: string) => {
-    return items.find(item => {
-      const baseLanguage = getBaseLanguage(item.language);
-      return baseLanguage === lang || item.language === lang;
+  // 按基礎語言分組
+  const groupedByBaseLanguage = useMemo(() => {
+    const groups: { [key: string]: MusicData[] } = {};
+    BASE_LANGUAGES.forEach(lang => {
+      groups[lang] = [];
     });
-  };
+    
+    items.forEach(item => {
+      const baseLang = getBaseLanguage(item.language);
+      if (groups[baseLang]) {
+        groups[baseLang].push(item);
+      } else {
+        groups['其他'].push(item);
+      }
+    });
+    
+    return groups;
+  }, [items]);
   
   // 獲取封面（優先中文版）
   const getCover = () => {
@@ -562,6 +585,9 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   const displayCover = getCover();
   const category = items[0]?.category;
   const createdAt = items[0]?.$createdAt;
+  
+  // 當前選中的版本
+  const selectedItem = selectedVersionId ? items.find(item => item.$id === selectedVersionId) : null;
   
   // 單個項目直接顯示原本的卡片樣式
   if (items.length === 1) {
@@ -626,104 +652,158 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
         </div>
       </div>
 
-      {/* 版本列表 - 一次顯示所有版本 */}
+      {/* 版本選擇區 */}
       <div className="p-3 sm:p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">版本:</span>
-        </div>
-        <div className="grid grid-cols-5 gap-2 sm:gap-3">
-          {LANGUAGES.map((lang) => {
-            const item = getItemByLanguage(lang);
-            const hasVersion = !!item;
-            const hasFile = item?.file;
-            const hasLyrics = item?.lyrics;
-            
-            return (
-              <div
-                key={lang}
-                className={`rounded-lg p-2 sm:p-3 text-center transition-all ${
-                  hasVersion
-                    ? 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
-                    : 'bg-gray-50 dark:bg-gray-800 border border-dashed border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                {/* 語言標題 */}
-                <div className={`text-[10px] sm:text-xs font-semibold mb-1.5 ${
-                  hasVersion 
-                    ? 'text-purple-600 dark:text-purple-400' 
-                    : 'text-gray-300 dark:text-gray-600'
-                }`}>
-                  {lang}
-                </div>
-                
-                {hasVersion && item ? (
-                  <div className="space-y-1.5">
-                    {/* 播放器 */}
-                    {hasFile ? (
-                      <div className="bg-white dark:bg-gray-800 rounded p-1">
-                        <PlyrPlayer 
-                          type="audio"
-                          src={getProxiedMediaUrl(item.file)}
-                          loop={isLooping}
-                          className="w-full"
-                        />
-                      </div>
-                    ) : (
-                      <div className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500 py-2">
-                        無檔案
-                      </div>
-                    )}
-                    
-                    {/* 操作按鈕 */}
-                    <div className="flex items-center justify-center gap-1">
-                      {hasLyrics && (
-                        <button
-                          onClick={() => setExpandedLyricsId(expandedLyricsId === item.$id ? null : item.$id)}
-                          className={`p-1 rounded transition-all ${
-                            expandedLyricsId === item.$id
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200'
-                          }`}
-                          title="歌詞"
-                        >
-                          <FileText className="w-3 h-3" />
-                        </button>
-                      )}
-                      {hasFile && (
-                        <a
-                          href={item.file}
-                          download={`${item.name}-${item.language}.mp3`}
-                          className="p-1 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 transition-all"
-                          title="下載"
-                        >
-                          <Download className="w-3 h-3" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => onEdit(item)}
-                        className="p-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 transition-all"
-                        title="編輯"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(item)}
-                        className="p-1 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 transition-all"
-                        title="刪除"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+        {/* 第一層：基礎語言選擇 */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">版本:</span>
+          </div>
+          <div className="grid grid-cols-6 gap-1 sm:gap-2">
+            {BASE_LANGUAGES.map((lang) => {
+              const versionsInLang = groupedByBaseLanguage[lang] || [];
+              const hasVersions = versionsInLang.length > 0;
+              const isSelected = selectedBaseLanguage === lang;
+              
+              return (
+                <button
+                  key={lang}
+                  onClick={() => {
+                    if (hasVersions) {
+                      setSelectedBaseLanguage(isSelected ? null : lang);
+                      setSelectedVersionId(null);
+                    }
+                  }}
+                  disabled={!hasVersions}
+                  className={`px-1 sm:px-2 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium rounded-lg transition-all text-center ${
+                    isSelected
+                      ? 'bg-purple-600 text-white'
+                      : hasVersions
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  <div>{lang}</div>
+                  {hasVersions && (
+                    <div className={`text-[8px] sm:text-[10px] mt-0.5 ${
+                      isSelected ? 'text-purple-200' : 'text-gray-400 dark:text-gray-500'
+                    }`}>
+                      {versionsInLang.length}個
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-[9px] sm:text-[10px] text-gray-300 dark:text-gray-600 py-4">
-                    —
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* 第二層：子版本選擇 */}
+        {selectedBaseLanguage && groupedByBaseLanguage[selectedBaseLanguage]?.length > 0 && (
+          <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-medium text-purple-600 dark:text-purple-400">{selectedBaseLanguage} 版本:</span>
+            </div>
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              {groupedByBaseLanguage[selectedBaseLanguage].map((item) => {
+                const isVersionSelected = selectedVersionId === item.$id;
+                
+                return (
+                  <button
+                    key={item.$id}
+                    onClick={() => setSelectedVersionId(isVersionSelected ? null : item.$id)}
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-all ${
+                      isVersionSelected
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    {item.language || '未指定'}
+                    {item.file && <span className="ml-1 opacity-70">♫</span>}
+                    {item.lyrics && <span className="ml-0.5 opacity-70">♬</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 選中版本的播放器和操作 */}
+        {selectedItem && (
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                {selectedItem.language || '未指定'}
+              </span>
+              <div className="flex items-center gap-1">
+                {selectedItem.lyrics && (
+                  <button
+                    onClick={() => setExpandedLyricsId(expandedLyricsId === selectedItem.$id ? null : selectedItem.$id)}
+                    className={`p-1.5 rounded-lg transition-all ${
+                      expandedLyricsId === selectedItem.$id
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200'
+                    }`}
+                    title="歌詞"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+                )}
+                {selectedItem.file && (
+                  <a
+                    href={selectedItem.file}
+                    download={`${selectedItem.name}-${selectedItem.language}.mp3`}
+                    className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 transition-all"
+                    title="下載"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                )}
+                <button
+                  onClick={() => onEdit(selectedItem)}
+                  className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 transition-all"
+                  title="編輯"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onDelete(selectedItem)}
+                  className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 transition-all"
+                  title="刪除"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            {selectedItem.file ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-2">
+                <PlyrPlayer 
+                  type="audio"
+                  src={getProxiedMediaUrl(selectedItem.file)}
+                  loop={isLooping}
+                  className="w-full"
+                />
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
+                尚未上傳音樂檔案
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 未選擇版本時的提示 */}
+        {!selectedVersionId && !selectedBaseLanguage && (
+          <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+            請選擇語言版本
+          </div>
+        )}
+        
+        {selectedBaseLanguage && !selectedVersionId && (
+          <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+            請選擇具體版本
+          </div>
+        )}
       </div>
 
       {/* 展開的歌詞 */}
