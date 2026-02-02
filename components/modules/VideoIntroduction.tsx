@@ -967,10 +967,14 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
 
       // 如果有選擇新檔案，先上傳到 Appwrite
       if (selectedFile) {
-        const { url, fileId } = await uploadFileToAppwrite(selectedFile);
-        finalFormData.file = url;
-        // 使用已計算的 hash，如果沒有則使用 fileId
-        finalFormData.hash = fileHash || fileId;
+        try {
+          const { url, fileId } = await uploadFileToAppwrite(selectedFile);
+          finalFormData.file = url;
+          // 使用已計算的 hash，如果沒有則使用 fileId
+          finalFormData.hash = fileHash || fileId;
+        } catch (uploadError) {
+          throw new Error(`影片上傳失敗: ${uploadError instanceof Error ? uploadError.message : '未知錯誤'}`);
+        }
       } else if (!video && !formData.hash) {
         // 新增且沒有檔案也沒有 hash 的情況，生成一個備用 hash
         finalFormData.hash = `no_file_${Date.now()}`;
@@ -978,8 +982,12 @@ function VideoFormModal({ video, existingVideos, onClose, onSuccess }: { video: 
 
       // 如果有選擇封面圖檔案，上傳到 Appwrite
       if (selectedCoverFile) {
-        const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
-        finalFormData.cover = url;
+        try {
+          const { url } = await uploadCoverFileToAppwrite(selectedCoverFile);
+          finalFormData.cover = url;
+        } catch (coverError) {
+          throw new Error(`封面圖上傳失敗: ${coverError instanceof Error ? coverError.message : '未知錯誤'}`);
+        }
       }
 
       const apiUrl = video 
