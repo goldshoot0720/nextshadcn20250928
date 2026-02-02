@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat } from "lucide-react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat, FileText } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
@@ -211,12 +211,9 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={onToggleExpand}>
-        {/* 封面 - 點擊不影響音樂播放 */}
-        <div 
-          className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 group/cover"
-          onClick={(e) => e.stopPropagation()}
-        >
+      <div className="flex items-center gap-4 p-4">
+        {/* 封面 */}
+        <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
           {music.cover ? (
             <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
           ) : (
@@ -230,7 +227,24 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate">{music.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate">{music.name}</h3>
+                {/* 歌詞按鈕 */}
+                {music.lyrics && (
+                  <button
+                    onClick={onToggleExpand}
+                    className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-200 flex items-center gap-1 ${
+                      isExpanded 
+                        ? 'bg-purple-600 text-white' 
+                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+                    }`}
+                    title="顯示歌詞"
+                  >
+                    <FileText className="w-3 h-3" />
+                    <span>歌詞</span>
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
                 <Calendar className="w-3 h-3" />
                 {formatLocalDate(music.$createdAt)}
@@ -254,7 +268,7 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
 
           {/* 播放器或占位 */}
           {music.file ? (
-            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-2">
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
                 <PlyrPlayer 
                   type="audio"
@@ -272,7 +286,7 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
         </div>
 
         {/* 操作按鈕 */}
-        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 flex-shrink-0">
           {music.file && (
             <button
               onClick={() => setIsLooping(!isLooping)}
