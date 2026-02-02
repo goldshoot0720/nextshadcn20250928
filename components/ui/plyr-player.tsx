@@ -146,7 +146,7 @@ export function PlyrPlayer({
   }
 
   return (
-    <div className={className}>
+    <div className={`${className} [&_video]:object-contain`}>
       <Plyr {...plyrProps} />
     </div>
   );
