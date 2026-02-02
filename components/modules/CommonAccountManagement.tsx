@@ -726,8 +726,8 @@ export default function CommonAccountManagement() {
               </Button>
               <Button
                 onClick={executeImport}
-                disabled={importPreview.data.length === 0}
-                className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                disabled={importPreview.data.length === 0 || importPreview.errors.length > 0}
+                className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 確認匯入 ({importPreview.data.length} 筆)
               </Button>
