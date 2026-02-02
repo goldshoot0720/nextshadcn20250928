@@ -740,12 +740,6 @@ export default function SubscriptionManagement() {
                               <span className="font-medium">下次付款:</span><span>{formattedDate}</span>
                             </div>
                           )}
-                          {sub.site && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">網站:</span>
-                              <a href={sub.site} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 underline text-sm bg-blue-50 px-2 py-1 rounded-lg">前往網站</a>
-                            </div>
-                          )}
                         </div>
                         <div className="flex gap-2 pt-2">
                           <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="flex-1 rounded-xl">編輯</Button>
