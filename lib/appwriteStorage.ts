@@ -56,8 +56,8 @@ export async function uploadToAppwriteStorage(
       } : undefined
     );
 
-    // Construct file URL
-    const fileUrl = `${config.endpoint}/storage/buckets/${config.bucketId}/files/${response.$id}/view`;
+    // Construct file URL with project parameter for public access
+    const fileUrl = `${config.endpoint}/storage/buckets/${config.bucketId}/files/${response.$id}/view?project=${config.projectId}`;
 
     return {
       url: fileUrl,
@@ -101,9 +101,9 @@ export async function deleteFromAppwriteStorage(fileId: string): Promise<void> {
 export function getAppwriteFileUrl(fileId: string): string {
   const config = getAppwriteConfig();
   
-  if (!config.endpoint || !config.bucketId) {
+  if (!config.endpoint || !config.bucketId || !config.projectId) {
     return '';
   }
 
-  return `${config.endpoint}/storage/buckets/${config.bucketId}/files/${fileId}/view`;
+  return `${config.endpoint}/storage/buckets/${config.bucketId}/files/${fileId}/view?project=${config.projectId}`;
 }

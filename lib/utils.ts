@@ -101,6 +101,11 @@ export function getProxiedMediaUrl(url: string | undefined | null): string {
   if (config.apiKey && config.apiKey !== 'undefined' && config.apiKey !== 'null') {
     params.set('_key', config.apiKey);
   }
+  
+  // Add project ID for public access fallback
+  if (config.projectId && config.projectId !== 'undefined' && config.projectId !== 'null') {
+    params.set('_project', config.projectId);
+  }
 
   return `/api/media-proxy?${params.toString()}`;
 }

@@ -44,9 +44,21 @@ export async function GET(request: NextRequest) {
       if ((response.status === 401 || response.status === 403) && fetchHeaders['x-appwrite-key']) {
         const retryHeaders = { ...fetchHeaders };
         delete retryHeaders['x-appwrite-key'];
-        const retryResponse = await fetch(url, { headers: retryHeaders, cache: 'no-store', redirect: 'follow' });
+        
+        // Ensure URL has project parameter for public access
+        let publicUrl = url;
+        if (url.includes('/storage/buckets/') && !url.includes('project=')) {
+          const projectId = searchParams.get('_project') || 
+                           request.headers.get('x-appwrite-project');
+          if (projectId) {
+            const separator = url.includes('?') ? '&' : '?';
+            publicUrl = `${url}${separator}project=${projectId}`;
+          }
+        }
+        
+        const retryResponse = await fetch(publicUrl, { headers: retryHeaders, cache: 'no-store', redirect: 'follow' });
         if (retryResponse.status < 400) {
-          return createProxiedResponse(retryResponse, url);
+          return createProxiedResponse(retryResponse, publicUrl);
         }
       }
       
