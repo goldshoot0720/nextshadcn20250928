@@ -86,6 +86,8 @@ export default function CommonAccountManagement() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   // Error state for duplicate name
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  // Copy success message state
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -255,12 +257,20 @@ export default function CommonAccountManagement() {
   };
 
   // Copy note (account info) to clipboard
-  const handleCopyNote = async (text: string) => {
+  const handleCopyNote = async (text: string, accountId?: string) => {
     try {
       await navigator.clipboard.writeText(text);
       // Check if it looks like an email (simple check)
       const isEmail = text.includes('@') && text.includes('.');
-      alert(isEmail ? '✅ 已複製帳號！' : '✅ 已複製備註！');
+      const message = isEmail ? '✅ 已複製帳號！' : '✅ 已複製備註！';
+      
+      // Show message temporarily
+      if (accountId) {
+        setCopySuccess(accountId);
+        setTimeout(() => setCopySuccess(null), 2000);
+      } else {
+        alert(message);
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
       alert('❌ 複製失敗');
@@ -593,12 +603,17 @@ export default function CommonAccountManagement() {
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    onClick={() => handleCopyNote(account.name)}
+                    onClick={() => handleCopyNote(account.name, account.$id)}
                     className="h-7 w-7 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                     title="複製帳號"
                   >
                     <Copy size={14} />
                   </Button>
+                  {copySuccess === account.$id && (
+                    <span className="text-sm text-green-600 dark:text-green-400 font-medium animate-fade-in">
+                      ✅ 已複製帳號！
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Button size="sm" variant="ghost" onClick={() => handleEdit(account)} className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg shadow-sm bg-white/50 dark:bg-gray-800/50">
