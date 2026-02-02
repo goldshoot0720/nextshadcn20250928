@@ -131,8 +131,11 @@ export default function EnhancedDashboard({ onNavigate, title = "鋒兄儀表", 
   // Filter out podcast and commondocument errors since these tables now exist
   const filteredError = error ? error
     .split('\n')
-    .filter(line => !line.includes('Table podcast'))
-    .filter(line => !line.includes('Table commondocument'))
+    .filter(line => {
+      // Check if line contains podcast or commondocument (case-insensitive)
+      const lowerLine = line.toLowerCase();
+      return !lowerLine.includes('podcast') && !lowerLine.includes('commondocument');
+    })
     .join('\n')
     .trim() : null;
 
