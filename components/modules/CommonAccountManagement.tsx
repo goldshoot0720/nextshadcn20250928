@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy } from "lucide-react";
+import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy, Download } from "lucide-react";
 import { CommonAccount, CommonAccountFormData } from "@/types";
 import { Input, Textarea, DataCard, Button, SectionHeader, FormCard, FormActions } from "@/components/ui";
 import { 
@@ -296,6 +296,59 @@ export default function CommonAccountManagement() {
     }
   };
 
+  // 匯出 CSV
+  const exportToCSV = () => {
+    if (accounts.length === 0) {
+      alert('沒有資料可匯出');
+      return;
+    }
+
+    // 建立 CSV 表頭
+    const headers = ['name'];
+    for (let i = 1; i <= 37; i++) {
+      const idx = i.toString().padStart(2, '0');
+      headers.push(`site${idx}`, `note${idx}`);
+    }
+
+    // 建立 CSV 內容
+    const rows = accounts.map(account => {
+      const row: string[] = [account.name || ''];
+      for (let i = 1; i <= 37; i++) {
+        const idx = i.toString().padStart(2, '0');
+        const siteKey = `site${idx}` as keyof CommonAccount;
+        const noteKey = `note${idx}` as keyof CommonAccount;
+        const site = (account[siteKey] as string) || '';
+        const note = (account[noteKey] as string) || '';
+        // CSV 處理：如果包含逗號、換行或雙引號，需要用雙引號包起並轉義
+        row.push(
+          site.includes(',') || site.includes('\n') || site.includes('"') 
+            ? `"${site.replace(/"/g, '""')}"` 
+            : site
+        );
+        row.push(
+          note.includes(',') || note.includes('\n') || note.includes('"') 
+            ? `"${note.replace(/"/g, '""')}"` 
+            : note
+        );
+      }
+      return row.join(',');
+    });
+
+    // 組合 CSV
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // 加入 BOM 以支援 Excel 開啟中文
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // 下載
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'commonaccount-appwrite.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   const handleDelete = async (account: CommonAccount) => {
     if (!confirm(`確定要刪除「${account.name}」嗎？`)) return;
 
@@ -381,13 +434,24 @@ export default function CommonAccountManagement() {
         title="鋒兄常用" 
         subtitle={`共 ${accounts.length} 組帳號設定`}
         action={
-          <Button 
-            onClick={() => setIsFormOpen(!isFormOpen)} 
-            className="rounded-xl flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
-          >
-            {isFormOpen ? <X size={18} /> : <Plus size={18} />}
-            {isFormOpen ? "取消" : "新增帳號組"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={exportToCSV}
+              variant="outline"
+              className="rounded-xl flex items-center gap-2"
+              title="匯出 CSV"
+            >
+              <Download size={18} />
+              匯出
+            </Button>
+            <Button 
+              onClick={() => setIsFormOpen(!isFormOpen)} 
+              className="rounded-xl flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
+            >
+              {isFormOpen ? <X size={18} /> : <Plus size={18} />}
+              {isFormOpen ? "取消" : "新增帳號組"}
+            </Button>
+          </div>
         }
       />
 
