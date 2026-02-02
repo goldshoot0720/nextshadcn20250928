@@ -16,6 +16,7 @@ import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders, getProxiedMediaUrl } from "@/lib/utils";
+import { uploadToAppwriteStorage } from "@/lib/appwriteStorage";
 
 // Helper function to add Appwrite config to URL
 function addAppwriteConfigToUrl(url: string): string {
