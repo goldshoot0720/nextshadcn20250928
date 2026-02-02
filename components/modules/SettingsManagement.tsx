@@ -458,16 +458,7 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setStorageStats(data);
-      alert(`⚡ 統計結果：\n\n` +
-        `💾 儲存空間總檔案：${data.totalFiles} 個\n` +
-        `📋 資料庫已引用：${data.referencedFiles} 個\n` +
-        `🗑️ 多餘檔案：${data.orphanedFiles} 個\n\n` +
-        `分類明細：\n` +
-        `- 圖片：${data.orphanedByType?.images || 0} 個\n` +
-        `- 影片：${data.orphanedByType?.videos || 0} 個\n` +
-        `- 音樂：${data.orphanedByType?.music || 0} 個\n` +
-        `- 文件：${data.orphanedByType?.documents || 0} 個\n` +
-        `- 播客：${data.orphanedByType?.podcasts || 0} 個`);
+      // Statistics are now displayed in the UI below, no need for alert
     } catch (error) {
       setScanProgress({ stage: '錯誤', current: 0, total: 100, message: '統計失敗' });
       alert('❗ 統計失敗：' + (error instanceof Error ? error.message : '未知錯誤'));
