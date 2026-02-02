@@ -108,6 +108,8 @@ export function useDashboardStats() {
           { name: 'food', api: '/api/food', label: 'Table food' },
           { name: 'image', api: '/api/image', label: 'Table image' },
           { name: 'music', api: '/api/music', label: 'Table music' },
+          { name: 'podcast', api: '/api/podcast', label: 'Table podcast' },
+          { name: 'commondocument', api: '/api/commondocument', label: 'Table commondocument' },
           { name: 'routine', api: '/api/routine', label: 'Table routine' },
           { name: 'subscription', api: '/api/subscription', label: 'Table subscription' },
           { name: 'video', api: '/api/video', label: 'Table video' },
