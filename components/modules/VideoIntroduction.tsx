@@ -509,20 +509,53 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
   const [isPortrait, setIsPortrait] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
   const [currentVideo, setCurrentVideo] = useState<VideoData>(video);
+  const [playedIds, setPlayedIds] = useState<Set<string>>(new Set([video.$id]));
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // 所有有影片的列表（按順序）
+  const allVideosWithFile = useMemo(() => {
+    return videos.filter(v => v.file);
+  }, [videos]);
+
+  // 推薦影片列表（排除當前影片）
   const recommendedVideos = useMemo(() => {
-    return videos.filter(v => v.$id !== currentVideo.$id && v.file).slice(0, 10);
-  }, [videos, currentVideo.$id]);
+    return allVideosWithFile.filter(v => v.$id !== currentVideo.$id).slice(0, 10);
+  }, [allVideosWithFile, currentVideo.$id]);
 
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
-  // 監聽影片播放結束事件 - 自動播放下一個
+  // 監聽影片播放結束事件 - 自動播放下一個（順序播放，不重複）
   useEffect(() => {
     const handleVideoEnded = () => {
-      if (autoPlay && recommendedVideos.length > 0) {
-        console.log('影片播放結束，自動播放下一個:', recommendedVideos[0].name);
-        setCurrentVideo(recommendedVideos[0]);
+      if (!autoPlay) return;
+      
+      // 找到當前影片在列表中的位置
+      const currentIndex = allVideosWithFile.findIndex(v => v.$id === currentVideo.$id);
+      
+      // 從當前位置往後找下一個未播放的影片
+      let nextVideo: VideoData | null = null;
+      for (let i = 1; i < allVideosWithFile.length; i++) {
+        const nextIndex = (currentIndex + i) % allVideosWithFile.length;
+        const candidate = allVideosWithFile[nextIndex];
+        if (!playedIds.has(candidate.$id)) {
+          nextVideo = candidate;
+          break;
+        }
+      }
+      
+      // 如果所有影片都播放過了，重置並從下一個開始
+      if (!nextVideo && allVideosWithFile.length > 1) {
+        const nextIndex = (currentIndex + 1) % allVideosWithFile.length;
+        nextVideo = allVideosWithFile[nextIndex];
+        setPlayedIds(new Set([nextVideo.$id])); // 重置播放記錄
+        console.log('所有影片已播放完畢，重新開始:', nextVideo.name);
+      } else if (nextVideo) {
+        setPlayedIds(prev => new Set([...prev, nextVideo!.$id]));
+        console.log('自動播放下一個:', nextVideo.name);
+      }
+      
+      if (nextVideo) {
+        setCurrentVideo(nextVideo);
       }
     };
 
@@ -542,7 +575,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
       clearTimeout(timer);
       if (cleanup) cleanup();
     };
-  }, [autoPlay, recommendedVideos, currentVideo]);
+  }, [autoPlay, allVideosWithFile, currentVideo, playedIds]);
 
   // 當 currentVideo 變化時，更新 videoRef
   useEffect(() => {
