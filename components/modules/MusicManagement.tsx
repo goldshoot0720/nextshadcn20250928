@@ -62,6 +62,22 @@ export default function MusicManagement() {
     );
   }, [music, searchQuery]);
 
+  // 按名稱分組音樂
+  const groupedMusic = useMemo(() => {
+    const groups: { [key: string]: MusicData[] } = {};
+    filteredMusic.forEach(item => {
+      const name = item.name || '未命名';
+      if (!groups[name]) {
+        groups[name] = [];
+      }
+      groups[name].push(item);
+    });
+    // 轉換為陣列並按名稱排序
+    return Object.entries(groups)
+      .map(([name, items]) => ({ name, items }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+  }, [filteredMusic]);
+
   const handleAdd = () => {
     setEditingMusic(null);
     setShowFormModal(true);
@@ -163,14 +179,15 @@ export default function MusicManagement() {
         />
       ) : (
         <div className="space-y-3">
-          {filteredMusic.map((musicItem) => (
-            <MusicCard
-              key={musicItem.$id}
-              music={musicItem}
-              isExpanded={expandedMusicId === musicItem.$id}
-              onToggleExpand={() => setExpandedMusicId(expandedMusicId === musicItem.$id ? null : musicItem.$id)}
-              onEdit={() => handleEdit(musicItem)}
-              onDelete={() => handleDelete(musicItem)}
+          {groupedMusic.map((group) => (
+            <GroupedMusicCard
+              key={group.name}
+              name={group.name}
+              items={group.items}
+              expandedMusicId={expandedMusicId}
+              onToggleExpand={(id) => setExpandedMusicId(expandedMusicId === id ? null : id)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           ))}
         </div>
@@ -187,6 +204,190 @@ export default function MusicManagement() {
           }}
           onSuccess={handleFormSuccess}
         />
+      )}
+    </div>
+  );
+}
+
+// 分組音樂卡片
+interface GroupedMusicCardProps {
+  name: string;
+  items: MusicData[];
+  expandedMusicId: string | null;
+  onToggleExpand: (id: string) => void;
+  onEdit: (music: MusicData) => void;
+  onDelete: (music: MusicData) => void;
+}
+
+function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit, onDelete }: GroupedMusicCardProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isLooping, setIsLooping] = useState(false);
+  
+  // 單個項目直接顯示原本的卡片樣式
+  if (items.length === 1) {
+    const music = items[0];
+    return (
+      <MusicCard
+        music={music}
+        isExpanded={expandedMusicId === music.$id}
+        onToggleExpand={() => onToggleExpand(music.$id)}
+        onEdit={() => onEdit(music)}
+        onDelete={() => onDelete(music)}
+      />
+    );
+  }
+
+  // 多個同名項目顯示合併卡片
+  const activeMusic = items[activeIndex];
+  const isExpanded = expandedMusicId === activeMusic.$id;
+  
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700">
+      {/* 版本切換標籤 */}
+      <div className="flex items-center gap-1 px-3 pt-3 sm:px-4 sm:pt-4 overflow-x-auto">
+        <span className="text-xs text-gray-500 dark:text-gray-400 mr-1 flex-shrink-0">版本:</span>
+        {items.map((item, index) => (
+          <button
+            key={item.$id}
+            onClick={() => setActiveIndex(index)}
+            className={`px-2 py-1 text-xs font-medium rounded-lg transition-all flex-shrink-0 ${
+              activeIndex === index
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            {item.language || `版本${index + 1}`}
+          </button>
+        ))}
+        <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto flex-shrink-0">
+          共 {items.length} 個版本
+        </span>
+      </div>
+
+      {/* 主要內容區 */}
+      <div className="p-3 sm:p-4">
+        <div className="flex items-start gap-3 sm:gap-4">
+          {/* 封面 */}
+          <div className="relative w-14 h-14 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
+            {activeMusic.cover ? (
+              <img src={activeMusic.cover} alt={activeMusic.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <MusicIcon className="text-white w-7 h-7 sm:w-10 sm:h-10 drop-shadow-lg" />
+              </div>
+            )}
+          </div>
+
+          {/* 資訊區 */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate max-w-[120px] sm:max-w-none">{name}</h3>
+              {activeMusic.lyrics && (
+                <button
+                  onClick={() => onToggleExpand(activeMusic.$id)}
+                  className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all duration-200 flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ${
+                    isExpanded 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+                  }`}
+                >
+                  <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <span>歌詞</span>
+                </button>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {activeMusic.category && (
+                <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
+                  {activeMusic.category}
+                </span>
+              )}
+              <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+                {formatLocalDate(activeMusic.$createdAt)}
+              </span>
+            </div>
+          </div>
+
+          {/* 操作按鈕 */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {activeMusic.file && (
+              <button
+                onClick={() => setIsLooping(!isLooping)}
+                className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                  isLooping 
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+                title={isLooping ? '重複播放' : '單次播放'}
+              >
+                <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => onEdit(activeMusic)}
+              className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+              title="編輯"
+            >
+              <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+            <button
+              onClick={() => onDelete(activeMusic)}
+              className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+              title="刪除"
+            >
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* 播放器 */}
+        {activeMusic.file ? (
+          <div className="mt-2 sm:mt-3">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-1.5 sm:p-2">
+              <PlyrPlayer 
+                type="audio"
+                src={getProxiedMediaUrl(activeMusic.file)}
+                loop={isLooping}
+                className="w-full"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+            尚未上傳音樂檔案
+          </div>
+        )}
+      </div>
+
+      {/* 展開的歌詞 */}
+      {isExpanded && activeMusic.lyrics && (
+        <div className="px-3 sm:px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="pt-4">
+            <div className="flex justify-center mb-4">
+              <div className="relative w-full max-w-sm aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 shadow-xl">
+                {activeMusic.cover ? (
+                  <img src={activeMusic.cover} alt={activeMusic.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <MusicIcon className="text-white w-32 h-32 drop-shadow-2xl" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="text-center mb-4">
+              <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{activeMusic.name}</h3>
+              {activeMusic.language && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">{activeMusic.language}</span>
+              )}
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+              <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
+                {activeMusic.lyrics}
+              </pre>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
