@@ -212,8 +212,11 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700">
       <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={onToggleExpand}>
-        {/* 封面 */}
-        <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 group/cover">
+        {/* 封面 - 點擊不影響音樂播放 */}
+        <div 
+          className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 group/cover"
+          onClick={(e) => e.stopPropagation()}
+        >
           {music.cover ? (
             <img src={music.cover} alt={music.name} className="w-full h-full object-cover" />
           ) : (
@@ -221,13 +224,6 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
               <MusicIcon className="text-white w-10 h-10 drop-shadow-lg" />
             </div>
           )}
-          {/* 點擊提示 */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="text-center text-white text-[10px] font-medium px-1">
-              <ChevronDown className={`w-4 h-4 mx-auto mb-0.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-              <span>歌詞</span>
-            </div>
-          </div>
         </div>
 
         {/* 資訊區 */}
