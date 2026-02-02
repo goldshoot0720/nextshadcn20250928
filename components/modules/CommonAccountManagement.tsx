@@ -367,32 +367,70 @@ export default function CommonAccountManagement() {
       return { data, errors };
     }
     
-    // 檢查表頭
-    const headers = lines[0].split(',').map(h => h.trim());
-    if (headers[0] !== 'name') {
-      errors.push('第一欄必須是 "name"');
-      return { data, errors };
-    }
-    
-    // 檢查 site/note 欄位
+    // 建立預期的表頭
     const expectedHeaders = ['name'];
     for (let i = 1; i <= 37; i++) {
       const idx = i.toString().padStart(2, '0');
       expectedHeaders.push(`site${idx}`, `note${idx}`);
     }
+    const EXPECTED_COLUMN_COUNT = expectedHeaders.length; // 75 欄
     
-    // 驗證表頭數量（至少要有 name）
-    if (headers.length < 1) {
-      errors.push('表頭欄位數量不足');
+    // 解析表頭
+    const headerValues = parseCSVLine(lines[0]);
+    
+    // 嚴格檢查表頭欄位數量
+    if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
+      errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
+      if (headerValues.length > EXPECTED_COLUMN_COUNT) {
+        errors.push(`→ 多了 ${headerValues.length - EXPECTED_COLUMN_COUNT} 欄（可能有多餘的逗號）`);
+      } else {
+        errors.push(`→ 少了 ${EXPECTED_COLUMN_COUNT - headerValues.length} 欄（可能缺少逗號）`);
+      }
+      return { data, errors };
+    }
+    
+    // 檢查第一欄是否為 "name"
+    if (headerValues[0].trim() !== 'name') {
+      errors.push(`第一欄必須是 "name"，實際為 "${headerValues[0].trim()}"`);
+      return { data, errors };
+    }
+    
+    // 嚴格檢查表頭名稱
+    for (let i = 0; i < expectedHeaders.length; i++) {
+      const expected = expectedHeaders[i];
+      const actual = headerValues[i]?.trim() || '';
+      if (actual !== expected) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${expected}"，實際 "${actual}"`);
+        // 只顯示前 5 個錯誤
+        if (errors.length >= 5) {
+          errors.push('...更多表頭錯誤已省略');
+          break;
+        }
+      }
+    }
+    
+    if (errors.length > 0) {
       return { data, errors };
     }
     
     // 解析資料行
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
+      const lineNum = i + 1;
       
+      // 嚴格檢查欄位數量
+      if (values.length !== EXPECTED_COLUMN_COUNT) {
+        if (values.length > EXPECTED_COLUMN_COUNT) {
+          errors.push(`第 ${lineNum} 行: 欄位過多 (預期 ${EXPECTED_COLUMN_COUNT}，實際 ${values.length})，多了 ${values.length - EXPECTED_COLUMN_COUNT} 欄`);
+        } else {
+          errors.push(`第 ${lineNum} 行: 欄位不足 (預期 ${EXPECTED_COLUMN_COUNT}，實際 ${values.length})，少了 ${EXPECTED_COLUMN_COUNT - values.length} 欄`);
+        }
+        continue;
+      }
+      
+      // 檢查 name 欄位
       if (!values[0] || !values[0].trim()) {
-        errors.push(`第 ${i + 1} 行: name 欄位不能為空`);
+        errors.push(`第 ${lineNum} 行: name 欄位不能為空`);
         continue;
       }
       
