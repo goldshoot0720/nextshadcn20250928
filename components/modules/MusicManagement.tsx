@@ -223,6 +223,19 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLooping, setIsLooping] = useState(false);
   
+  // 計算封面圖回退邏輯：優先使用中文版封面，其次使用任意有封面的版本
+  const getFallbackCover = () => {
+    // 先找中文版的封面
+    const chineseVersion = items.find(item => item.language === '中文' && item.cover);
+    if (chineseVersion?.cover) return chineseVersion.cover;
+    
+    // 再找任意有封面的版本
+    const anyWithCover = items.find(item => item.cover);
+    return anyWithCover?.cover || null;
+  };
+  
+  const fallbackCover = getFallbackCover();
+  
   // 單個項目直接顯示原本的卡片樣式
   if (items.length === 1) {
     const music = items[0];
@@ -240,6 +253,9 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   // 多個同名項目顯示合併卡片
   const activeMusic = items[activeIndex];
   const isExpanded = expandedMusicId === activeMusic.$id;
+  
+  // 使用自己的封面，沒有則使用回退封面
+  const displayCover = activeMusic.cover || fallbackCover;
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700">
@@ -267,10 +283,10 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
       {/* 主要內容區 */}
       <div className="p-3 sm:p-4">
         <div className="flex items-start gap-3 sm:gap-4">
-          {/* 封面 */}
+          {/* 封面 - 使用自己的封面或回退封面 */}
           <div className="relative w-14 h-14 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
-            {activeMusic.cover ? (
-              <img src={activeMusic.cover} alt={activeMusic.name} className="w-full h-full object-cover" />
+            {displayCover ? (
+              <img src={displayCover} alt={activeMusic.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <MusicIcon className="text-white w-7 h-7 sm:w-10 sm:h-10 drop-shadow-lg" />
@@ -366,8 +382,8 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
           <div className="pt-4">
             <div className="flex justify-center mb-4">
               <div className="relative w-full max-w-sm aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 shadow-xl">
-                {activeMusic.cover ? (
-                  <img src={activeMusic.cover} alt={activeMusic.name} className="w-full h-full object-cover" />
+                {displayCover ? (
+                  <img src={displayCover} alt={activeMusic.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <MusicIcon className="text-white w-32 h-32 drop-shadow-2xl" />
