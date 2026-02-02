@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Play, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy } from "lucide-react";
+import { Star, Link as LinkIcon, FileText as NoteIcon, Plus, Trash2, Edit2, X, Save, ChevronDown, ChevronUp, Filter, Search, AlertTriangle, Copy } from "lucide-react";
 import { CommonAccount, CommonAccountFormData } from "@/types";
 import { Input, Textarea, DataCard, Button, SectionHeader, FormCard, FormActions } from "@/components/ui";
 import { 
@@ -11,56 +11,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { FaviconImage } from "@/components/ui/favicon-image";
 import { useCrud } from "@/hooks/useApi";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { FullPageLoading } from "@/components/ui/loading-spinner";
-
-// Known site names mapped to their URLs
-const SITE_URL_MAP: Record<string, string> = {
-  "Musicful": "https://tw.musicful.ai/",
-  "MindVideo": "https://www.mindvideo.ai/",
-  "Qoder": "https://qoder.com/",
-  "GitHub": "https://github.com/",
-  "Gmail": "https://mail.google.com/",
-  "Outlook": "https://outlook.live.com/",
-  "Google": "https://www.google.com/",
-  "Facebook": "https://www.facebook.com/",
-  "YouTube": "https://www.youtube.com/",
-  "Twitter": "https://twitter.com/",
-  "LinkedIn": "https://www.linkedin.com/",
-  "Amazon": "https://www.amazon.com/",
-  "Netflix": "https://www.netflix.com/",
-  "Apple": "https://www.apple.com/",
-  "Microsoft": "https://www.microsoft.com/",
-  "Dropbox": "https://www.dropbox.com/",
-  "Evernote": "https://evernote.com/",
-  "Slack": "https://slack.com/",
-  "Discord": "https://discord.com/",
-  "Trello": "https://trello.com/",
-  "Notion": "https://www.notion.so/",
-  "Canva": "https://www.canva.com/",
-  "Pinterest": "https://www.pinterest.com/",
-  "Instagram": "https://www.instagram.com/",
-  "TikTok": "https://www.tiktok.com/",
-  "Reddit": "https://www.reddit.com/",
-  "Spotify": "https://www.spotify.com/",
-  "SoundCloud": "https://soundcloud.com/",
-  "Medium": "https://medium.com/",
-  "Quora": "https://www.quora.com/",
-  "StackOverflow": "https://stackoverflow.com/",
-  "Behance": "https://www.behance.net/",
-  "Dribbble": "https://dribbble.com/",
-  "Adobe": "https://www.adobe.com/",
-  "Figma": "https://www.figma.com/",
-  "Zoom": "https://zoom.us/",
-  "Skype": "https://www.skype.com/",
-  "WhatsApp": "https://www.whatsapp.com/",
-  "TRAE": "https://www.trae.ai/",
-};
-
-// Array of common site names for the select dropdown
-const COMMON_SITES = Object.keys(SITE_URL_MAP).sort();
 
 const INITIAL_FORM: CommonAccountFormData = {
   name: "",
@@ -585,7 +538,6 @@ export default function CommonAccountManagement() {
                   return name?.trim() === siteName.trim();
                 });
               }).length;
-              const siteUrl = SITE_URL_MAP[siteName];
               return (
                 <Button
                   key={siteName}
@@ -594,7 +546,6 @@ export default function CommonAccountManagement() {
                   onClick={() => setSiteFilter(siteFilter === siteName ? null : siteName)}
                   className={`h-8 px-3 rounded-lg text-sm flex items-center gap-1.5 shrink-0 ${siteFilter === siteName ? 'bg-blue-600 text-white' : ''}`}
                 >
-                  {siteUrl && <FaviconImage siteUrl={siteUrl} siteName={siteName} size={14} />}
                   {siteName} ({count})
                 </Button>
               );
@@ -679,7 +630,6 @@ export default function CommonAccountManagement() {
                   return (
                     <>
                       {visibleItems.map(({ idx, siteName, note }) => {
-                        const siteUrl = siteName ? SITE_URL_MAP[siteName] : undefined;
                         const isInlineEditing = inlineEdit?.accountId === account.$id && inlineEdit?.idx === idx;
                         
                         return (
@@ -705,7 +655,7 @@ export default function CommonAccountManagement() {
                                   <ChevronDown className="h-4 w-4" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {COMMON_SITES.map(site => (
+                                  {allSiteNames.map(site => (
                                     <SelectItem key={site} value={site}>{site}</SelectItem>
                                   ))}
                                 </SelectContent>
@@ -744,24 +694,10 @@ export default function CommonAccountManagement() {
                               // Display Mode
                               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 {siteName && (
-                                  siteUrl ? (
-                                    <a
-                                      href={siteUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors shrink-0"
-                                      title={siteUrl}
-                                    >
-                                      <FaviconImage siteUrl={siteUrl} siteName={siteName} size={18} />
-                                      <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
-                                      <Play size={12} className="opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 hidden sm:block" />
-                                    </a>
-                                  ) : (
-                                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
-                                      <LinkIcon size={16} className="text-gray-400" />
-                                      <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
-                                    </span>
-                                  )
+                                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
+                                    <LinkIcon size={16} className="text-gray-400" />
+                                    <span className="truncate max-w-[150px] sm:max-w-[200px]">{siteName}</span>
+                                  </span>
                                 )}
                                 <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
                                   {note && (
