@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FileText as DocumentIcon, Plus, Edit, Edit2, Trash2, X, Upload, Calendar, Search, Download, Eye, FileArchive, File } from "lucide-react";
+import { FileText as DocumentIcon, Plus, Edit, Edit2, Trash2, X, Upload, Calendar, Search, Download, Eye, FileArchive, File, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { useCommonDocument, CommonDocumentData } from "@/hooks/useCommonDocument";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -15,6 +15,11 @@ import { API_ENDPOINTS } from "@/lib/constants";
 import { formatLocalDate } from "@/lib/formatters";
 import { getAppwriteHeaders, getAppwriteDownloadUrl, getProxiedMediaUrl } from "@/lib/utils";
 import { PlyrPlayer } from "@/components/ui/plyr-player";
+import { CodeEditor } from "@/components/ui/code-editor";
+import { PDFViewer } from "@/components/ui/pdf-viewer";
+import { ImageEditor } from "@/components/ui/image-editor";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import JSZip from "jszip";
 
 // Helper function to add Appwrite config to URL
@@ -995,9 +1000,18 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
   const [txtLoading, setTxtLoading] = useState(false);
   const [zipEntries, setZipEntries] = useState<{ name: string; isDir: boolean; size: number }[]>([]);
   const [zipLoading, setZipLoading] = useState(false);
+  const [zipCurrentPath, setZipCurrentPath] = useState<string>('');
+  const [zipFileContent, setZipFileContent] = useState<string | null>(null);
+  const [zipViewingFile, setZipViewingFile] = useState<string | null>(null);
+  const [zipInstance, setZipInstance] = useState<JSZip | null>(null);
   const [isEditing, setIsEditing] = useState(openInEditMode);
   const [editedContent, setEditedContent] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [showMarkdownPreview, setShowMarkdownPreview] = useState(ext === 'md');
+  const [officeViewerType, setOfficeViewerType] = useState<'microsoft' | 'google'>('microsoft');
+  const [officePreviewFailed, setOfficePreviewFailed] = useState(false);
 
   useEffect(() => {
     // Load text content for editable file types
@@ -1022,6 +1036,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
         .then(res => res.arrayBuffer())
         .then(async (buffer) => {
           const zip = await JSZip.loadAsync(buffer);
+          setZipInstance(zip);
           const entries: { name: string; isDir: boolean; size: number }[] = [];
           zip.forEach((relativePath, file) => {
             entries.push({
@@ -1043,6 +1058,17 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
         });
     }
   }, [ext, document.file]);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [isFullscreen]);
 
   const getPreviewContent = () => {
     if (!document.file) return null;
@@ -1077,22 +1103,102 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
 
     // Office documents (old and new formats)
     if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+      const microsoftViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.file)}`;
+      const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(document.file)}&embedded=true`;
+      const viewerUrl = officeViewerType === 'microsoft' ? microsoftViewerUrl : googleViewerUrl;
+
       return (
-        <iframe
-          src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.file)}`}
-          className="w-full h-full border-0"
-          title={document.name}
-        />
+        <div className="relative w-full h-full">
+          {!officePreviewFailed ? (
+            <>
+              <iframe
+                src={viewerUrl}
+                className="w-full h-full border-0"
+                title={document.name}
+                onError={() => {
+                  console.error('Office preview failed');
+                  setOfficePreviewFailed(true);
+                }}
+              />
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-4 z-10">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">Office 文件預覽</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setOfficeViewerType('microsoft')}
+                      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        officeViewerType === 'microsoft'
+                          ? 'bg-white text-blue-500'
+                          : 'bg-blue-400 text-white hover:bg-blue-300'
+                      }`}
+                    >
+                      Microsoft
+                    </button>
+                    <button
+                      onClick={() => setOfficeViewerType('google')}
+                      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        officeViewerType === 'google'
+                          ? 'bg-white text-blue-500'
+                          : 'bg-blue-400 text-white hover:bg-blue-300'
+                      }`}
+                    >
+                      Google
+                    </button>
+                  </div>
+                </div>
+                <a
+                  href={`https://office.live.com/start/default.aspx`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-white text-blue-500 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors flex items-center gap-1"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  編輯
+                </a>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
+              <div className="max-w-md text-center">
+                <FileArchive className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  無法預覽此 Office 文件
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  線上預覽服務無法存取此文件。這可能是因為文件URL為私有或網路限制。
+                </p>
+                <div className="flex flex-col gap-3">
+                  <a
+                    href={getAppwriteDownloadUrl(document.file)}
+                    download={document.name}
+                    className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-5 h-5" />
+                    下載文件
+                  </a>
+                  <button
+                    onClick={() => {
+                      setOfficePreviewFailed(false);
+                      setOfficeViewerType(officeViewerType === 'microsoft' ? 'google' : 'microsoft');
+                    }}
+                    className="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-lg font-medium transition-colors"
+                  >
+                    嘗試其他預覽器
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       );
     }
     
-    // PDF Preview
+    // PDF Preview with Annotation
     if (ext === 'pdf') {
       return (
-        <iframe
-          src={getProxiedMediaUrl(document.file)}
-          className="w-full h-full border-0"
-          title={document.name}
+        <PDFViewer
+          url={getProxiedMediaUrl(document.file)}
+          fileName={document.name}
         />
       );
     }
@@ -1104,49 +1210,197 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
       }
       if (isEditing) {
         return (
-          <div className="p-6 h-full overflow-auto bg-gray-50 dark:bg-gray-900 flex flex-col">
-            <Textarea
+          <div className="h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+            <CodeEditor
               value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              className="flex-1 font-mono text-sm resize-none rounded-xl"
-              placeholder="編輯內容..."
+              onChange={(value) => setEditedContent(value || '')}
+              fileName={document.name || document.file || ''}
+              height={isFullscreen ? "calc(100vh - 80px)" : "calc(90vh - 150px)"}
             />
           </div>
         );
       }
+      // Show Markdown preview for .md files when enabled
+      if (ext === 'md' && showMarkdownPreview) {
+        return (
+          <div className="h-full overflow-auto p-8 bg-white dark:bg-gray-900">
+            <article className="prose prose-lg dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {txtContent}
+              </ReactMarkdown>
+            </article>
+          </div>
+        );
+      }
+
+      // Show code editor for source view
       return (
-        <div className="p-6 h-full overflow-auto bg-gray-50 dark:bg-gray-900">
-          <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-gray-200">{txtContent}</pre>
+        <div className="h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+          <CodeEditor
+            value={txtContent}
+            onChange={() => {}}
+            fileName={document.name || document.file || ''}
+            height={isFullscreen ? "calc(100vh - 80px)" : "calc(90vh - 150px)"}
+            readOnly={true}
+          />
         </div>
       );
     }
     
-    // ZIP Preview
+    // ZIP Preview with Interactive Browsing
     if (ext === 'zip') {
       if (zipLoading) {
         return <div className="flex items-center justify-center h-full"><LoadingSpinner /></div>;
       }
+
+      const handleViewZipFile = async (filePath: string) => {
+        if (!zipInstance) return;
+        try {
+          const file = zipInstance.file(filePath);
+          if (file) {
+            const content = await file.async('string');
+            setZipFileContent(content);
+            setZipViewingFile(filePath);
+          }
+        } catch (error) {
+          alert('無法讀取此檔案');
+        }
+      };
+
+      const handleDownloadZipFile = async (filePath: string) => {
+        if (!zipInstance) return;
+        try {
+          const file = zipInstance.file(filePath);
+          if (file) {
+            const blob = await file.async('blob');
+            const url = URL.createObjectURL(blob);
+            const a = globalThis.document.createElement('a');
+            a.href = url;
+            a.download = filePath.split('/').pop() || 'file';
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        } catch (error) {
+          alert('下載失敗');
+        }
+      };
+
+      // Filter entries by current path
+      const currentEntries = zipEntries.filter(entry => {
+        if (zipCurrentPath === '') {
+          // Root level: show items in root only
+          return !entry.name.includes('/') || entry.name.split('/').filter(s => s).length === 1;
+        }
+        // Inside folder: show direct children only
+        const normalizedPath = zipCurrentPath.endsWith('/') ? zipCurrentPath : zipCurrentPath + '/';
+        return entry.name.startsWith(normalizedPath) &&
+               entry.name.slice(normalizedPath.length).split('/').filter(s => s).length === 1;
+      });
+
+      if (zipViewingFile && zipFileContent !== null) {
+        return (
+          <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setZipViewingFile(null);
+                    setZipFileContent(null);
+                  }}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded text-sm"
+                >
+                  ← 返回
+                </button>
+                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{zipViewingFile}</span>
+              </div>
+              <button
+                onClick={() => handleDownloadZipFile(zipViewingFile)}
+                className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm flex items-center gap-1"
+              >
+                <Download className="w-4 h-4" />
+                下載
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <pre className="text-sm text-gray-800 dark:text-gray-200 font-mono whitespace-pre-wrap">{zipFileContent}</pre>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="p-6 h-full overflow-auto">
-          <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">
-            ZIP 檔案結構 ({zipEntries.length} 項)
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              {zipCurrentPath && (
+                <button
+                  onClick={() => {
+                    const parts = zipCurrentPath.split('/').filter(s => s);
+                    parts.pop();
+                    setZipCurrentPath(parts.join('/'));
+                  }}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded text-sm"
+                >
+                  ← 上一層
+                </button>
+              )}
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {zipCurrentPath || 'ZIP 檔案根目錄'} ({currentEntries.length} 項)
+              </h3>
+            </div>
+          </div>
           <div className="space-y-1">
-            {zipEntries.map((entry, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {entry.isDir ? (
-                  <File className="w-4 h-4 text-yellow-500" />
-                ) : (
-                  <DocumentIcon className="w-4 h-4 text-gray-400" />
-                )}
-                <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{entry.name}</span>
-                {!entry.isDir && (
-                  <span className="text-xs text-gray-400">
-                    {entry.size < 1024 ? `${entry.size} B` : entry.size < 1024 * 1024 ? `${(entry.size / 1024).toFixed(1)} KB` : `${(entry.size / 1024 / 1024).toFixed(1)} MB`}
-                  </span>
-                )}
-              </div>
-            ))}
+            {currentEntries.map((entry, idx) => {
+              const displayName = entry.name.split('/').filter(s => s).pop() || entry.name;
+              const isTextFile = /\.(txt|md|json|xml|html|css|js|ts|jsx|tsx|log|csv)$/i.test(entry.name);
+
+              return (
+                <div key={idx} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                  {entry.isDir ? (
+                    <FileArchive className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                  ) : (
+                    <File className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  )}
+                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{displayName}</span>
+                  {!entry.isDir && (
+                    <span className="text-xs text-gray-400 flex-shrink-0 w-20 text-right">
+                      {entry.size < 1024 ? `${entry.size} B` :
+                       entry.size < 1024 * 1024 ? `${(entry.size / 1024).toFixed(1)} KB` :
+                       `${(entry.size / 1024 / 1024).toFixed(1)} MB`}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2">
+                    {entry.isDir ? (
+                      <button
+                        onClick={() => setZipCurrentPath(entry.name)}
+                        className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                      >
+                        開啟
+                      </button>
+                    ) : (
+                      <>
+                        {isTextFile && (
+                          <button
+                            onClick={() => handleViewZipFile(entry.name)}
+                            className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm flex items-center gap-1"
+                          >
+                            <Eye className="w-4 h-4" />
+                            預覽
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDownloadZipFile(entry.name)}
+                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm flex items-center gap-1"
+                        >
+                          <Download className="w-4 h-4" />
+                          下載
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       );
@@ -1221,14 +1475,61 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
     }
   };
 
+  const handleSaveImage = async (imageBlob: Blob, fileName: string) => {
+    setSaving(true);
+    try {
+      const file = new globalThis.File([imageBlob], fileName, { type: imageBlob.type });
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const uploadResponse = await fetch('/api/upload-music', {
+        method: 'POST',
+        headers: getAppwriteHeaders(),
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('上傳失敗');
+      }
+
+      const uploadData = await uploadResponse.json();
+
+      const url = addAppwriteConfigToUrl(`${API_ENDPOINTS.COMMONDOCUMENT}/${document.$id}`);
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...document,
+          file: uploadData.url,
+        }),
+      });
+
+      if (!response.ok) throw new Error('更新失敗');
+
+      setIsEditingImage(false);
+      alert('圖片儲存成功！');
+      window.location.reload();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '儲存失敗');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const canEdit = canEditFile(document.name || document.file || '');
+  const canEditImage = ['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext);
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100 truncate flex-1 mr-4">{document.name}</h2>
-          <div className="flex items-center gap-2">
+    <>
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className={`bg-white dark:bg-gray-800 flex flex-col overflow-hidden ${
+          isFullscreen
+            ? 'w-full h-full rounded-none'
+            : 'rounded-2xl w-full max-w-5xl h-[90vh]'
+        }`}>
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-bold text-gray-900 dark:text-gray-100 truncate flex-1 mr-4">{document.name}</h2>
+            <div className="flex items-center gap-2">
             {canEdit && (
               <>
                 {isEditing ? (
@@ -1260,6 +1561,39 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
                 )}
               </>
             )}
+            {ext === 'md' && !isEditing && (
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button
+                  onClick={() => setShowMarkdownPreview(false)}
+                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    !showMarkdownPreview
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  原始碼
+                </button>
+                <button
+                  onClick={() => setShowMarkdownPreview(true)}
+                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    showMarkdownPreview
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  預覽
+                </button>
+              </div>
+            )}
+            {canEditImage && !isEditingImage && (
+              <button
+                onClick={() => setIsEditingImage(true)}
+                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                編輯圖片
+              </button>
+            )}
             <a
               href={getAppwriteDownloadUrl(document.file)}
               download={document.name || "download"}
@@ -1270,6 +1604,13 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
               <Download className="w-4 h-4" />
               下載
             </a>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title={isFullscreen ? "退出全螢幕" : "全螢幕"}
+            >
+              {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+            </button>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
               <X className="w-5 h-5" />
             </button>
@@ -1281,5 +1622,15 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
         </div>
       </div>
     </div>
+
+    {isEditingImage && canEditImage && (
+      <ImageEditor
+        imageUrl={getProxiedMediaUrl(document.file)}
+        onSave={handleSaveImage}
+        onCancel={() => setIsEditingImage(false)}
+        fileName={document.name || 'edited-image.png'}
+      />
+    )}
+  </>
   );
 }

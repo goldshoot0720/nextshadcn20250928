@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Music, X, ListMusic, Trash2, Play, Pause, ChevronUp, ChevronDown, SkipForward } from 'lucide-react';
 import { useMusicQueue, QueueItem } from '@/hooks/useMusicQueue';
+import { useMusicCache } from '@/hooks/useMusicCache';
 import { Button } from '@/components/ui/button';
 
 interface MusicQueuePanelProps {
@@ -16,44 +17,60 @@ export function MusicQueuePanel({ onPlayFromQueue }: MusicQueuePanelProps) {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastPlayedIdRef = useRef<string | null>(null);
-  const { 
-    queue, 
-    currentIndex, 
+  const {
+    queue,
+    currentIndex,
     currentItem,
-    removeFromQueue, 
+    removeFromQueue,
     clearQueue,
     moveInQueue,
     skipToNext,
-    queueLength 
+    queueLength
   } = useMusicQueue();
+
+  // 音樂快取
+  const { loadMusicFromCache } = useMusicCache();
 
   // 當 currentItem 變化時自動播放（唯一的播放觸發點）
   useEffect(() => {
-    if (currentItem && currentItem.file && audioRef.current) {
-      // 只有當歌曲變化時才播放（避免重複播放）
-      if (lastPlayedIdRef.current !== currentItem.id) {
-        console.log('播放:', currentItem.name);
-        lastPlayedIdRef.current = currentItem.id;
-        
-        // 先暫停並重置，避免衝突
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current.src = currentItem.file;
-        
-        // 等待 src 載入後再播放
-        audioRef.current.load();
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log('播放成功:', currentItem.name);
-          }).catch((err) => {
-            console.error('播放失敗:', err.name, err.message);
-          });
+    const loadAndPlayMusic = async () => {
+      if (currentItem && currentItem.file && audioRef.current) {
+        // 只有當歌曲變化時才播放（避免重複播放）
+        if (lastPlayedIdRef.current !== currentItem.id) {
+          console.log('播放:', currentItem.name);
+          lastPlayedIdRef.current = currentItem.id;
+
+          // 先暫停並重置，避免衝突
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+
+          // 檢查是否有快取的音樂
+          const cachedUrl = await loadMusicFromCache(currentItem.id);
+          audioRef.current.src = cachedUrl || currentItem.file;
+
+          if (cachedUrl) {
+            console.log('從快取播放:', currentItem.name);
+          } else {
+            console.log('從伺服器串流播放:', currentItem.name);
+          }
+
+          // 等待 src 載入後再播放
+          audioRef.current.load();
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log('播放成功:', currentItem.name);
+            }).catch((err) => {
+              console.error('播放失敗:', err.name, err.message);
+            });
+          }
+          setIsExpanded(true);
         }
-        setIsExpanded(true);
       }
-    }
-  }, [currentItem]);
+    };
+
+    loadAndPlayMusic();
+  }, [currentItem, loadMusicFromCache]);
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;

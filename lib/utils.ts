@@ -128,16 +128,16 @@ export function getAppwriteDownloadUrl(url: string | undefined | null): string {
 
 /**
  * 獲取當前 Appwrite 帳號的友善顯示名稱
- * - 使用 .env 配置時返回 ".env"
+ * - 使用 .env 配置時返回 "appwrite-.env"
  * - 使用自定義配置時返回 "appwrite-{nickname}" 或 "appwrite-custom"
  */
 export function getCurrentAccountLabel(): string {
   if (typeof window === 'undefined') {
-    return '.env';
+    return 'appwrite-.env';
   }
 
   const hasCustomConfig = localStorage.getItem('appwrite_custom_config_saved');
-  
+
   if (hasCustomConfig === 'true') {
     const nickname = localStorage.getItem('APPWRITE_ACCOUNT_NICKNAME') || '';
     if (nickname) {
@@ -145,8 +145,8 @@ export function getCurrentAccountLabel(): string {
     }
     return 'appwrite-custom';
   }
-  
-  return '.env';
+
+  return 'appwrite-.env';
 }
 
 // 清除所有快取（用於 Appwrite 帳號切換）
