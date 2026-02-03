@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FileText as DocumentIcon, Plus, Edit, Edit2, Trash2, X, Upload, Calendar, Search, Download, Eye, FileArchive, File, Maximize, Minimize, ExternalLink } from "lucide-react";
+import { FileText as DocumentIcon, Plus, Edit, Edit2, Trash2, X, Upload, Calendar, Search, Download, Eye, FileArchive, File, Maximize, Minimize, ExternalLink, HardDrive, Check } from "lucide-react";
 import { useCommonDocument, CommonDocumentData } from "@/hooks/useCommonDocument";
+import { useDocumentCache } from "@/hooks/useDocumentCache";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
@@ -563,6 +564,32 @@ function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: 
   const fileInfo = getFileTypeInfo(document.name || document.file || '');
   const canPreview = document.file && canPreviewFile(document.name || document.file);
   const canEditContent = document.file && canEditFile(document.name || document.file || '');
+  const { cacheStatus, downloadAndCacheDocument, checkDocumentCache } = useDocumentCache();
+  const [isCached, setIsCached] = useState(false);
+
+  // 檢查快取狀態
+  useEffect(() => {
+    const checkCache = async () => {
+      const cached = await checkDocumentCache(document.$id);
+      setIsCached(cached);
+    };
+    checkCache();
+  }, [document.$id, checkDocumentCache]);
+
+  // 處理快取下載
+  const handleCacheDownload = async () => {
+    await downloadAndCacheDocument({
+      $id: document.$id,
+      name: document.name,
+      file: getProxiedMediaUrl(document.file),
+      note: document.note,
+      category: document.category,
+      cover: document.cover
+    });
+    setIsCached(true);
+  };
+
+  const documentCacheStatus = cacheStatus[document.$id];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700 p-4">
@@ -602,16 +629,54 @@ function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: 
       {/* 操作按鈕 */}
       <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
         {document.file && (
-          <a
-            href={getAppwriteDownloadUrl(document.file)}
-            download={document.name || "download"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all duration-200 text-sm font-medium"
-          >
-            <Download className="w-4 h-4" />
-            下載
-          </a>
+          <>
+            <a
+              href={getAppwriteDownloadUrl(document.file)}
+              download={document.name || "download"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all duration-200 text-sm font-medium"
+            >
+              <Download className="w-4 h-4" />
+              下載
+            </a>
+            {/* 快取按鈕 */}
+            <button
+              onClick={handleCacheDownload}
+              disabled={isCached || documentCacheStatus?.downloading}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all duration-200 text-sm font-medium relative ${
+                isCached || documentCacheStatus?.cached
+                  ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 cursor-default'
+                  : documentCacheStatus?.downloading
+                  ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 cursor-wait'
+                  : 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40'
+              }`}
+              title={
+                isCached || documentCacheStatus?.cached
+                  ? '已快取'
+                  : documentCacheStatus?.downloading
+                  ? `下載中 ${Math.round(documentCacheStatus.progress)}%`
+                  : '快取到本地'
+              }
+            >
+              {isCached || documentCacheStatus?.cached ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  已快取
+                </>
+              ) : (
+                <>
+                  <HardDrive className="w-4 h-4" />
+                  快取
+                </>
+              )}
+              {documentCacheStatus?.downloading && (
+                <span className="absolute -top-1 -right-1 text-[8px] bg-cyan-600 text-white rounded-full px-1.5 py-0.5">
+                  {Math.round(documentCacheStatus.progress)}%
+                </span>
+              )}
+            </button>
+          </>
         )}
         {canPreview && (
           <button
@@ -626,10 +691,10 @@ function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: 
           <button
             onClick={onEditContent}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all duration-200 text-sm font-medium"
-            title="編輯檔案內容"
+            title="編輯文件"
           >
             <Edit className="w-4 h-4" />
-            編輯內容
+            編輯文件
           </button>
         )}
         <button
@@ -827,7 +892,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
       <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            {document ? '編輯文件' : '新增文件'}
+            {document ? '編輯資訊' : '新增文件'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
             <X className="w-5 h-5" />
