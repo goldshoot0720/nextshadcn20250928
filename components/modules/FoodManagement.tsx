@@ -192,8 +192,47 @@ export default function FoodManagement() {
 
   // CSV 匯入/匯出功能
   const [importPreview, setImportPreview] = useState<{data: FoodFormData[], errors: string[]} | null>(null);
+  const [importFormat, setImportFormat] = useState<'appwrite' | 'supabase' | null>(null);
+  const [pendingCSVText, setPendingCSVText] = useState<string>('');
   const CSV_HEADERS = ['name', 'amount', 'todate', 'photo', 'price', 'shop', 'photohash'];
   const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length; // 7 欄
+
+  const SUPABASE_FOOD_HEADERS = ['食物名稱', '數量', '價格(NT$)', '購買商店', '到期日期', '照片網址'];
+
+  const detectCSVFormat = (headerLine: string): 'appwrite' | 'supabase' | 'unknown' => {
+    const headers = parseCSVLine(headerLine);
+    const trimmed = headers.map(h => h.trim());
+    if (trimmed.includes('name')) return 'appwrite';
+    if (trimmed.includes('食物名稱')) return 'supabase';
+    return 'unknown';
+  };
+
+  const convertSupabaseFood = (text: string): string => {
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const lines = cleanText.split('\n').filter(line => line.trim());
+    if (lines.length < 1) return text;
+
+    const newLines: string[] = [CSV_HEADERS.join(',')];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      // Supabase: 食物名稱, 數量, 價格(NT$), 購買商店, 到期日期, 照片網址
+      // Appwrite: name, amount, todate, photo, price, shop, photohash
+      const name = values[0]?.trim() || '';
+      const amount = values[1]?.trim() || '0';
+      const price = values[2]?.trim() || '0';
+      const shop = values[3]?.trim() || '';
+      const todate = values[4]?.trim() || '';
+      const photo = values[5]?.trim() || '';
+      const photohash = '';
+
+      const escapeCSV = (val: string) => {
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) return `"${val.replace(/"/g, '""')}"`;
+        return val;
+      };
+      newLines.push([escapeCSV(name), escapeCSV(amount), escapeCSV(todate), escapeCSV(photo), escapeCSV(price), escapeCSV(shop), escapeCSV(photohash)].join(','));
+    }
+    return newLines.join('\n');
+  };
 
   const exportToCSV = () => {
     const escapeCSV = (val: any) => {
@@ -255,8 +294,34 @@ export default function FoodManagement() {
     const file = e.target.files?.[0]; if (!file) return;
     if (!file.name.endsWith('.csv')) { alert('請選擇 CSV 檔案'); return; }
     const reader = new FileReader();
-    reader.onload = (event) => { setImportPreview(parseCSV(event.target?.result as string)); };
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const cleanText = text.replace(/^\uFEFF/, '');
+      const firstLine = cleanText.split('\n').find(line => line.trim()) || '';
+      const format = detectCSVFormat(firstLine);
+
+      if (format === 'appwrite') {
+        setImportPreview(parseCSV(text));
+      } else if (format === 'supabase') {
+        setImportFormat('supabase');
+        setPendingCSVText(text);
+      } else {
+        alert('無法辨識 CSV 格式：表頭不符合 Appwrite 或 Supabase 格式');
+      }
+    };
     reader.readAsText(file, 'UTF-8'); e.target.value = '';
+  };
+
+  const confirmSupabaseFoodImport = () => {
+    const converted = convertSupabaseFood(pendingCSVText);
+    setImportPreview(parseCSV(converted));
+    setImportFormat(null);
+    setPendingCSVText('');
+  };
+
+  const cancelSupabaseFoodImport = () => {
+    setImportFormat(null);
+    setPendingCSVText('');
   };
 
   const executeImport = async () => {
@@ -311,6 +376,66 @@ export default function FoodManagement() {
           {isFormOpen ? "收起表單" : "新增食品"}
         </Button>
       </div>
+
+      {/* Supabase 格式確認對話框 */}
+      {importFormat === 'supabase' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">偵測到 Supabase 格式</h3>
+              <p className="text-sm text-gray-500 mt-1">此 CSV 檔案來自 Supabase，需要轉換欄位後才能匯入</p>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[50vh]">
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <h4 className="font-semibold text-blue-600 dark:text-blue-400 mb-3">欄位轉換對照：</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">食物名稱</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">name</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">數量</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">amount</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">價格(NT$)</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">price</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">購買商店</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">shop</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">到期日期</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">todate</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">照片網址</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">photo</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">(無)</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">photohash (空值)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <Button variant="outline" onClick={cancelSupabaseFoodImport} className="rounded-xl">取消</Button>
+              <Button onClick={confirmSupabaseFoodImport} className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white">
+                確認轉換並匯入
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {importPreview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

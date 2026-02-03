@@ -275,9 +275,70 @@ export default function SubscriptionManagement() {
 
   // CSV 匯入/匯出功能
   const [importPreview, setImportPreview] = useState<{data: SubscriptionFormData[], errors: string[]} | null>(null);
+  const [importFormat, setImportFormat] = useState<'appwrite' | 'supabase' | null>(null);
+  const [pendingCSVText, setPendingCSVText] = useState<string>('');
 
   const CSV_HEADERS = ['name', 'site', 'price', 'nextdate', 'note', 'account', 'currency', 'continue'];
   const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length; // 8 欄
+  const SUPABASE_SUBSCRIPTION_HEADERS = ['服務名稱', '網站網址', '帳號/Email', '月費(NT$)', '下次扣款日期', '備註'];
+
+  // 解析單行 CSV
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (inQuotes) {
+        if (char === '"') {
+          if (line[i + 1] === '"') { current += '"'; i++; }
+          else { inQuotes = false; }
+        } else { current += char; }
+      } else {
+        if (char === '"') { inQuotes = true; }
+        else if (char === ',') { result.push(current); current = ''; }
+        else { current += char; }
+      }
+    }
+    result.push(current);
+    return result;
+  };
+
+  const detectCSVFormat = (headerLine: string): 'appwrite' | 'supabase' | 'unknown' => {
+    const headers = parseCSVLine(headerLine);
+    const trimmed = headers.map(h => h.trim());
+    if (trimmed.includes('name')) return 'appwrite';
+    if (trimmed.includes('服務名稱')) return 'supabase';
+    return 'unknown';
+  };
+
+  const convertSupabaseSubscription = (text: string): string => {
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const lines = cleanText.split('\n').filter(line => line.trim());
+    if (lines.length < 1) return text;
+
+    const newLines: string[] = [CSV_HEADERS.join(',')];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      // Supabase: 服務名稱, 網站網址, 帳號/Email, 月費(NT$), 下次扣款日期, 備註
+      // Appwrite: name, site, price, nextdate, note, account, currency, continue
+      const name = values[0]?.trim() || '';
+      const site = values[1]?.trim() || '';
+      const account = values[2]?.trim() || '';
+      const price = values[3]?.trim() || '0';
+      const nextdate = values[4]?.trim() || '';
+      const note = values[5]?.trim() || '';
+      const currency = 'TWD';
+      const continueVal = 'true';
+
+      const escapeCSV = (val: string) => {
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) return `"${val.replace(/"/g, '""')}"`;
+        return val;
+      };
+      newLines.push([escapeCSV(name), escapeCSV(site), escapeCSV(price), escapeCSV(nextdate), escapeCSV(note), escapeCSV(account), escapeCSV(currency), escapeCSV(continueVal)].join(','));
+    }
+    return newLines.join('\n');
+  };
 
   // 匯出 CSV
   const exportToCSV = () => {
@@ -312,28 +373,6 @@ export default function SubscriptionManagement() {
     link.download = 'subscription-appwrite.csv';
     link.click();
     URL.revokeObjectURL(link.href);
-  };
-
-  // 解析單行 CSV
-  const parseCSVLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (inQuotes) {
-        if (char === '"') {
-          if (line[i + 1] === '"') { current += '"'; i++; }
-          else { inQuotes = false; }
-        } else { current += char; }
-      } else {
-        if (char === '"') { inQuotes = true; }
-        else if (char === ',') { result.push(current); current = ''; }
-        else { current += char; }
-      }
-    }
-    result.push(current);
-    return result;
   };
 
   // 解析 CSV
@@ -396,10 +435,33 @@ export default function SubscriptionManagement() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      setImportPreview(parseCSV(text));
+      const cleanText = text.replace(/^\uFEFF/, '');
+      const firstLine = cleanText.split('\n').find(line => line.trim()) || '';
+      const format = detectCSVFormat(firstLine);
+
+      if (format === 'appwrite') {
+        setImportPreview(parseCSV(text));
+      } else if (format === 'supabase') {
+        setImportFormat('supabase');
+        setPendingCSVText(text);
+      } else {
+        alert('無法辨識 CSV 格式：表頭不符合 Appwrite 或 Supabase 格式');
+      }
     };
     reader.readAsText(file, 'UTF-8');
     e.target.value = '';
+  };
+
+  const confirmSupabaseSubscriptionImport = () => {
+    const converted = convertSupabaseSubscription(pendingCSVText);
+    setImportPreview(parseCSV(converted));
+    setImportFormat(null);
+    setPendingCSVText('');
+  };
+
+  const cancelSupabaseSubscriptionImport = () => {
+    setImportFormat(null);
+    setPendingCSVText('');
   };
 
   const executeImport = async () => {
@@ -464,6 +526,71 @@ export default function SubscriptionManagement() {
           {isFormOpen ? "收起表單" : "新增訂閱"}
         </Button>
       </div>
+
+      {/* Supabase 格式確認對話框 */}
+      {importFormat === 'supabase' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">偵測到 Supabase 格式</h3>
+              <p className="text-sm text-gray-500 mt-1">此 CSV 檔案來自 Supabase，需要轉換欄位後才能匯入</p>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[50vh]">
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <h4 className="font-semibold text-blue-600 dark:text-blue-400 mb-3">欄位轉換對照：</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">服務名稱</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">name</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">網站網址</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">site</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">帳號/Email</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">account</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">月費(NT$)</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">price</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">下次扣款日期</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">nextdate</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">備註</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">note</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">(無)</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">currency (預設 TWD)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">(無)</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono">continue (預設 true)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <Button variant="outline" onClick={cancelSupabaseSubscriptionImport} className="rounded-xl">取消</Button>
+              <Button onClick={confirmSupabaseSubscriptionImport} className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white">
+                確認轉換並匯入
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 匯入預覽對話框 */}
       {importPreview && (
