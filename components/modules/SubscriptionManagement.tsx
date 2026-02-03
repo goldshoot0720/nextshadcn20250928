@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Minus, ChevronDown, ChevronUp, Search, Download, Upload, X } from "lucide-react";
+import { Plus, Minus, ChevronDown, ChevronUp, Search, Download, Upload, X, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -225,6 +225,22 @@ export default function SubscriptionManagement() {
     setEditingId(sub.$id);
     setIsFormOpen(true);
     // 滾動到頁面頂部讓用戶看到編輯表單
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCopy = (sub: Subscription) => {
+    setForm({
+      name: `${sub.name} (複製)`,
+      site: sub.site,
+      price: sub.price !== undefined && sub.price !== null && sub.price !== 0 ? sub.price : 0,
+      nextdate: sub.nextdate ? formatDate(sub.nextdate) : "",
+      note: sub.note || "",
+      account: sub.account || "",
+      currency: sub.currency || "TWD",
+      continue: sub.continue !== false
+    });
+    setEditingId(null);
+    setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1023,6 +1039,7 @@ export default function SubscriptionManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleCopy(sub)} className="rounded-xl" title="複製"><Copy size={14} /></Button>
                             <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="rounded-xl">編輯</Button>
                           </div>
                         </TableCell>
@@ -1090,6 +1107,7 @@ export default function SubscriptionManagement() {
                           )}
                         </div>
                         <div className="flex gap-2 pt-2">
+                          <Button type="button" size="sm" variant="outline" onClick={() => handleCopy(sub)} className="rounded-xl" title="複製"><Copy size={14} /></Button>
                           <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(sub)} className="flex-1 rounded-xl">編輯</Button>
                         </div>
                       </div>
