@@ -110,7 +110,9 @@ export function useMediaStats() {
         console.error('Error fetching storage stats:', err);
         const message = err instanceof Error ? err.message : 'Unknown error';
         if (message.includes('Bandwidth limit') || message.includes('bandwidth') || message.includes('exceeded')) {
-          setStorageError('Appwrite 組織頻寬已超出限制，請升級方案或調整預算上限。\n(Bandwidth limit for your organization has exceeded. Please upgrade to a higher plan or update your budget cap.)');
+          const bandwidthMsg = 'Appwrite 組織頻寬已超出限制，請升級方案或調整預算上限。\n(Bandwidth limit for your organization has exceeded. Please upgrade to a higher plan or update your budget cap.)';
+          setStorageError(bandwidthMsg);
+          alert('⚠️ Appwrite 頻寬超出限制\n\n您的 Appwrite 組織頻寬已超出限制。\n請至 Appwrite Console → Organization → Billing 升級方案或調整預算上限。');
         } else {
           setStorageError(message);
         }
