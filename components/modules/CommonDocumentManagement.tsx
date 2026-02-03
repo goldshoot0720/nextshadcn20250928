@@ -562,8 +562,8 @@ interface DocumentCardProps {
 
 function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: DocumentCardProps) {
   const fileInfo = getFileTypeInfo(document.name || document.file || '');
-  const canPreview = document.file && canPreviewFile(document.name || document.file);
-  const canEditContent = document.file && canEditFile(document.name || document.file || '');
+  const canPreview = document.file && (canPreviewFile(document.name || '') || canPreviewFile(document.file || ''));
+  const canEditContent = document.file && (canEditFile(document.name || '') || canEditFile(document.file || ''));
   const { cacheStatus, downloadAndCacheDocument, checkDocumentCache } = useDocumentCache();
   const [isCached, setIsCached] = useState(false);
 
