@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText, Download, ListPlus } from "lucide-react";
+import { Music as MusicIcon, Plus, Edit, Trash2, X, Upload, Calendar, Search, ChevronDown, Repeat, FileText, Download, ListPlus, HardDrive, Check } from "lucide-react";
 import { useMusic, MusicData } from "@/hooks/useMusic";
 import { useMusicQueue, QueueItem } from "@/hooks/useMusicQueue";
+import { useMusicCache } from "@/hooks/useMusicCache";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -53,6 +54,22 @@ export default function MusicManagement() {
   const [editingMusic, setEditingMusic] = useState<MusicData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedMusicId, setExpandedMusicId] = useState<string | null>(null);
+
+  // 音樂快取管理
+  const {
+    cacheStatus,
+    cacheStats,
+    downloadAndCacheMusic,
+    deleteMusicCache,
+    clearAllCache,
+    updateCacheStats,
+    formatFileSize,
+    maxCacheSize,
+  } = useMusicCache();
+
+  useEffect(() => {
+    updateCacheStats();
+  }, [updateCacheStats]);
 
   // CSV 匯入/匯出功能
   const [importPreview, setImportPreview] = useState<{data: MusicFormData[], errors: string[]} | null>(null);
@@ -430,6 +447,8 @@ export default function MusicManagement() {
       {/* 統計卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard title="音樂總數" value={stats.total} icon={MusicIcon} />
+        <StatCard title="已快取" value={cacheStats.cachedMusic} icon={Check} />
+        <StatCard title="快取大小" value={formatFileSize(cacheStats.totalSize)} icon={HardDrive} />
       </div>
 
       {/* 搜尋欄位 */}
@@ -571,6 +590,42 @@ export default function MusicManagement() {
         </div>
       )}
 
+      {/* 快取管理 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">快取管理</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              已使用 {formatFileSize(cacheStats.totalSize)} / {formatFileSize(maxCacheSize)}
+            </p>
+          </div>
+          <Button 
+            onClick={clearAllCache} 
+            variant="outline" 
+            className="rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            disabled={cacheStats.cachedMusic === 0}
+          >
+            清空快取
+          </Button>
+        </div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-cyan-500 to-cyan-600 transition-all duration-300" 
+            style={{ width: `${Math.min((cacheStats.totalSize / maxCacheSize) * 100, 100)}%` }}
+          />
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400">已快取音樂：</span>
+            <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{cacheStats.cachedMusic} / {music.length}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400">下載中：</span>
+            <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{cacheStats.downloadingMusic}</span>
+          </div>
+        </div>
+      </div>
+
       {/* 音樂佇列面板 */}
       <MusicQueuePanel />
     </div>
@@ -593,6 +648,23 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   const [selectedBaseLanguage, setSelectedBaseLanguage] = useState<string | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const { addToQueue, isInQueue } = useMusicQueue();
+  const { cacheStatus, downloadAndCacheMusic, checkMusicCache } = useMusicCache();
+  const [cachedItems, setCachedItems] = useState<Set<string>>(new Set());
+
+  // 檢查所有項目的快取狀態
+  useEffect(() => {
+    const checkAllCache = async () => {
+      const cached = new Set<string>();
+      for (const item of items) {
+        const isCached = await checkMusicCache(item.$id);
+        if (isCached) {
+          cached.add(item.$id);
+        }
+      }
+      setCachedItems(cached);
+    };
+    checkAllCache();
+  }, [items, checkMusicCache]);
   
   // 第一層：基礎語言類別
   const BASE_LANGUAGES = ['中文', '英語', '日語', '韓語', '粵語', '其他'];
@@ -840,6 +912,47 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                 )}
                 {selectedItem.file && (
                   <button
+                    onClick={async () => {
+                      await downloadAndCacheMusic({
+                        $id: selectedItem.$id,
+                        name: selectedItem.name,
+                        file: getProxiedMediaUrl(selectedItem.file),
+                        cover: selectedItem.cover || displayCover || undefined,
+                        category: selectedItem.category,
+                        language: selectedItem.language
+                      });
+                      setCachedItems(prev => new Set([...prev, selectedItem.$id]));
+                    }}
+                    disabled={cachedItems.has(selectedItem.$id) || cacheStatus[selectedItem.$id]?.downloading}
+                    className={`p-1.5 rounded-lg transition-all relative ${
+                      cachedItems.has(selectedItem.$id) || cacheStatus[selectedItem.$id]?.cached
+                        ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 cursor-default'
+                        : cacheStatus[selectedItem.$id]?.downloading
+                        ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 cursor-wait'
+                        : 'bg-gray-100 dark:bg-gray-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                    }`}
+                    title={
+                      cachedItems.has(selectedItem.$id) || cacheStatus[selectedItem.$id]?.cached
+                        ? '已快取'
+                        : cacheStatus[selectedItem.$id]?.downloading
+                        ? `下載中 ${Math.round(cacheStatus[selectedItem.$id].progress)}%`
+                        : '快取到本地'
+                    }
+                  >
+                    {cachedItems.has(selectedItem.$id) || cacheStatus[selectedItem.$id]?.cached ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <HardDrive className="w-4 h-4" />
+                    )}
+                    {cacheStatus[selectedItem.$id]?.downloading && (
+                      <span className="absolute -bottom-1 -right-1 text-[8px] bg-cyan-600 text-white rounded-full px-1">
+                        {Math.round(cacheStatus[selectedItem.$id].progress)}%
+                      </span>
+                    )}
+                  </button>
+                )}
+                {selectedItem.file && (
+                  <button
                     onClick={() => {
                       const added = addToQueue({
                         id: selectedItem.$id,
@@ -970,6 +1083,32 @@ interface MusicCardProps {
 function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: MusicCardProps) {
   const [isLooping, setIsLooping] = useState(false);
   const { addToQueue, isInQueue } = useMusicQueue();
+  const { cacheStatus, downloadAndCacheMusic, checkMusicCache } = useMusicCache();
+  const [isCached, setIsCached] = useState(false);
+
+  // 檢查快取狀態
+  useEffect(() => {
+    const checkCache = async () => {
+      const cached = await checkMusicCache(music.$id);
+      setIsCached(cached);
+    };
+    checkCache();
+  }, [music.$id, checkMusicCache]);
+
+  // 處理快取下載
+  const handleCacheDownload = async () => {
+    await downloadAndCacheMusic({
+      $id: music.$id,
+      name: music.name,
+      file: getProxiedMediaUrl(music.file),
+      cover: music.cover,
+      category: music.category,
+      language: music.language
+    });
+    setIsCached(true);
+  };
+
+  const musicCacheStatus = cacheStatus[music.$id];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700">
@@ -1081,6 +1220,36 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
                   title="下載"
                 >
                   <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+                {/* 快取按鈕 */}
+                <button
+                  onClick={handleCacheDownload}
+                  disabled={isCached || musicCacheStatus?.downloading}
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 relative ${
+                    isCached || musicCacheStatus?.cached
+                      ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 cursor-default'
+                      : musicCacheStatus?.downloading
+                      ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 cursor-wait'
+                      : 'bg-gray-100 dark:bg-gray-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                  }`}
+                  title={
+                    isCached || musicCacheStatus?.cached
+                      ? '已快取'
+                      : musicCacheStatus?.downloading
+                      ? `下載中 ${Math.round(musicCacheStatus.progress)}%`
+                      : '快取到本地'
+                  }
+                >
+                  {isCached || musicCacheStatus?.cached ? (
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  ) : (
+                    <HardDrive className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  )}
+                  {musicCacheStatus?.downloading && (
+                    <span className="absolute -bottom-1 -right-1 text-[8px] bg-cyan-600 text-white rounded-full px-1">
+                      {Math.round(musicCacheStatus.progress)}%
+                    </span>
+                  )}
                 </button>
               </>
             )}

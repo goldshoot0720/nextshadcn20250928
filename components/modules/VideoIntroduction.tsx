@@ -538,6 +538,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
   const { videos } = useVideos();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
+  const [repeatMode, setRepeatMode] = useState(false);
   const [currentVideo, setCurrentVideo] = useState<VideoData>(video);
   const [playedIds, setPlayedIds] = useState<Set<string>>(new Set([video.$id]));
   const modalRef = useRef<HTMLDivElement>(null);
@@ -575,9 +576,20 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
 
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
-  // 監聽影片播放結束事件 - 自動播放下一個（順序播放，不重複）
+  // 監聽影片播放結束事件 - 支援重複播放和自動播放下一個
   useEffect(() => {
     const handleVideoEnded = () => {
+      // 如果開啟重複播放，重播當前影片
+      if (repeatMode) {
+        const plyrVideo = document.querySelector('.plyr video') as HTMLVideoElement;
+        if (plyrVideo) {
+          plyrVideo.currentTime = 0;
+          plyrVideo.play();
+        }
+        return;
+      }
+      
+      // 自動播放下一個（順序播放，不重複）
       if (!autoPlay) return;
       
       // 找到當前影片在列表中的位置
@@ -626,7 +638,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
       clearTimeout(timer);
       if (cleanup) cleanup();
     };
-  }, [autoPlay, allVideosWithFile, currentVideo, playedIds]);
+  }, [autoPlay, repeatMode, allVideosWithFile, currentVideo, playedIds]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -749,16 +761,32 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
           <aside className="w-full lg:w-[400px] space-y-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-gray-900 dark:text-white">接下來播放</h3>
-              <button 
-                onClick={() => setAutoPlay(!autoPlay)}
-                className={`text-xs font-medium cursor-pointer px-3 py-1 rounded-full transition-colors ${
-                  autoPlay 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                自動播放 {autoPlay ? '開' : '關'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setRepeatMode(!repeatMode)}
+                  className={`text-xs font-medium cursor-pointer px-3 py-1 rounded-full transition-colors ${
+                    repeatMode 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  }`}
+                  title="重複播放同一影片"
+                >
+                  重複 {repeatMode ? '開' : '關'}
+                </button>
+                <button 
+                  onClick={() => setAutoPlay(!autoPlay)}
+                  className={`text-xs font-medium cursor-pointer px-3 py-1 rounded-full transition-colors ${
+                    autoPlay 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  }`}
+                  disabled={repeatMode}
+                  style={{ opacity: repeatMode ? 0.5 : 1 }}
+                  title={repeatMode ? '重複模式下自動播放已停用' : '自動播放下一個影片'}
+                >
+                  自動播放 {autoPlay ? '開' : '關'}
+                </button>
+              </div>
             </div>
             <div className="space-y-3">
               {recommendedVideos.map((recVideo) => (

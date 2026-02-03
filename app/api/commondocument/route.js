@@ -75,6 +75,7 @@ export async function POST(request) {
       {
         name: body.name,
         file: body.file || '',
+        filetype: body.filetype || '',
         note: body.note || '',
         ref: body.ref || '',
         category: body.category || '',

@@ -8,6 +8,7 @@ export interface CommonDocumentData {
   $id: string;
   name: string;
   file: string;
+  filetype: string;
   note: string;
   ref: string;
   category: string;

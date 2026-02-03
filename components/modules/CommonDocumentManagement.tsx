@@ -160,6 +160,22 @@ export default function CommonDocumentManagement() {
     const [importing, setImporting] = useState(false);
     const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
+  // 文件快取管理
+  const {
+    cacheStatus,
+    cacheStats,
+    downloadAndCacheDocument,
+    deleteDocumentCache,
+    clearAllCache,
+    updateCacheStats,
+    formatFileSize,
+    maxCacheSize,
+  } = useDocumentCache();
+
+  useEffect(() => {
+    updateCacheStats();
+  }, [updateCacheStats]);
+
   // CSV 匯出/匯入
   const CSV_HEADERS = ['name', 'category', 'note', 'ref'];
   const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length;
@@ -399,6 +415,8 @@ export default function CommonDocumentManagement() {
       {/* 統計卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard title="文件總數" value={stats.total} icon={DocumentIcon} />
+        <StatCard title="已快取" value={cacheStats.cachedDocuments} icon={Check} />
+        <StatCard title="快取大小" value={formatFileSize(cacheStats.totalSize)} icon={HardDrive} />
       </div>
 
       {/* 搜尋欄位 */}
@@ -548,6 +566,42 @@ export default function CommonDocumentManagement() {
           </div>
         </div>
       )}
+
+      {/* 快取管理 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">快取管理</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              已使用 {formatFileSize(cacheStats.totalSize)} / {formatFileSize(maxCacheSize)}
+            </p>
+          </div>
+          <Button 
+            onClick={clearAllCache} 
+            variant="outline" 
+            className="rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            disabled={cacheStats.cachedDocuments === 0}
+          >
+            清空快取
+          </Button>
+        </div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-cyan-500 to-cyan-600 transition-all duration-300" 
+            style={{ width: `${Math.min((cacheStats.totalSize / maxCacheSize) * 100, 100)}%` }}
+          />
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400">已快取文件：</span>
+            <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{cacheStats.cachedDocuments} / {commondocument.length}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400">下載中：</span>
+            <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{cacheStats.downloadingDocuments}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
