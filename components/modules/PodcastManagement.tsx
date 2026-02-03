@@ -117,7 +117,7 @@ export default function PodcastManagement() {
   if (loading) {
     return (
       <div className="space-y-4 lg:space-y-6">
-        <SectionHeader title="鋒兄播客" subtitle="播客管理" />
+        <SectionHeader title="鋒兄播客" subtitle="播客管理" showAccountLabel={true} />
         <LoadingSpinner />
       </div>
     );
@@ -134,6 +134,7 @@ export default function PodcastManagement() {
       <SectionHeader
         title="鋒兄播客"
         subtitle="管理播客收藏"
+        showAccountLabel={true}
         action={
           <Button onClick={handleAdd} className="gap-2 bg-blue-500 hover:bg-blue-600 rounded-xl">
             <Plus size={16} />

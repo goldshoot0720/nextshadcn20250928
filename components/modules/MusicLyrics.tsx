@@ -1658,6 +1658,7 @@ export default function MusicLyrics() {
       <SectionHeader
         title="鋒兄音樂"
         subtitle="播放您喜愛的歌曲與查看歌詞"
+        showAccountLabel={true}
         action={
           <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
             <Plus size={16} />

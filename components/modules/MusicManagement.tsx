@@ -392,7 +392,7 @@ export default function MusicManagement() {
   if (loading) {
     return (
       <div className="space-y-4 lg:space-y-6">
-        <SectionHeader title="鋒兄音樂" subtitle="音樂管理" />
+        <SectionHeader title="鋒兄音樂" subtitle="音樂管理" showAccountLabel={true} />
         <LoadingSpinner />
       </div>
     );
@@ -409,6 +409,7 @@ export default function MusicManagement() {
       <SectionHeader
         title="鋒兄音樂"
         subtitle="管理音樂收藏，支援歌詞和多語言"
+        showAccountLabel={true}
         action={
           <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={() => document.getElementById('csv-import-music')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">

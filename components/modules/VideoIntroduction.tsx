@@ -326,7 +326,7 @@ export default function VideoIntroduction() {
   if (loading) {
     return (
       <div className="space-y-4 lg:space-y-6">
-        <SectionHeader title="鋒兄影片" subtitle="影片管理" />
+        <SectionHeader title="鋒兄影片" subtitle="影片管理" showAccountLabel={true} />
         <LoadingSpinner />
       </div>
     );
@@ -343,6 +343,7 @@ export default function VideoIntroduction() {
       <SectionHeader
         title="鋒兄影片"
         subtitle="觀看精彩影片內容，支援本地快取減少流量使用"
+        showAccountLabel={true}
         action={
           <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={() => document.getElementById('csv-import-video')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">

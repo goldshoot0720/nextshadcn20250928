@@ -354,7 +354,7 @@ export default function CommonDocumentManagement() {
   if (loading) {
     return (
       <div className="space-y-4 lg:space-y-6">
-        <SectionHeader title="鋒兄文件" subtitle="文件管理" />
+        <SectionHeader title="鋒兄文件" subtitle="文件管理" showAccountLabel={true} />
         <LoadingSpinner />
       </div>
     );
@@ -371,6 +371,7 @@ export default function CommonDocumentManagement() {
       <SectionHeader
         title="鋒兄文件"
         subtitle="管理文件收藏，支援 PDF、Word、Excel、PowerPoint、TXT、MD、ZIP、影片"
+        showAccountLabel={true}
         action={
           <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={() => document.getElementById('csv-import-document')?.click()} variant="outline" className="rounded-xl flex items-center gap-2" title="匯入 CSV">

@@ -519,6 +519,7 @@ export default function NotesManagement() {
       <SectionHeader
         title="鋒兄筆記"
         subtitle={`共 ${stats.total} 篇筆記`}
+        showAccountLabel={true}
         action={
           <StatCard title="筆記總數" value={stats.total} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />
         }

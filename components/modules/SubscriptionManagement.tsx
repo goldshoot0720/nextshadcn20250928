@@ -509,6 +509,7 @@ export default function SubscriptionManagement() {
       <SectionHeader
         title="鋒兄訂閱"
         subtitle={`共 ${stats.total} 個訂閱服務`}
+        showAccountLabel={true}
         action={
           <div className="flex gap-4">
             <StatCard title="本月月費" value={formatCurrency(stats.totalMonthlyFee)} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />

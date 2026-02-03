@@ -255,6 +255,7 @@ export default function BankManagement() {
       <SectionHeader
         title="鋒兄銀行"
         subtitle={`管理您的銀行帳戶、資產與相關資訊`}
+        showAccountLabel={true}
         action={
           <div className="flex gap-4">
             <StatCard title="總資產" value={formatCurrency(stats.totalDeposit)} gradient="from-blue-500 to-blue-600" className="min-w-[160px]" />

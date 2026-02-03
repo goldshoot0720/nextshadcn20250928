@@ -576,6 +576,7 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
       <SectionHeader
         title="鋒兄設定"
         subtitle="應用程式設定與偏好"
+        showAccountLabel={true}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

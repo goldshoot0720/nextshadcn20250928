@@ -87,6 +87,7 @@ export default function ImageGallery() {
       <SectionHeader
         title="鋒兄圖片"
         subtitle={loading ? "載入中..." : `共 ${images.length} 張圖片`}
+        showAccountLabel={true}
         action={
           <div className="flex gap-2">
             <Button onClick={handleAdd} className="gap-2 bg-green-500 hover:bg-green-600 rounded-xl">

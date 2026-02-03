@@ -1,6 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { cn, getCurrentAccountLabel } from "@/lib/utils";
 
 interface SectionHeaderProps {
   title: string;
@@ -8,6 +9,7 @@ interface SectionHeaderProps {
   action?: React.ReactNode;
   accentColor?: string;
   className?: string;
+  showAccountLabel?: boolean;
 }
 
 export function SectionHeader({
@@ -16,7 +18,16 @@ export function SectionHeader({
   action,
   accentColor = "from-blue-500 to-blue-600",
   className,
+  showAccountLabel = false,
 }: SectionHeaderProps) {
+  const [accountLabel, setAccountLabel] = useState<string>('');
+
+  useEffect(() => {
+    if (showAccountLabel) {
+      setAccountLabel(getCurrentAccountLabel());
+    }
+  }, [showAccountLabel]);
+
   return (
     <div className={cn("flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4", className)}>
       <div className="flex-1 min-w-0">
@@ -25,6 +36,11 @@ export function SectionHeader({
         </h1>
         {subtitle && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>
+        )}
+        {showAccountLabel && accountLabel && (
+          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
+            當前帳號: {accountLabel}
+          </p>
         )}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
@@ -58,9 +74,18 @@ interface PageTitleProps {
   description?: string;
   badge?: React.ReactNode;
   className?: string;
+  showAccountLabel?: boolean;
 }
 
-export function PageTitle({ title, description, badge, className }: PageTitleProps) {
+export function PageTitle({ title, description, badge, className, showAccountLabel = false }: PageTitleProps) {
+  const [accountLabel, setAccountLabel] = useState<string>('');
+
+  useEffect(() => {
+    if (showAccountLabel) {
+      setAccountLabel(getCurrentAccountLabel());
+    }
+  }, [showAccountLabel]);
+
   return (
     <div className={cn("space-y-1", className)}>
       <div className="flex items-center gap-3">
@@ -71,6 +96,11 @@ export function PageTitle({ title, description, badge, className }: PageTitlePro
       </div>
       {description && (
         <p className="text-gray-500 dark:text-gray-400">{description}</p>
+      )}
+      {showAccountLabel && accountLabel && (
+        <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
+          當前帳號: {accountLabel}
+        </p>
       )}
     </div>
   );

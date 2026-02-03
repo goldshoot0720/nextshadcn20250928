@@ -640,6 +640,7 @@ export default function CommonAccountManagement() {
       <SectionHeader 
         title="鋒兄常用" 
         subtitle={`共 ${accounts.length} 組帳號設定`}
+        showAccountLabel={true}
         action={
           <div className="flex items-center gap-2">
             <input
