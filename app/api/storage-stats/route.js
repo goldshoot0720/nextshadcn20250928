@@ -468,8 +468,12 @@ export async function GET(request) {
 
   } catch (err) {
     console.error("GET /api/storage-stats error:", err);
-    return NextResponse.json({ 
-      error: err.message || '獲取儲存統計失敗',
+    const errorMessage = err.message || '獲取儲存統計失敗';
+    const isBandwidthError = errorMessage.includes('Bandwidth limit') || errorMessage.includes('bandwidth') || errorMessage.includes('exceeded');
+    return NextResponse.json({
+      error: isBandwidthError
+        ? 'Bandwidth limit for your organization has exceeded. Please upgrade to a higher plan or update your budget cap.'
+        : errorMessage,
       stats: {
         totalFiles: 0,
         totalSize: 0,

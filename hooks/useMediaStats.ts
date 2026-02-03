@@ -108,7 +108,12 @@ export function useMediaStats() {
         });
       } catch (err) {
         console.error('Error fetching storage stats:', err);
-        setStorageError(err instanceof Error ? err.message : 'Unknown error');
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        if (message.includes('Bandwidth limit') || message.includes('bandwidth') || message.includes('exceeded')) {
+          setStorageError('Appwrite 組織頻寬已超出限制，請升級方案或調整預算上限。\n(Bandwidth limit for your organization has exceeded. Please upgrade to a higher plan or update your budget cap.)');
+        } else {
+          setStorageError(message);
+        }
       } finally {
         setStorageLoading(false);
       }
