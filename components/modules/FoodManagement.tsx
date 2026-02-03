@@ -201,22 +201,12 @@ export default function FoodManagement() {
 
   const SUPABASE_FOOD_HEADERS = ['食物名稱', '數量', '價格(NT$)', '購買商店', '到期日期', '照片網址'];
 
-  const detectCSVFormat = (headerLine: string): 'appwrite' | 'supabase' | 'unknown' => {
-    const headers = parseCSVLine(headerLine);
-    const trimmed = headers.map(h => h.trim());
-    if (trimmed.includes('name')) return 'appwrite';
-    if (trimmed.includes('食物名稱')) return 'supabase';
-    return 'unknown';
-  };
-
   const convertSupabaseFood = (text: string): string => {
-    const cleanText = text.replace(/^\uFEFF/, '');
-    const lines = cleanText.split('\n').filter(line => line.trim());
-    if (lines.length < 1) return text;
-
+    const rows = parseFullCSV(text);
+    if (rows.length < 1) return text;
     const newLines: string[] = [CSV_HEADERS.join(',')];
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i];
       // Supabase: 食物名稱, 數量, 價格(NT$), 購買商店, 到期日期, 照片網址
       // Appwrite: name, amount, todate, photo, price, shop, photohash
       const name = values[0]?.trim() || '';
@@ -226,7 +216,6 @@ export default function FoodManagement() {
       const todate = values[4]?.trim() || '';
       const photo = values[5]?.trim() || '';
       const photohash = '';
-
       const escapeCSV = (val: string) => {
         if (val.includes(',') || val.includes('"') || val.includes('\n')) return `"${val.replace(/"/g, '""')}"`;
         return val;
@@ -266,25 +255,60 @@ export default function FoodManagement() {
     result.push(current); return result;
   };
 
+  // 解析完整 CSV（處理多行欄位）
+  const parseFullCSV = (text: string): string[][] => {
+    const rows: string[][] = [];
+    const cleanText = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    let currentRow: string[] = []; let currentField = ''; let inQuotes = false;
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      if (inQuotes) {
+        if (char === '"') { if (cleanText[i + 1] === '"') { currentField += '"'; i++; } else { inQuotes = false; } }
+        else { currentField += char; }
+      } else {
+        if (char === '"') { inQuotes = true; }
+        else if (char === ',') { currentRow.push(currentField); currentField = ''; }
+        else if (char === '\n') {
+          currentRow.push(currentField);
+          if (currentRow.length > 0 && currentRow.some(f => f.trim())) { rows.push(currentRow); }
+          currentRow = []; currentField = '';
+        } else { currentField += char; }
+      }
+    }
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim())) { rows.push(currentRow); }
+    }
+    return rows;
+  };
+
+  const detectCSVFormat = (text: string): 'appwrite' | 'supabase' | 'unknown' => {
+    const rows = parseFullCSV(text);
+    if (rows.length === 0) return 'unknown';
+    const headers = rows[0].map(h => h.trim());
+    if (headers.includes('name')) return 'appwrite';
+    if (headers.includes('食物名稱')) return 'supabase';
+    return 'unknown';
+  };
+
   const parseCSV = (text: string): {data: FoodFormData[], errors: string[]} => {
     const errors: string[] = []; const data: FoodFormData[] = [];
-    const cleanText = text.replace(/^\uFEFF/, '');
-    const lines = cleanText.split('\n').filter(line => line.trim());
-    if (lines.length < 2) { errors.push('CSV 檔案至少需要表頭和一行資料'); return { data, errors }; }
-    const headerValues = parseCSVLine(lines[0]);
+    const rows = parseFullCSV(text);
+    if (rows.length < 2) { errors.push('CSV 檔案至少需要表頭和一行資料'); return { data, errors }; }
+    const headerValues = rows[0].map(h => h.trim());
     if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
       errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
       return { data, errors };
     }
     for (let i = 0; i < CSV_HEADERS.length; i++) {
-      if (headerValues[i]?.trim() !== CSV_HEADERS[i]) {
-        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]?.trim()}"`);
+      if (headerValues[i] !== CSV_HEADERS[i]) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]}"`);
         if (errors.length >= 5) { errors.push('...更多錯誤已省略'); break; }
       }
     }
     if (errors.length > 0) return { data, errors };
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]); const lineNum = i + 1;
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i]; const lineNum = i + 1;
       if (values.length !== EXPECTED_COLUMN_COUNT) { errors.push(`第 ${lineNum} 行: 欄位數量錯誤`); continue; }
       if (!values[0]?.trim()) { errors.push(`第 ${lineNum} 行: name 欄位不能為空`); continue; }
       data.push({ name: values[0].trim(), amount: parseFloat(values[1]) || 0, todate: values[2]?.trim() || '', photo: values[3]?.trim() || '', price: parseFloat(values[4]) || 0, shop: values[5]?.trim() || '', photohash: values[6]?.trim() || '' });
@@ -298,18 +322,10 @@ export default function FoodManagement() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const cleanText = text.replace(/^\uFEFF/, '');
-      const firstLine = cleanText.split('\n').find(line => line.trim()) || '';
-      const format = detectCSVFormat(firstLine);
-
-      if (format === 'appwrite') {
-        setImportPreview(parseCSV(text));
-      } else if (format === 'supabase') {
-        setImportFormat('supabase');
-        setPendingCSVText(text);
-      } else {
-        alert('無法辨識 CSV 格式：表頭不符合 Appwrite 或 Supabase 格式');
-      }
+      const format = detectCSVFormat(text);
+      if (format === 'appwrite') { setImportPreview(parseCSV(text)); }
+      else if (format === 'supabase') { setImportFormat('supabase'); setPendingCSVText(text); }
+      else { alert('無法辨識 CSV 格式：表頭不符合 Appwrite 或 Supabase 格式'); }
     };
     reader.readAsText(file, 'UTF-8'); e.target.value = '';
   };

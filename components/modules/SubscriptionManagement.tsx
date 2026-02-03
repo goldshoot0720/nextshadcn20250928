@@ -322,11 +322,71 @@ export default function SubscriptionManagement() {
     return result;
   };
 
-  const detectCSVFormat = (headerLine: string): 'appwrite' | 'supabase' | 'unknown' => {
-    const headers = parseCSVLine(headerLine);
-    const trimmed = headers.map(h => h.trim());
-    if (trimmed.includes('name')) return 'appwrite';
-    if (trimmed.includes('服務名稱')) return 'supabase';
+  // 解析完整 CSV（處理多行欄位）
+  const parseFullCSV = (text: string): string[][] => {
+    const rows: string[][] = [];
+    const cleanText = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    let currentRow: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      
+      if (inQuotes) {
+        if (char === '"') {
+          if (cleanText[i + 1] === '"') {
+            // 雙引號跳脫
+            currentField += '"';
+            i++;
+          } else {
+            // 結束引號
+            inQuotes = false;
+          }
+        } else {
+          // 在引號內，保留所有字元（包含換行）
+          currentField += char;
+        }
+      } else {
+        if (char === '"') {
+          // 開始引號
+          inQuotes = true;
+        } else if (char === ',') {
+          // 欄位分隔
+          currentRow.push(currentField);
+          currentField = '';
+        } else if (char === '\n') {
+          // 行結束
+          currentRow.push(currentField);
+          if (currentRow.length > 0 && currentRow.some(f => f.trim())) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+        } else {
+          currentField += char;
+        }
+      }
+    }
+    
+    // 處理最後一行
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim())) {
+        rows.push(currentRow);
+      }
+    }
+    
+    return rows;
+  };
+
+  const detectCSVFormat = (text: string): 'appwrite' | 'supabase' | 'unknown' => {
+    const rows = parseFullCSV(text);
+    if (rows.length === 0) return 'unknown';
+    const headers = rows[0].map(h => h.trim());
+    if (headers.includes('name')) return 'appwrite';
+    if (headers.includes('服務名稱')) return 'supabase';
     return 'unknown';
   };
 
@@ -397,32 +457,32 @@ export default function SubscriptionManagement() {
   const parseCSV = (text: string): {data: SubscriptionFormData[], errors: string[]} => {
     const errors: string[] = [];
     const data: SubscriptionFormData[] = [];
-    const cleanText = text.replace(/^\uFEFF/, '');
-    const lines = cleanText.split('\n').filter(line => line.trim());
-
-    if (lines.length < 2) {
+      
+    const rows = parseFullCSV(text);
+      
+    if (rows.length < 2) {
       errors.push('CSV 檔案至少需要表頭和一行資料');
       return { data, errors };
     }
-
-    const headerValues = parseCSVLine(lines[0]);
+  
+    const headerValues = rows[0].map(h => h.trim());
     if (headerValues.length !== EXPECTED_COLUMN_COUNT) {
       errors.push(`表頭欄位數量錯誤: 預期 ${EXPECTED_COLUMN_COUNT} 欄，實際 ${headerValues.length} 欄`);
       if (headerValues.length > EXPECTED_COLUMN_COUNT) errors.push(`→ 多了 ${headerValues.length - EXPECTED_COLUMN_COUNT} 欄`);
       else errors.push(`→ 少了 ${EXPECTED_COLUMN_COUNT - headerValues.length} 欄`);
       return { data, errors };
     }
-
+  
     for (let i = 0; i < CSV_HEADERS.length; i++) {
-      if (headerValues[i]?.trim() !== CSV_HEADERS[i]) {
-        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]?.trim()}"`);
+      if (headerValues[i] !== CSV_HEADERS[i]) {
+        errors.push(`表頭第 ${i + 1} 欄錯誤: 預期 "${CSV_HEADERS[i]}"，實際 "${headerValues[i]}"`);
         if (errors.length >= 5) { errors.push('...更多錯誤已省略'); break; }
       }
     }
     if (errors.length > 0) return { data, errors };
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
+  
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i];
       const lineNum = i + 1;
       if (values.length !== EXPECTED_COLUMN_COUNT) {
         errors.push(`第 ${lineNum} 行: 欄位數量錯誤 (預期 ${EXPECTED_COLUMN_COUNT}，實際 ${values.length})`);
@@ -453,9 +513,7 @@ export default function SubscriptionManagement() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const cleanText = text.replace(/^\uFEFF/, '');
-      const firstLine = cleanText.split('\n').find(line => line.trim()) || '';
-      const format = detectCSVFormat(firstLine);
+      const format = detectCSVFormat(text);
 
       if (format === 'appwrite') {
         setImportPreview(parseCSV(text));
