@@ -16,10 +16,15 @@ export function useSubscriptions() {
     try {
       const resData = await fetchApi<Subscription[]>(`${API_ENDPOINTS.SUBSCRIPTION}?t=${Date.now()}`);
       let data: Subscription[] = Array.isArray(resData) ? resData : [];
-      // 按到期日排序
-      data = data.sort(
-        (a, b) => new Date(a.nextdate || '').getTime() - new Date(b.nextdate || '').getTime()
-      );
+      // 按到期日排序，無日期排最後
+      data = data.sort((a, b) => {
+        const hasA = !!a.nextdate;
+        const hasB = !!b.nextdate;
+        if (!hasA && !hasB) return 0;
+        if (!hasA) return 1;
+        if (!hasB) return -1;
+        return new Date(a.nextdate!).getTime() - new Date(b.nextdate!).getTime();
+      });
       
       setSubscriptions(data);
       return data;
