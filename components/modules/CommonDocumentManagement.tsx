@@ -50,14 +50,15 @@ function addAppwriteConfigToUrl(url: string): string {
   return paramString ? `${url}${separator}${paramString}` : url;
 }
 
-// Get file extension
-function getFileExtension(filename: string): string {
+// Get file extension from filetype or filename
+function getFileExtension(filename: string, filetype?: string): string {
+  if (filetype) return filetype.toLowerCase();
   return filename?.toLowerCase().split('.').pop() || '';
 }
 
 // Get file type info for styling
-function getFileTypeInfo(filename: string): { color: string; bgColor: string; label: string } {
-  const ext = getFileExtension(filename);
+function getFileTypeInfo(filename: string, filetype?: string): { color: string; bgColor: string; label: string } {
+  const ext = getFileExtension(filename, filetype);
   switch (ext) {
     case 'pdf':
       return { color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label: 'PDF' };
@@ -117,8 +118,8 @@ function getFileTypeInfo(filename: string): { color: string; bgColor: string; la
 }
 
 // Check if file can be previewed
-function canPreviewFile(filename: string): boolean {
-  const ext = getFileExtension(filename);
+function canPreviewFile(filename: string, filetype?: string): boolean {
+  const ext = getFileExtension(filename, filetype);
   return [
     // Documents
     'pdf', 'txt', 'md', 'json', 'xml', 'html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx',
@@ -134,8 +135,8 @@ function canPreviewFile(filename: string): boolean {
 }
 
 // Check if file can be edited
-function canEditFile(filename: string): boolean {
-  const ext = getFileExtension(filename);
+function canEditFile(filename: string, filetype?: string): boolean {
+  const ext = getFileExtension(filename, filetype);
   return ['txt', 'md', 'json', 'xml', 'html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx'].includes(ext);
 }
 
@@ -347,7 +348,7 @@ export default function CommonDocumentManagement() {
   };
 
   const handlePreview = (doc: CommonDocumentData, editMode = false) => {
-    if (doc.file && canPreviewFile(doc.name || doc.file)) {
+    if (doc.file && canPreviewFile(doc.name || doc.file, doc.filetype)) {
       setPreviewDocument(doc);
       setOpenInEditMode(editMode);
     }
@@ -561,9 +562,9 @@ interface DocumentCardProps {
 }
 
 function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: DocumentCardProps) {
-  const fileInfo = getFileTypeInfo(document.name || document.file || '');
-  const canPreview = document.file && (canPreviewFile(document.name || '') || canPreviewFile(document.file || ''));
-  const canEditContent = document.file && (canEditFile(document.name || '') || canEditFile(document.file || ''));
+  const fileInfo = getFileTypeInfo(document.name || document.file || '', document.filetype);
+  const canPreview = document.file && canPreviewFile(document.name || document.file || '', document.filetype);
+  const canEditContent = document.file && canEditFile(document.name || document.file || '', document.filetype);
   const { cacheStatus, downloadAndCacheDocument, checkDocumentCache } = useDocumentCache();
   const [isCached, setIsCached] = useState(false);
 
@@ -596,7 +597,7 @@ function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: 
       <div className="flex items-start gap-4">
         {/* 文件圖示 */}
         <div className={`w-14 h-14 flex-shrink-0 rounded-xl ${fileInfo.bgColor} flex items-center justify-center`}>
-          {getFileExtension(document.name || document.file || '') === 'zip' ? (
+          {getFileExtension(document.name || document.file || '', document.filetype) === 'zip' ? (
             <FileArchive className={`w-7 h-7 ${fileInfo.color}`} />
           ) : (
             <DocumentIcon className={`w-7 h-7 ${fileInfo.color}`} />
@@ -726,6 +727,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
   const [formData, setFormData] = useState({
     name: document?.name || '',
     file: document?.file || '',
+    filetype: document?.filetype || '',
     note: document?.note || '',
     ref: document?.ref || '',
     category: document?.category || '',
@@ -787,8 +789,13 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
     setDuplicateWarning('');
     setSelectedFile(file);
 
+    // Extract filetype from filename
+    const filetype = file.name.split('.').pop()?.toLowerCase() || '';
+
     if (!formData.name) {
-      setFormData(prev => ({ ...prev, name: file.name }));
+      setFormData(prev => ({ ...prev, name: file.name, filetype }));
+    } else {
+      setFormData(prev => ({ ...prev, filetype }));
     }
 
     const hash = await calculateFileHash(file);
@@ -874,6 +881,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
         body: JSON.stringify({
           ...formData,
           file: fileUrl,
+          filetype: formData.filetype,
           hash: fileHash || formData.hash,
         }),
       });
@@ -1060,7 +1068,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
 
 // 文件預覽模態框
 function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { document: CommonDocumentData; onClose: () => void; openInEditMode?: boolean }) {
-  const ext = getFileExtension(document.name || document.file || '');
+  const ext = getFileExtension(document.name || document.file || '', document.filetype);
   const [txtContent, setTxtContent] = useState<string>('');
   const [txtLoading, setTxtLoading] = useState(false);
   const [zipEntries, setZipEntries] = useState<{ name: string; isDir: boolean; size: number }[]>([]);
@@ -1080,7 +1088,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
 
   useEffect(() => {
     // Load text content for editable file types
-    if (canEditFile(document.name || document.file || '') && document.file) {
+    if (canEditFile(document.name || document.file || '', document.filetype) && document.file) {
       setTxtLoading(true);
       fetch(getProxiedMediaUrl(document.file))
         .then(res => res.text())
@@ -1269,7 +1277,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
     }
     
     // Text/Code files preview and edit
-    if (canEditFile(document.name || document.file || '')) {
+    if (canEditFile(document.name || document.file || '', document.filetype)) {
       if (txtLoading) {
         return <div className="flex items-center justify-center h-full"><LoadingSpinner /></div>;
       }
@@ -1581,7 +1589,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
     }
   };
 
-  const canEdit = canEditFile(document.name || document.file || '');
+  const canEdit = canEditFile(document.name || document.file || '', document.filetype);
   const canEditImage = ['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext);
 
   return (
