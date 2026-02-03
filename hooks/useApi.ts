@@ -99,10 +99,14 @@ export async function fetchApi<T>(
     }
 
     if (response.status === 404) {
-      // 嘗試從 URL 提取 table 名稱
-      let tableName = url.split('/api/')[1]?.split('/')[0]?.split('?')[0] || 'table';
-      if (errorMessage === `HTTP error! status: 404`) {
-        errorMessage = `Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`;
+      // 頻寬超限時不顯示 Table 不存在
+      const isBandwidth = errorMessage.includes('Bandwidth') || errorMessage.includes('bandwidth') || errorMessage.includes('exceeded');
+      if (!isBandwidth) {
+        // 嘗試從 URL 提取 table 名稱
+        let tableName = url.split('/api/')[1]?.split('/')[0]?.split('?')[0] || 'table';
+        if (errorMessage === `HTTP error! status: 404`) {
+          errorMessage = `Table ${tableName} 不存在，請至「鋒兄設定」中初始化。`;
+        }
       }
     }
     
@@ -144,7 +148,7 @@ function addAppwriteConfigToUrl(url: string): string {
 export function useCrud<T extends { $id: string }>(baseUrl: string) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // 全域快取 - 使用 Map 依據 baseUrl 儲存不同的快取
   const getCacheKey = () => baseUrl.replace(/\//g, '_');
@@ -204,7 +208,7 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
       setItems(data);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Fetch failed"));
+      setError(err instanceof Error ? err.message : "Fetch failed");
       return [];
     } finally {
       setLoading(false);
@@ -223,7 +227,7 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
         setRefreshKeyValue();
         return newItem;
       } catch (err) {
-        setError(err instanceof Error ? err : new Error("Create failed"));
+        setError(err instanceof Error ? err.message : "Create failed");
         return null;
       }
     },
@@ -244,7 +248,7 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
         setRefreshKeyValue();
         return updatedItem;
       } catch (err) {
-        setError(err instanceof Error ? err : new Error("Update failed"));
+        setError(err instanceof Error ? err.message : "Update failed");
         return null;
       }
     },
@@ -260,7 +264,7 @@ export function useCrud<T extends { $id: string }>(baseUrl: string) {
         setRefreshKeyValue();
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err : new Error("Delete failed"));
+        setError(err instanceof Error ? err.message : "Delete failed");
         return false;
       }
     },

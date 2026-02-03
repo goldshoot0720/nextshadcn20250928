@@ -194,6 +194,8 @@ export default function FoodManagement() {
   const [importPreview, setImportPreview] = useState<{data: FoodFormData[], errors: string[]} | null>(null);
   const [importFormat, setImportFormat] = useState<'appwrite' | 'supabase' | null>(null);
   const [pendingCSVText, setPendingCSVText] = useState<string>('');
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const CSV_HEADERS = ['name', 'amount', 'todate', 'photo', 'price', 'shop', 'photohash'];
   const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length; // 7 欄
 
@@ -249,7 +251,7 @@ export default function FoodManagement() {
     const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'food-appwrite.csv';
+    link.download = 'appwrite-Food.csv';
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -326,14 +328,27 @@ export default function FoodManagement() {
 
   const executeImport = async () => {
     if (!importPreview || importPreview.data.length === 0) return;
+    
+    setImporting(true);
+    setImportProgress({ current: 0, total: importPreview.data.length });
+    
     let successCount = 0, failCount = 0;
-    for (const formData of importPreview.data) {
+    for (let i = 0; i < importPreview.data.length; i++) {
+      const formData = importPreview.data[i];
+      setImportProgress({ current: i + 1, total: importPreview.data.length });
       try {
         const existing = foods.find(f => f.name === formData.name);
-        if (existing) await updateFood(existing.$id, formData); else await createFood(formData);
+        if (existing) {
+          await updateFood(existing.$id, formData);
+        } else {
+          await createFood(formData);
+        }
         successCount++;
       } catch { failCount++; }
     }
+    
+    setImporting(false);
+    setImportProgress({ current: 0, total: 0 });
     setImportPreview(null);
     alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
   };
@@ -472,10 +487,26 @@ export default function FoodManagement() {
               )}
             </div>
             <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setImportPreview(null)} className="rounded-xl">取消</Button>
-              <Button onClick={executeImport} disabled={importPreview.data.length === 0 || importPreview.errors.length > 0} className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">
-                確認匯入 ({importPreview.data.length} 筆)
-              </Button>
+              {importing ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    匯入中 {importProgress.current}/{importProgress.total}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setImportPreview(null)} className="rounded-xl">取消</Button>
+                  <Button onClick={executeImport} disabled={importPreview.data.length === 0 || importPreview.errors.length > 0} className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                    確認匯入 ({importPreview.data.length} 筆)
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

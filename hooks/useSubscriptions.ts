@@ -50,6 +50,21 @@ export function useSubscriptions() {
     }
   }, [loadSubscriptions]);
 
+  // 新增訂閱（不重新載入，用於批量匯入）
+  const createSubscriptionSilent = useCallback(async (formData: SubscriptionFormData): Promise<Subscription | null> => {
+    try {
+      const newSub = await fetchApi<Subscription>(API_ENDPOINTS.SUBSCRIPTION, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      return newSub;
+    } catch (err) {
+      console.error("新增訂閱失敗:", err);
+      throw err;
+    }
+  }, []);
+
   // 更新訂閱
   const updateSubscription = useCallback(async (id: string, formData: SubscriptionFormData): Promise<Subscription | null> => {
     try {
@@ -66,6 +81,21 @@ export function useSubscriptions() {
       throw err;
     }
   }, [loadSubscriptions]);
+
+  // 更新訂閱（不重新載入，用於批量匯入）
+  const updateSubscriptionSilent = useCallback(async (id: string, formData: SubscriptionFormData): Promise<Subscription | null> => {
+    try {
+      const updatedSub = await fetchApi<Subscription>(`${API_ENDPOINTS.SUBSCRIPTION}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      return updatedSub;
+    } catch (err) {
+      console.error("更新訂閱失敗:", err);
+      throw err;
+    }
+  }, []);
 
   // 刪除訂閱
   const deleteSubscription = useCallback(async (id: string): Promise<boolean> => {
@@ -153,7 +183,9 @@ export function useSubscriptions() {
     stats,
     loadSubscriptions,
     createSubscription,
+    createSubscriptionSilent,
     updateSubscription,
+    updateSubscriptionSilent,
     deleteSubscription,
   };
 }

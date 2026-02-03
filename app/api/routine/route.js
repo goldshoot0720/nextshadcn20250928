@@ -58,10 +58,15 @@ export async function GET(request) {
     return NextResponse.json(res.documents);
   } catch (err) {
     console.error("GET /api/routine error:", err);
+    // Check for bandwidth errors first
+    const errMsg = err.message || '';
+    if (errMsg.includes('Bandwidth') || errMsg.includes('bandwidth') || errMsg.includes('exceeded')) {
+      return NextResponse.json({ error: errMsg }, { status: 500 });
+    }
     // Check for collection not found errors
-    if (err.message.includes('not found') || err.message.includes('Collection') || err.code === 404) {
+    if (errMsg.includes('not found') || errMsg.includes('Collection') || err.code === 404) {
       return NextResponse.json(
-        { error: "Table routine 不存在，請至「鋒兄設定」中初始化。" }, 
+        { error: "Table routine 不存在，請至「鋒兄設定」中初始化。" },
         { status: 404 }
       );
     }

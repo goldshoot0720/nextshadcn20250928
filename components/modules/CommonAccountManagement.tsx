@@ -344,13 +344,15 @@ export default function CommonAccountManagement() {
     // 下載
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'commonaccount-appwrite.csv';
+    link.download = 'appwrite-CommonAccount.csv';
     link.click();
     URL.revokeObjectURL(link.href);
   };
 
   // 匯入狀態
   const [importPreview, setImportPreview] = useState<{data: CommonAccountFormData[], errors: string[]} | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const fileInputRef = useState<HTMLInputElement | null>(null);
 
   // 解析 CSV
@@ -514,11 +516,16 @@ export default function CommonAccountManagement() {
   const executeImport = async () => {
     if (!importPreview || importPreview.data.length === 0) return;
     
+    setImporting(true);
+    setImportProgress({ current: 0, total: importPreview.data.length });
+    
     try {
       let successCount = 0;
       let failCount = 0;
       
-      for (const formData of importPreview.data) {
+      for (let i = 0; i < importPreview.data.length; i++) {
+        const formData = importPreview.data[i];
+        setImportProgress({ current: i + 1, total: importPreview.data.length });
         try {
           // 檢查是否已存在同名帳號
           const existing = accounts.find(a => a.name === formData.name);
@@ -537,10 +544,14 @@ export default function CommonAccountManagement() {
       }
       
       await fetchAll();
+      setImporting(false);
+      setImportProgress({ current: 0, total: 0 });
       setImportPreview(null);
       alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
     } catch (err) {
       console.error('匯入失敗:', err);
+      setImporting(false);
+      setImportProgress({ current: 0, total: 0 });
       alert('匯入過程中發生錯誤');
     }
   };
@@ -622,7 +633,7 @@ export default function CommonAccountManagement() {
     <div className="space-y-4 lg:space-y-6">
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-600 dark:text-red-400">
-          {error.message}
+          {error}
         </div>
       )}
 
@@ -717,20 +728,36 @@ export default function CommonAccountManagement() {
             </div>
             
             <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setImportPreview(null)}
-                className="rounded-xl"
-              >
-                取消
-              </Button>
-              <Button
-                onClick={executeImport}
-                disabled={importPreview.data.length === 0 || importPreview.errors.length > 0}
-                className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                確認匯入 ({importPreview.data.length} 筆)
-              </Button>
+              {importing ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    匯入中 {importProgress.current}/{importProgress.total}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setImportPreview(null)}
+                    className="rounded-xl"
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    onClick={executeImport}
+                    disabled={importPreview.data.length === 0 || importPreview.errors.length > 0}
+                    className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    確認匯入 ({importPreview.data.length} 筆)
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

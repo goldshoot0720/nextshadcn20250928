@@ -56,6 +56,8 @@ export default function MusicManagement() {
 
   // CSV 匯入/匯出功能
   const [importPreview, setImportPreview] = useState<{data: MusicFormData[], errors: string[]} | null>(null);
+    const [importing, setImporting] = useState(false);
+    const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const CSV_HEADERS = ['name', 'category', 'language', 'lyrics', 'note', 'ref'];
   const EXPECTED_COLUMN_COUNT = CSV_HEADERS.length;
 
@@ -90,7 +92,7 @@ export default function MusicManagement() {
     const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'music-appwrite.csv';
+    link.download = 'appwrite-Music.csv';
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -229,8 +231,14 @@ export default function MusicManagement() {
 
   const executeImport = async () => {
     if (!importPreview || importPreview.data.length === 0) return;
+    
+    setImporting(true);
+    setImportProgress({ current: 0, total: importPreview.data.length });
+    
     let successCount = 0, failCount = 0;
-    for (const formData of importPreview.data) {
+    for (let i = 0; i < importPreview.data.length; i++) {
+      const formData = importPreview.data[i];
+      setImportProgress({ current: i + 1, total: importPreview.data.length });
       try {
         // 查找是否已存在相同 name + language 的記錄
         const existing = music.find(m => m.name === formData.name && m.language === formData.language);
@@ -279,8 +287,13 @@ export default function MusicManagement() {
         failCount++; 
       }
     }
+    
+    // 匯入完成後統一重新載入一次
+    await loadMusic();
+    
+    setImporting(false);
+    setImportProgress({ current: 0, total: 0 });
     setImportPreview(null);
-    loadMusic(); // 重新載入資料
     alert(`匯入完成！
 成功: ${successCount} 筆
 失敗: ${failCount} 筆
@@ -528,14 +541,30 @@ export default function MusicManagement() {
               )}
             </div>
             <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
-              <Button 
-                onClick={executeImport} 
-                disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
-                className="bg-blue-500 hover:bg-blue-600"
-              >
-                確認匯入 ({importPreview.data.length} 筆)
-              </Button>
+              {importing ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    匯入中 {importProgress.current}/{importProgress.total}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
+                  <Button 
+                    onClick={executeImport} 
+                    disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    確認匯入 ({importPreview.data.length} 筆)
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

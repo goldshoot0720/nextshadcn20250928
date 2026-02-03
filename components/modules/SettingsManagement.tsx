@@ -47,6 +47,7 @@ export default function SettingsManagement() {
   const [progress, setProgress] = useState<CreateProgress | null>(null);
   const [recentlyCreated, setRecentlyCreated] = useState<Set<string>>(new Set()); // Track recently created tables
   const [appwriteConfig, setAppwriteConfig] = useState({
+    nickname: '',
     endpoint: '',
     projectId: '',
     databaseId: '',
@@ -93,6 +94,7 @@ export default function SettingsManagement() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const saved = {
+      nickname: localStorage.getItem('APPWRITE_ACCOUNT_NICKNAME') || '',
       endpoint: localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT') || '',
       projectId: localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID') || '',
       databaseId: localStorage.getItem('APPWRITE_DATABASE_ID') || '',
@@ -112,6 +114,11 @@ export default function SettingsManagement() {
     }
 
     // 儲存新設定
+    if (appwriteConfig.nickname) {
+      localStorage.setItem('APPWRITE_ACCOUNT_NICKNAME', appwriteConfig.nickname);
+    } else {
+      localStorage.removeItem('APPWRITE_ACCOUNT_NICKNAME');
+    }
     localStorage.setItem('NEXT_PUBLIC_APPWRITE_ENDPOINT', appwriteConfig.endpoint);
     localStorage.setItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID', appwriteConfig.projectId);
     localStorage.setItem('APPWRITE_DATABASE_ID', appwriteConfig.databaseId);
@@ -205,6 +212,7 @@ export default function SettingsManagement() {
     }
     
     // 清除所有 localStorage 中的 Appwrite 配置
+    localStorage.removeItem('APPWRITE_ACCOUNT_NICKNAME');
     localStorage.removeItem('NEXT_PUBLIC_APPWRITE_ENDPOINT');
     localStorage.removeItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID');
     localStorage.removeItem('APPWRITE_DATABASE_ID');
@@ -578,11 +586,21 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
               <Key size={20} className="text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <h3 className="font-bold text-lg">Appwrite 帳號切換</h3>
+              <h3 className="font-bold text-lg">Appwrite 帳號切換{appwriteConfig.nickname && <span className="ml-2 text-sm font-normal text-orange-600 dark:text-orange-400">({appwriteConfig.nickname})</span>}</h3>
               <p className="text-xs text-gray-400">基於使用者輸入資訊，儲存於瀏覽器 localStorage</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">帳號暱稱（選填）</label>
+              <Input
+                type="text"
+                placeholder="例如：鋒兄正式帳號、測試帳號"
+                value={appwriteConfig.nickname}
+                onChange={(e) => setAppwriteConfig({...appwriteConfig, nickname: e.target.value})}
+                className="text-sm"
+              />
+            </div>
             <div>
               <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">NEXT_PUBLIC_APPWRITE_ENDPOINT</label>
               <Input 

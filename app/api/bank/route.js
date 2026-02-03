@@ -43,9 +43,13 @@ export async function GET(request) {
     try {
       collectionId = await getCollectionId(databases, databaseId, "bank");
     } catch (collectionErr) {
+      const errMsg = collectionErr.message || '';
+      if (errMsg.includes('Bandwidth') || errMsg.includes('bandwidth') || errMsg.includes('exceeded')) {
+        return NextResponse.json({ error: errMsg }, { status: 500 });
+      }
       console.error("Collection not found:", collectionErr.message);
       return NextResponse.json(
-        { error: "Table bank 不存在，請至「鋒兄設定」中初始化。" }, 
+        { error: "Table bank 不存在，請至「鋒兄設定」中初始化。" },
         { status: 404 }
       );
     }

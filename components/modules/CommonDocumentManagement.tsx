@@ -68,6 +68,21 @@ function getFileTypeInfo(filename: string): { color: string; bgColor: string; la
       return { color: 'text-gray-600', bgColor: 'bg-gray-100 dark:bg-gray-700', label: 'TXT' };
     case 'md':
       return { color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30', label: 'MD' };
+    case 'json':
+      return { color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', label: 'JSON' };
+    case 'xml':
+      return { color: 'text-teal-600', bgColor: 'bg-teal-100 dark:bg-teal-900/30', label: 'XML' };
+    case 'html':
+    case 'htm':
+      return { color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30', label: 'HTML' };
+    case 'css':
+      return { color: 'text-blue-500', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label: 'CSS' };
+    case 'js':
+    case 'jsx':
+      return { color: 'text-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', label: 'JS' };
+    case 'ts':
+    case 'tsx':
+      return { color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label: 'TS' };
     case 'zip':
     case 'rar':
     case '7z':
@@ -77,13 +92,18 @@ function getFileTypeInfo(filename: string): { color: string; bgColor: string; la
     case 'png':
     case 'gif':
     case 'webp':
+    case 'svg':
+    case 'bmp':
+    case 'ico':
       return { color: 'text-pink-600', bgColor: 'bg-pink-100 dark:bg-pink-900/30', label: 'IMG' };
     case 'mp4':
     case 'webm':
+    case 'mov':
       return { color: 'text-indigo-600', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', label: 'VIDEO' };
     case 'mp3':
     case 'wav':
     case 'm4a':
+    case 'ogg':
       return { color: 'text-cyan-600', bgColor: 'bg-cyan-100 dark:bg-cyan-900/30', label: 'AUDIO' };
     default:
       return { color: 'text-gray-600', bgColor: 'bg-gray-100 dark:bg-gray-700', label: ext.toUpperCase() || 'File' };
@@ -93,7 +113,33 @@ function getFileTypeInfo(filename: string): { color: string; bgColor: string; la
 // Check if file can be previewed
 function canPreviewFile(filename: string): boolean {
   const ext = getFileExtension(filename);
-  return ['pdf', 'txt', 'md', 'docx', 'xlsx', 'pptx', 'zip', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mp3', 'wav', 'm4a'].includes(ext);
+  return [
+    // Documents
+    'pdf', 'txt', 'md', 'json', 'xml', 'html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx',
+    // Office (new & old formats)
+    'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    // Archives
+    'zip',
+    // Images
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico',
+    // Video/Audio
+    'mp4', 'webm', 'mp3', 'wav', 'm4a', 'ogg', 'mov'
+  ].includes(ext);
+}
+
+// Check if file can be edited
+function canEditFile(filename: string): boolean {
+  const ext = getFileExtension(filename);
+  return ['txt', 'md', 'json', 'xml', 'html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx'].includes(ext);
+}
+
+// Get syntax highlighting language
+function getCodeLanguage(ext: string): string {
+  const langMap: Record<string, string> = {
+    'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+    'json': 'json', 'xml': 'xml', 'html': 'html', 'htm': 'html', 'css': 'css', 'md': 'markdown'
+  };
+  return langMap[ext] || 'text';
 }
 
 export default function CommonDocumentManagement() {
@@ -104,6 +150,8 @@ export default function CommonDocumentManagement() {
   const [previewDocument, setPreviewDocument] = useState<CommonDocumentData | null>(null);
   const [openInEditMode, setOpenInEditMode] = useState(false);
   const [importPreview, setImportPreview] = useState<{ data: DocumentFormData[]; errors: string[] } | null>(null);
+    const [importing, setImporting] = useState(false);
+    const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
   // CSV 匯出/匯入
   const CSV_HEADERS = ['name', 'category', 'note', 'ref'];
@@ -136,7 +184,7 @@ export default function CommonDocumentManagement() {
     const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'commondocument-appwrite.csv';
+    link.download = 'appwrite-CommonDocument.csv';
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -208,8 +256,14 @@ export default function CommonDocumentManagement() {
 
   const executeImport = async () => {
     if (!importPreview || importPreview.data.length === 0) return;
+    
+    setImporting(true);
+    setImportProgress({ current: 0, total: importPreview.data.length });
+    
     let successCount = 0, failCount = 0;
-    for (const formData of importPreview.data) {
+    for (let i = 0; i < importPreview.data.length; i++) {
+      const formData = importPreview.data[i];
+      setImportProgress({ current: i + 1, total: importPreview.data.length });
       try {
         const existing = commondocument.find(d => d.name === formData.name);
         const apiUrl = existing
@@ -225,8 +279,13 @@ export default function CommonDocumentManagement() {
         if (response.ok) { successCount++; } else { failCount++; }
       } catch { failCount++; }
     }
+    
+    // 匯入完成後統一重新載入一次
+    await loadCommonDocument(true);
+    
+    setImporting(false);
+    setImportProgress({ current: 0, total: 0 });
     setImportPreview(null);
-    loadCommonDocument(true);
     alert(`匯入完成！\n成功: ${successCount} 筆\n失敗: ${failCount} 筆`);
   };
 
@@ -453,14 +512,30 @@ export default function CommonDocumentManagement() {
               )}
             </div>
             <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
-              <Button 
-                onClick={executeImport} 
-                disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
-                className="bg-blue-500 hover:bg-blue-600"
-              >
-                確認匯入 ({importPreview.data.length} 筆)
-              </Button>
+              {importing ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    匯入中 {importProgress.current}/{importProgress.total}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setImportPreview(null)}>取消</Button>
+                  <Button 
+                    onClick={executeImport} 
+                    disabled={importPreview.errors.length > 0 || importPreview.data.length === 0}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    確認匯入 ({importPreview.data.length} 筆)
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -481,8 +556,7 @@ interface DocumentCardProps {
 function DocumentCard({ document, onEdit, onDelete, onPreview, onEditContent }: DocumentCardProps) {
   const fileInfo = getFileTypeInfo(document.name || document.file || '');
   const canPreview = document.file && canPreviewFile(document.name || document.file);
-  const ext = getFileExtension(document.name || document.file || '');
-  const canEditContent = ext === 'txt' || ext === 'md';
+  const canEditContent = document.file && canEditFile(document.name || document.file || '');
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700 p-4">
@@ -619,10 +693,21 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
       return;
     }
 
-    const validExtensions = ['.pdf', '.txt', '.md', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar', '.7z', '.mp4', '.webm', '.mov', '.avi', '.mkv'];
+    const validExtensions = [
+      // Documents
+      '.pdf', '.txt', '.md', '.json', '.xml', '.html', '.htm', '.css', '.js', '.ts', '.jsx', '.tsx',
+      // Office
+      '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      // Archives
+      '.zip', '.rar', '.7z',
+      // Images
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico',
+      // Video/Audio
+      '.mp4', '.webm', '.mov', '.avi', '.mkv', '.mp3', '.wav', '.m4a', '.ogg'
+    ];
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!validExtensions.includes(ext)) {
-      alert('只支援 PDF, TXT, MD, Word, Excel, PowerPoint, ZIP, 影片 格式');
+      alert('只支援 PDF, 文字檔, 程式碼, Office 文件, 壓縮檔, 圖片, 影音 格式');
       return;
     }
 
@@ -765,7 +850,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
               <input
                 type="file"
-                accept=".pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.mp4,.webm,.mov,.avi,.mkv"
+                accept=".pdf,.txt,.md,.json,.xml,.html,.htm,.css,.js,.ts,.jsx,.tsx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.ico,.mp4,.webm,.mov,.avi,.mkv,.mp3,.wav,.m4a,.ogg"
                 onChange={handleFileSelect}
                 className="hidden"
                 id="file-upload"
@@ -776,7 +861,7 @@ function DocumentFormModal({ document, existingDocuments, onClose, onSuccess }: 
                   {selectedFile ? selectedFile.name : '點擊或拖曳上傳文件'}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  支援 PDF, TXT, MD, Word, Excel, PowerPoint, ZIP, 影片 (最大 50MB)
+                  支援 PDF, 文字檔, 程式碼, Office, 壓縮檔, 圖片, 影音 (最大 50MB)
                 </p>
               </label>
             </div>
@@ -914,9 +999,10 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if ((ext === 'txt' || ext === 'md') && document.file) {
+    // Load text content for editable file types
+    if (canEditFile(document.name || document.file || '') && document.file) {
       setTxtLoading(true);
-      fetch(document.file)
+      fetch(getProxiedMediaUrl(document.file))
         .then(res => res.text())
         .then(text => {
           setTxtContent(text);
@@ -931,7 +1017,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
         });
     } else if (ext === 'zip' && document.file) {
       setZipLoading(true);
-      fetch(document.file)
+      fetch(getProxiedMediaUrl(document.file))
         .then(res => res.arrayBuffer())
         .then(async (buffer) => {
           const zip = await JSZip.loadAsync(buffer);
@@ -960,12 +1046,12 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
   const getPreviewContent = () => {
     if (!document.file) return null;
     
-    // Image Preview
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+    // Image Preview (including SVG, BMP, ICO)
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
       return (
         <div className="flex items-center justify-center h-full p-4 bg-gray-50 dark:bg-gray-900/50">
           <img 
-            src={document.file} 
+            src={getProxiedMediaUrl(document.file)} 
             alt={document.name} 
             className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
           />
@@ -973,9 +1059,9 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
       );
     }
 
-    // Video/Audio Preview
-    if (['mp4', 'webm', 'mp3', 'wav', 'm4a'].includes(ext)) {
-      const isAudio = ['mp3', 'wav', 'm4a'].includes(ext);
+    // Video/Audio Preview (including MOV, OGG)
+    if (['mp4', 'webm', 'mov', 'mp3', 'wav', 'm4a', 'ogg'].includes(ext)) {
+      const isAudio = ['mp3', 'wav', 'm4a', 'ogg'].includes(ext);
       return (
         <div className="flex items-center justify-center h-full p-8 bg-black">
           <div className={`w-full ${isAudio ? 'max-w-2xl' : 'max-w-4xl'}`}>
@@ -988,7 +1074,8 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
       );
     }
 
-    if (['docx', 'xlsx', 'pptx'].includes(ext)) {
+    // Office documents (old and new formats)
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
       return (
         <iframe
           src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.file)}`}
@@ -998,17 +1085,19 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
       );
     }
     
+    // PDF Preview
     if (ext === 'pdf') {
       return (
         <iframe
-          src={document.file}
+          src={getProxiedMediaUrl(document.file)}
           className="w-full h-full border-0"
           title={document.name}
         />
       );
     }
     
-    if (ext === 'txt' || ext === 'md') {
+    // Text/Code files preview and edit
+    if (canEditFile(document.name || document.file || '')) {
       if (txtLoading) {
         return <div className="flex items-center justify-center h-full"><LoadingSpinner /></div>;
       }
@@ -1031,6 +1120,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
       );
     }
     
+    // ZIP Preview
     if (ext === 'zip') {
       if (zipLoading) {
         return <div className="flex items-center justify-center h-full"><LoadingSpinner /></div>;
@@ -1078,8 +1168,17 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
   const handleSaveEdit = async () => {
     setSaving(true);
     try {
+      // Determine MIME type based on extension
+      const mimeTypes: Record<string, string> = {
+        'txt': 'text/plain', 'md': 'text/markdown', 'json': 'application/json',
+        'xml': 'application/xml', 'html': 'text/html', 'htm': 'text/html',
+        'css': 'text/css', 'js': 'application/javascript', 'jsx': 'application/javascript',
+        'ts': 'application/typescript', 'tsx': 'application/typescript'
+      };
+      const mimeType = mimeTypes[ext] || 'text/plain';
+      
       // Create a new file with edited content
-      const blob = new Blob([editedContent], { type: ext === 'md' ? 'text/markdown' : 'text/plain' });
+      const blob = new Blob([editedContent], { type: mimeType });
       const file = new globalThis.File([blob], document.name || `edited.${ext}`, { type: blob.type });
       
       // Upload the new file
@@ -1121,7 +1220,7 @@ function DocumentPreviewModal({ document, onClose, openInEditMode = false }: { d
     }
   };
 
-  const canEdit = ext === 'txt' || ext === 'md';
+  const canEdit = canEditFile(document.name || document.file || '');
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">

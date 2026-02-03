@@ -52,7 +52,7 @@ export function useMediaStats() {
     storageLimit: 2 * 1024 * 1024 * 1024, // 2GB
     usagePercentage: 0,
   });
-  
+
   const [storageLoading, setStorageLoading] = useState(true);
   const [storageError, setStorageError] = useState<string | null>(null);
 
@@ -65,20 +65,24 @@ export function useMediaStats() {
         setStorageLoading(true);
         setStorageError(null);
 
-        // Get Appwrite config from localStorage
-        const endpoint = localStorage.getItem('appwrite_endpoint') || '';
-        const projectId = localStorage.getItem('appwrite_project') || '';
-        const apiKey = localStorage.getItem('appwrite_key') || '';
-        const bucketId = localStorage.getItem('appwrite_bucket') || '';
+        // Get Appwrite config from localStorage (same keys as SettingsManagement)
+        const endpoint = localStorage.getItem('NEXT_PUBLIC_APPWRITE_ENDPOINT') || '';
+        const projectId = localStorage.getItem('NEXT_PUBLIC_APPWRITE_PROJECT_ID') || '';
+        const apiKey = localStorage.getItem('APPWRITE_API_KEY') || '';
+        const bucketId = localStorage.getItem('APPWRITE_BUCKET_ID') || '';
+        const databaseId = localStorage.getItem('APPWRITE_DATABASE_ID') || '';
 
-        const response = await fetch('/api/storage-stats', {
-          headers: {
-            'x-appwrite-endpoint': endpoint,
-            'x-appwrite-project': projectId,
-            'x-appwrite-key': apiKey,
-            'x-appwrite-bucket': bucketId,
-          },
-        });
+        // Send config as URL query params (same pattern as other API calls)
+        const params = new URLSearchParams();
+        if (endpoint) params.set('_endpoint', endpoint);
+        if (projectId) params.set('_project', projectId);
+        if (apiKey) params.set('_key', apiKey);
+        if (bucketId) params.set('_bucket', bucketId);
+        if (databaseId) params.set('_database', databaseId);
+        const queryString = params.toString();
+        const url = queryString ? `/api/storage-stats?${queryString}` : '/api/storage-stats';
+
+        const response = await fetch(url);
 
         const data = await response.json();
 
