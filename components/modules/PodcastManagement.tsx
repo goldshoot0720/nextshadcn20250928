@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Podcast as PodcastIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat } from "lucide-react";
+import { Podcast as PodcastIcon, Plus, Edit, Trash2, X, Upload, Calendar, Play, Pause, Search, ChevronDown, Repeat, HardDrive, Check } from "lucide-react";
 import { usePodcast, PodcastData } from "@/hooks/usePodcast";
+import { usePodcastCache } from "@/hooks/usePodcastCache";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataCard } from "@/components/ui/data-card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -60,6 +61,22 @@ export default function PodcastManagement() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedPodcastId, setExpandedPodcastId] = useState<string | null>(null);
+
+  // 播客快取管理
+  const {
+    cacheStatus,
+    cacheStats,
+    downloadAndCachePodcast,
+    deletePodcastCache,
+    clearAllCache,
+    updateCacheStats,
+    formatFileSize,
+    maxCacheSize,
+  } = usePodcastCache();
+
+  useEffect(() => {
+    updateCacheStats();
+  }, [updateCacheStats]);
 
   // 搜尋過濾
   const filteredPodcast = useMemo(() => {
@@ -146,6 +163,8 @@ export default function PodcastManagement() {
       {/* 統計卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard title="播客總數" value={stats.total} icon={PodcastIcon} />
+        <StatCard title="已快取" value={cacheStats.cachedPodcasts} icon={Check} />
+        <StatCard title="快取大小" value={formatFileSize(cacheStats.totalSize)} icon={HardDrive} />
       </div>
 
       {/* 搜尋欄位 */}
@@ -191,8 +210,40 @@ export default function PodcastManagement() {
               onToggleExpand={() => setExpandedPodcastId(expandedPodcastId === podcastItem.$id ? null : podcastItem.$id)}
               onEdit={() => handleEdit(podcastItem)}
               onDelete={() => handleDelete(podcastItem)}
+              cacheStatus={cacheStatus}
+              downloadAndCachePodcast={downloadAndCachePodcast}
             />
           ))}
+        </div>
+      )}
+
+      {/* 快取管理 */}
+      {podcast.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">快取管理</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                已使用 {formatFileSize(cacheStats.totalSize)} / {formatFileSize(maxCacheSize)}
+              </p>
+            </div>
+            <Button onClick={clearAllCache} variant="outline" className="rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" disabled={cacheStats.cachedPodcasts === 0}>
+              清空快取
+            </Button>
+          </div>
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-cyan-500 to-cyan-600 transition-all duration-300" style={{ width: `${Math.min((cacheStats.totalSize / maxCacheSize) * 100, 100)}%` }} />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">已快取播客：</span>
+              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{cacheStats.cachedPodcasts} / {podcast.length}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">下載中：</span>
+              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{cacheStats.downloadingPodcasts}</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -221,10 +272,25 @@ interface MusicCardProps {
   onToggleExpand: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  cacheStatus: any;
+  downloadAndCachePodcast: (podcast: any, onProgress?: (progress: number) => void) => Promise<void>;
 }
 
-function PodcastCard({ podcast, isPlaying, isExpanded, onPlay, onToggleExpand, onEdit, onDelete }: MusicCardProps) {
+function PodcastCard({ podcast, isPlaying, isExpanded, onPlay, onToggleExpand, onEdit, onDelete, cacheStatus, downloadAndCachePodcast }: MusicCardProps) {
   const [isLooping, setIsLooping] = useState(false);
+  const [isCached, setIsCached] = useState(false);
+  const { checkPodcastCache } = usePodcastCache();
+
+  // 檢查快取狀態
+  useEffect(() => {
+    const checkCache = async () => {
+      const cached = await checkPodcastCache(podcast.$id);
+      setIsCached(cached);
+    };
+    checkCache();
+  }, [podcast.$id, checkPodcastCache]);
+
+  const podcastCacheStatus = cacheStatus[podcast.$id];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group border border-gray-200 dark:border-gray-700">
@@ -290,17 +356,57 @@ function PodcastCard({ podcast, isPlaying, isExpanded, onPlay, onToggleExpand, o
         {/* 操作按鈕 */}
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           {podcast.file && (
-            <button
-              onClick={() => setIsLooping(!isLooping)}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isLooping 
-                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-              title={isLooping ? '重複播放' : '單次播放'}
-            >
-              <Repeat className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                onClick={() => setIsLooping(!isLooping)}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  isLooping 
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+                title={isLooping ? '重複播放' : '單次播放'}
+              >
+                <Repeat className="w-4 h-4" />
+              </button>
+              <button
+                onClick={async () => {
+                  await downloadAndCachePodcast({
+                    $id: podcast.$id,
+                    name: podcast.name,
+                    file: getProxiedMediaUrl(podcast.file),
+                    cover: podcast.cover,
+                    category: podcast.category
+                  });
+                  setIsCached(true);
+                }}
+                disabled={isCached || podcastCacheStatus?.downloading}
+                className={`p-2 rounded-lg transition-all duration-200 relative ${
+                  isCached || podcastCacheStatus?.cached
+                    ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 cursor-default'
+                    : podcastCacheStatus?.downloading
+                    ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 cursor-wait'
+                    : 'bg-gray-100 dark:bg-gray-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                }`}
+                title={
+                  isCached || podcastCacheStatus?.cached
+                    ? '已快取'
+                    : podcastCacheStatus?.downloading
+                    ? `下載中 ${Math.round(podcastCacheStatus.progress)}%`
+                    : '快取到本地'
+                }
+              >
+                {isCached || podcastCacheStatus?.cached ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <HardDrive className="w-4 h-4" />
+                )}
+                {podcastCacheStatus?.downloading && (
+                  <span className="absolute -bottom-1 -right-1 text-[8px] bg-cyan-600 text-white rounded-full px-1">
+                    {Math.round(podcastCacheStatus.progress)}%
+                  </span>
+                )}
+              </button>
+            </>
           )}
           <button
             onClick={onEdit}
@@ -425,11 +531,10 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (4MB = 4 * 1024 * 1024 bytes)
-    // Note: Next.js dev server has a ~4MB body limit
-    const maxSize = 4 * 1024 * 1024;
+    // 檢查檔案大小 (50MB = 50 * 1024 * 1024 bytes)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('播客檔案大小不能超過 4MB\n建議：\n1. 使用音訊/影片壓縮工具\n2. 或使用 URL 方式引用外部檔案');
+      alert('播客檔案大小不能超過 50MB');
       return;
     }
 
@@ -523,11 +628,10 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案大小 (10MB for cover images - reasonable for optimized images)
-    // Note: Appwrite Storage supports 50MB, but cover images should be optimized
-    const maxSize = 10 * 1024 * 1024;
+    // 檢查檔案大小 (50MB for cover images)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('封面圖大小不能超過 10MB（建議使用壓縮過的圖片，通常 1-2MB 最佳）');
+      alert('封面圖大小不能超過 50MB');
       return;
     }
 
@@ -714,7 +818,7 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳播客 (最大 4MB) / Upload (Max 4MB)'}
+                      {previewLoading ? '載入中...' : selectedFile ? `已選擇: ${selectedFile.name}` : '上傳播客 (最大 50MB) / Upload (Max 50MB)'}
                     </span>
                   </div>
                   <input
@@ -849,7 +953,7 @@ function PodcastFormModal({ podcast, existingPodcast, onClose, onSuccess }: { po
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 10MB)'}
+                      {coverPreviewLoading ? '載入中...' : selectedCoverFile ? `已選擇: ${selectedCoverFile.name}` : '上傳封面圖 (最大 50MB) / Upload Cover (Max 50MB)'}
                     </span>
                   </div>
                   <input

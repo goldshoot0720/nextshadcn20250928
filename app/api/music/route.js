@@ -56,6 +56,8 @@ export async function GET(request) {
     
     const response = await databases.listDocuments(databaseId, collectionId);
     
+    console.log("Music documents from Appwrite:", JSON.stringify(response.documents, null, 2));
+
     return NextResponse.json(response.documents);
   } catch (err) {
     console.error("GET /api/music error:", err);

@@ -648,7 +648,7 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
   const [selectedBaseLanguage, setSelectedBaseLanguage] = useState<string | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const { addToQueue, isInQueue } = useMusicQueue();
-  const { cacheStatus, downloadAndCacheMusic, checkMusicCache } = useMusicCache();
+  const { cacheStatus, downloadAndCacheMusic, checkMusicCache, loadMusicFromCache } = useMusicCache();
   const [cachedItems, setCachedItems] = useState<Set<string>>(new Set());
 
   // 檢查所有項目的快取狀態
@@ -953,16 +953,22 @@ function GroupedMusicCard({ name, items, expandedMusicId, onToggleExpand, onEdit
                 )}
                 {selectedItem.file && (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      // Check if music is cached first
+                      const cachedUrl = await loadMusicFromCache(selectedItem.$id);
+                      const fileUrl = cachedUrl || getProxiedMediaUrl(selectedItem.file);
+                                        
                       const added = addToQueue({
                         id: selectedItem.$id,
                         name: selectedItem.name,
                         language: selectedItem.language,
-                        file: getProxiedMediaUrl(selectedItem.file),
+                        file: fileUrl,
                         cover: selectedItem.cover || displayCover || undefined,
                       });
                       if (!added) {
                         alert('該歌曲已在播放佇列中');
+                      } else if (cachedUrl) {
+                        console.log('已加入佇列（使用快取）:', selectedItem.name);
                       }
                     }}
                     disabled={isInQueue(selectedItem.$id)}
@@ -1083,7 +1089,7 @@ interface MusicCardProps {
 function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: MusicCardProps) {
   const [isLooping, setIsLooping] = useState(false);
   const { addToQueue, isInQueue } = useMusicQueue();
-  const { cacheStatus, downloadAndCacheMusic, checkMusicCache } = useMusicCache();
+  const { cacheStatus, downloadAndCacheMusic, checkMusicCache, loadMusicFromCache } = useMusicCache();
   const [isCached, setIsCached] = useState(false);
 
   // 檢查快取狀態
@@ -1183,16 +1189,22 @@ function MusicCard({ music, isExpanded, onToggleExpand, onEdit, onDelete }: Musi
                   <Repeat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    // Check if music is cached first
+                    const cachedUrl = await loadMusicFromCache(music.$id);
+                    const fileUrl = cachedUrl || getProxiedMediaUrl(music.file);
+                    
                     const added = addToQueue({
                       id: music.$id,
                       name: music.name,
                       language: music.language,
-                      file: getProxiedMediaUrl(music.file),
+                      file: fileUrl,
                       cover: music.cover,
                     });
                     if (!added) {
                       alert('該歌曲已在播放佇列中');
+                    } else if (cachedUrl) {
+                      console.log('已加入佇列（使用快取）:', music.name);
                     }
                   }}
                   disabled={isInQueue(music.$id)}

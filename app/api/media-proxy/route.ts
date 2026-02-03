@@ -170,6 +170,9 @@ function createProxiedResponse(response: Response, url: string) {
     else if (ext === 'mp4') contentType = 'video/mp4';
     else if (ext === 'webm') contentType = 'video/webm';
     else if (ext === 'ogg') contentType = 'audio/ogg';
+    else if (ext === 'wav') contentType = 'audio/wav';
+    else if (ext === 'flac') contentType = 'audio/flac';
+    else if (ext === 'aac') contentType = 'audio/aac';
     
     if (contentType) responseHeaders.set('content-type', contentType);
   }

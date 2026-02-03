@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Music, Search, Plus, Heart, Play, Pause, Volume2, SkipBack, SkipForward, Download, Copy } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { useMusic, MusicData } from "@/hooks/useMusic";
+import { getProxiedMediaUrl } from "@/lib/utils";
 
 interface Song {
   id: string;
@@ -903,7 +904,7 @@ export default function MusicLyrics() {
         const lang = (music.language || 'zh') as 'zh' | 'en' | 'ja' | 'yue' | 'ko';
         
         // 確保音頻文件 URL 存在且有效
-        const audioUrl = music.file || '';
+        const audioUrl = music.file ? getProxiedMediaUrl(music.file) : '';
         
         // 提取基礎歌名（去除括號內容）
         const baseName = music.name.replace(/[\(\uff08].*?[\)\uff09]/g, '').trim();
@@ -1399,28 +1400,28 @@ export default function MusicLyrics() {
     if (currentVariation !== "default" && 
         selectedSong.audioVariations?.[currentLanguage]) {
       const variation = selectedSong.audioVariations[currentLanguage]?.find(v => v.name === currentVariation);
-      if (variation) return variation.url;
+      if (variation) return getProxiedMediaUrl(variation.url);
     }
     
     // 嘗試獲取當前語言的音頻文件
     const audioUrl = selectedSong.audioFiles[currentLanguage];
     if (audioUrl) {
       console.log(`[getCurrentAudioUrl] Using ${currentLanguage} audio:`, audioUrl);
-      return audioUrl;
+      return getProxiedMediaUrl(audioUrl);
     }
     
     // 如果當前語言沒有音頻，回退到中文
     const fallbackUrl = selectedSong.audioFiles.zh;
     if (fallbackUrl) {
       console.log(`[getCurrentAudioUrl] Fallback to zh audio:`, fallbackUrl);
-      return fallbackUrl;
+      return getProxiedMediaUrl(fallbackUrl);
     }
     
     // 嘗試任何可用的音頻文件
     const availableAudio = Object.values(selectedSong.audioFiles).find(url => url);
     if (availableAudio) {
       console.log(`[getCurrentAudioUrl] Using any available audio:`, availableAudio);
-      return availableAudio;
+      return getProxiedMediaUrl(availableAudio);
     }
     
     console.warn('[getCurrentAudioUrl] No audio file available');
