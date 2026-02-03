@@ -78,13 +78,13 @@ export default function SettingsManagement() {
   } | null>(null);
 
   // 計算待處理表格數量
-  const missingTablesCount = useMemo(() => 
-    dbStats?.collections.filter(col => col.error).length || 0,
+  const missingTablesCount = useMemo(() =>
+    dbStats?.collections?.filter(col => col.error).length || 0,
     [dbStats]
   );
-  
-  const mismatchTablesCount = useMemo(() => 
-    dbStats?.collections.filter(col => col.schemaMismatch && !col.error && !recentlyCreated.has(col.name)).length || 0,
+
+  const mismatchTablesCount = useMemo(() =>
+    dbStats?.collections?.filter(col => col.schemaMismatch && !col.error && !recentlyCreated.has(col.name)).length || 0,
     [dbStats, recentlyCreated]
   );
 
@@ -136,7 +136,7 @@ export default function SettingsManagement() {
   };
 
   const handleBulkCreate = () => {
-    if (!dbStats) return;
+    if (!dbStats?.collections) return;
     const missingTables = dbStats.collections
       .filter(col => col.error)
       .map(col => col.name);
@@ -165,7 +165,7 @@ export default function SettingsManagement() {
   };
 
   const handleBulkRebuild = () => {
-    if (!dbStats) return;
+    if (!dbStats?.collections) return;
     const mismatchTables = dbStats.collections
       .filter(col => col.schemaMismatch && !col.error)
       .map(col => col.name);
@@ -252,6 +252,12 @@ APPWRITE_API_KEY=${appwriteConfig.apiKey}`;
     fetch(url, { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
+        if (data.error) {
+          console.error("Database stats error:", data.error);
+          if (String(data.error).includes('Bandwidth limit') || String(data.error).includes('bandwidth') || String(data.error).includes('exceeded')) {
+            alert('⚠️ Appwrite 頻寬超出限制\n\n無法取得資料庫狀態。\n請至 Appwrite Console → Organization → Billing 升級方案或調整預算上限。');
+          }
+        }
         setDbStats(data);
         setLoading(false);
       })
