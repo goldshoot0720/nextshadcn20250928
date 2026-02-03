@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar, Search, ListPlus } from "lucide-react";
+import { Play, Download, CheckCircle, AlertCircle, Loader, Trash2, HardDrive, Plus, Edit, X, Upload, Calendar, Search, ListPlus, Camera } from "lucide-react";
 import SimpleVideoPlayer from "@/components/ui/simple-video-player";
 import { PlyrPlayer } from "@/components/ui/plyr-player";
 import { useVideoCache } from "@/hooks/useVideoCache";
@@ -22,6 +22,7 @@ import { getAppwriteHeaders, getProxiedMediaUrl, getAppwriteDownloadUrl } from "
 import { uploadToAppwriteStorage } from "@/lib/appwriteStorage";
 import { useVideoQueue, VideoQueueItem } from "@/hooks/useVideoQueue";
 import { VideoQueuePanel } from "@/components/ui/video-queue-panel";
+import { VideoScreenshotButton } from "@/components/ui/video-screenshot-button";
 
 // Helper function to add Appwrite config to URL
 function addAppwriteConfigToUrl(url: string): string {
@@ -715,6 +716,7 @@ function VideoPlayerModal({ video, videoRef, onClose }: { video: VideoData; vide
                 <Button variant="secondary" className="rounded-full gap-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 border-none dark:text-white">
                   <Play className="w-4 h-4" /> 點讚
                 </Button>
+                <VideoScreenshotButton videoTitle={currentVideo.name} />
                 <Button variant="secondary" onClick={toggleFullscreen} className="rounded-full gap-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 border-none dark:text-white">
                   <Plus className="w-4 h-4" /> 全螢幕
                 </Button>
